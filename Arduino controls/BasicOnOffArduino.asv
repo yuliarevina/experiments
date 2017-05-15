@@ -1,0 +1,6 @@
+[ard, comPort] = InitArduino
+disp('Arduino Initiated')
+pause(2)
+
+ShutdownArd(ard,comPort)
+disp('Arduino is off')
