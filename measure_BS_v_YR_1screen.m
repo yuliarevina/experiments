@@ -90,7 +90,12 @@ for mt = 1:2*meas_trials
 
        % Abort demo if any key is pressed:
        if keyCode(KbName('ESCAPE'))
-          cls
+          ToggleArd(ard,'AllOff')
+          disp('Check goggles are off')
+%         ShutdownArd(ard,comPort);
+%         disp('Arduino is off')
+%            cls
+            sca
           break;
        end
     end

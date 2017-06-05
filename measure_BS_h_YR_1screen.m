@@ -1,7 +1,7 @@
 meas_trials = 5;
 meas_positions_h = zeros(1,2*meas_trials);
 
-meas_stimRect = [0 0 5 5]; %was originally 10 but might be too big...
+meas_stimRect = [0 0 10 10]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
 
 SetMouse(xCenter,yCenter, window);
 
@@ -9,14 +9,16 @@ flickFreq = 4;
 flickCol = [0 255];
 %% instruct
 flickInd = 0;
-
+Screen('TextSize', window, 30);
 %% 
 for mt = 1:2*meas_trials    
 %     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     if mt <= meas_trials
-        DrawFormattedText(window,'INNER',500,400,white,[],1);
+        DrawFormattedText(window,'INNER',500,400,white,[],[]);
+    elseif mt == meas_trials+1
+        DrawFormattedText(window,'OUTER',500,400,[1 0 0],[],[]);
     else
-        DrawFormattedText(window,'OUTER',500,400,white,[],1);
+        DrawFormattedText(window,'OUTER',500,400,[1 0 0],[],[]);
     end
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
@@ -84,15 +86,20 @@ for mt = 1:2*meas_trials
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            Screen('TextSize', window, 20);
-           textString = ['Mouse at X pixel ' num2str(round(mouseX))...
-        ' and Y pixel ' num2str(round(mouseY))];
-     DrawFormattedText(window, textString, 'center', 470, white);
+%            textString = ['Mouse at X pixel ' num2str(round(mouseX))...
+%         ' and Y pixel ' num2str(round(mouseY))];
+%      DrawFormattedText(window, textString, 'center', 470, white);
            
         Screen('DrawingFinished',window);
 
        % Abort demo if any key is pressed:
        if keyCode(KbName('ESCAPE'))
-          cls
+          ToggleArd(ard,'AllOff')
+          disp('Check goggles are off')
+%           ShutdownArd(ard,comPort);
+%           disp('Arduino is off')
+%            cls
+           sca
           break;
        end
       

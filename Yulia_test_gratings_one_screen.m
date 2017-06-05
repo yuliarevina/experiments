@@ -170,6 +170,20 @@ Screen('DrawText',leftFixWin, '+', center(1), 1050-200,white);
 % Frame
 frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
 
+
+%% ---------------------------------------
+% Set up Arduino for Goggles use
+% ________________________________________
+[ard, comPort] = InitArduino;
+disp('Arduino Initiated')
+
+ToggleArd(ard,'LensOn') % need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
+
+% Remember to switch this off if the code stops for any reason. Any
+% Try/Catch routines should have LensOff integrated there...
+
+
+try
 %% ---------------
 %  Intro screen  |
 %-----------------
@@ -196,8 +210,10 @@ if ~exist('BS_diameter_h') || ~exist('BS_diameter_v')
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press any key...', 'center', 'center', white, [], []);
     Screen('Flip', window);
     KbStrokeWait;
+    ToggleArd(ard,'LeftOff') % close left eye so we can look with our right and measure BS
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
+    ToggleArd(ard,'LensOn') %put goggles back on
 end
 
 
@@ -628,7 +644,7 @@ try
     stimdurframes = round(0.8/ifi);
          
     framenumber = 1;
-    whichseye = 'left';
+    whicheye = 'left';
     
     nexttrial = allcondscombos(condsorder(1),:);
     switch nexttrial(1)
@@ -675,6 +691,7 @@ try
         % _________________________________________________
         % SHOW THE CONTROL
         
+        ToggleArd(ard,'RightOff') % turn right lens off
         
         while vbl - start_time < 0.8
             % Motion
@@ -717,7 +734,7 @@ try
         % _________________________________________________
         % SHOW BLANK SCREEN FOR 500 ms
         
-        
+        ToggleArd(ard,'LensOn') %all on for the ISI
         % blank ISI
                
         % do this ONCE outside the loop
@@ -748,7 +765,12 @@ try
         
         % ___________________________________________________________________________________
         % SHOW THE COMPARISON STIM
-        
+        if strcmp(whicheye, 'right'); %compare strings
+            % BS trial so open right lens
+            ToggleArd(ard,'LeftOff') %close left
+        else
+            ToggleArd(ard,'RightOff') %close right
+        end
         
         while vbl - start_time < 0.8
             % Motion
@@ -762,7 +784,7 @@ try
             
             % Define shifted srcRect that cuts out the properly shifted rectangular
             % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-            srcRect=[0, xoffset, 30, xoffset + 300];
+            srcRect=[0, xoffset, bar_width, xoffset + bar_length];
             
                         
             
@@ -820,6 +842,8 @@ try
             curr_response = 0;
             numFrames = 0;
             starttime = GetSecs;
+            
+            ToggleArd(ard,'LensOn') %both eyes back on
                         
             while resp2Bmade == true;
                                 
@@ -851,7 +875,9 @@ try
                 endtime = 0;
                 
                 if keyIsDown
-                    if keyCode(escapeKey); resp2Bmade = false; endtime = GetSecs; save (filename); sca;
+                    if keyCode(escapeKey);
+                        resp2Bmade = false; endtime = GetSecs; save (filename); sca; ToggleArd(ard,'AllOff'); ShutdownArd(ard,comPort);
+                        disp('Arduino is off')
                     elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; save (filename); endtime = GetSecs;
                     elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; save (filename); endtime = GetSecs;
                     else
@@ -884,6 +910,9 @@ try
             save filename
             sca
             rethrow(keyerr)
+            ToggleArd(ard,'AllOff');
+            ShutdownArd(ard,comPort);
+            disp('Arduino is off')
         end
                 
         
@@ -937,11 +966,17 @@ try
                 if keyCode(escapeKey)
                     save (filename)
                     sca %if esc then just quit demo
+                    ToggleArd(ard,'AllOff');
+                    ShutdownArd(ard,comPort);
+                    disp('Arduino is off')
                     break;
                 end
             end %end while. Move onto next trial
         catch whileerr
             sca
+            ToggleArd(ard,'AllOff');
+            ShutdownArd(ard,comPort);
+            disp('Arduino is off')
             rethrow(whileerr)
         end
     end %for
@@ -952,6 +987,9 @@ catch ERR3
     disp('Experiment error! Plz check your code!')
     %Close goggles
     %shut down ARDUINO
+    ToggleArd(ard,'AllOff');
+    ShutdownArd(ard,comPort);
+    disp('Arduino is off')
 end
 
 
@@ -960,3 +998,10 @@ save (filename)
 %Close goggles
 % Shut down ARDUINO
 sca
+catch OverallErr
+    ToggleArd(ard,'AllOff')
+    disp('Check goggles are off')
+    ShutdownArd(ard,comPort);
+    disp('Arduino is off')
+    rethrow(OverallErr)
+end
