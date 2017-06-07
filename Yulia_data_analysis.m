@@ -24,11 +24,12 @@ for i = 1:5; %conditions
 end
 
 
-figure; plot(1:5, results(1:5,1,1), 'ro') %intact
+figure; plot(1:5, results(1:5,1,1), 'ro-') %intact
 hold on;
-plot(1:5, results(1:5,1,2), 'bs') %BS
-plot(1:5, results(1:5,1,3), 'go') %occl
-plot(1:5, results(1:5,1,4), 'kx') %del sharp
-plot(1:5, results(1:5,1,5), 'cx') %del fuzzy
+plot(1:5, results(1:5,1,2), 'bs-') %BS
+plot(1:5, results(1:5,1,3), 'go-') %occl
+plot(1:5, results(1:5,1,4), 'kx-') %del sharp
+plot(1:5, results(1:5,1,5), 'cx-') %del fuzzy
 axis([0.5 5.5 -0.5 10.5])
+legend('Intact', 'BS', 'Occl', 'Del Sharp', 'Del Fuzz', 'Location', 'Northwest')
 hold off;

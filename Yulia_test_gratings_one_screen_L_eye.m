@@ -68,19 +68,20 @@ screenNumber = max(screens);  % puts stimulus on external screen
 white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
 black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
 grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
+grey_bkg = white*0.10
 
 
 % Open an on screen window and color it grey
 
 if stereoModeOn
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
         Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
     end
 else %just open one window
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey);
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
 end
 
 
@@ -131,8 +132,8 @@ fp_offset = 200;
 % frame
 frameSize = 900;
 
-rightFixWin = Screen('OpenOffScreenWindow',window, grey, windowRect); 
-leftFixWin = Screen('OpenOffScreenWindow',window, grey, windowRect); 
+rightFixWin = Screen('OpenOffScreenWindow',window, grey_bkg, windowRect); 
+leftFixWin = Screen('OpenOffScreenWindow',window, grey_bkg, windowRect); 
 [center(1), center(2)] = RectCenter(windowRect);
 fix_r1 = 8;
 fix_r2 = 4; 
@@ -293,6 +294,7 @@ cyclesPerDeg = [ .25 .30 .35 .40 .45];
 constant_tempFreq = 1;
 
 maxContrast = .75;
+% maxContrast = .5;
 
 bar_width = 1.73; %1.73 deg like in gerrit's prev expts
 bar_width = round(deg2pix_YR(bar_width));
@@ -340,7 +342,8 @@ for p = 1:length(periods)
             case 'square'
                 grating(p,t,:) = grey + tcos(t)*maxContrast*inc*sign(sin(fr*x));
             case 'sine'
-                grating(p,t,:) = grey + tcos(t)*maxContrast*inc*sin(fr*x);
+%                 grating(p,t,:) = grey + tcos(t)*maxContrast*inc*sin(fr*x);
+                grating(p,t,:) = (grey + tcos(t)*maxContrast*inc*sin(fr*x)) * 0.2;
         end
         gratingtex(p,t) = Screen('MakeTexture', window, squeeze(grating(p,t,:)), [], 1);
     end %for
@@ -391,7 +394,7 @@ gauss(gauss>1) = 1; % "flatten" the peak. Change anything bigger than 1 to 1. We
 
 contrast = 1;
 [s1, s2] = size(gauss);
-mask = ones(s1, s2, 2) .* grey; %just makes grey bkg
+mask = ones(s1, s2, 2) .* grey_bkg; %just makes grey bkg
 mask(:, :, 2)= gauss; %makes transparency following the gaussian vals
 
 maskTexture = Screen('MakeTexture', window, mask); %make into a texture
@@ -529,7 +532,7 @@ while exitDemo == false
                         Screen('FillOval', window, white*0.7, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
                         Screen('FrameOval', window, [0 0 0], occluderRectCentre_Demo, 3);
                     case 4
-                        Screen('FillOval', window, grey, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
+                        Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
                     case 5
                         Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Demo);
                         Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
@@ -818,7 +821,7 @@ try
                     %the LEFT EYE
                     %
                     %grey mask
-                    Screen('FillOval', window, grey, occluderRectCentre_Expt, maxDiameter); %grey occluder
+                    Screen('FillOval', window, grey_bkg, occluderRectCentre_Expt, maxDiameter); %grey occluder
                 case 5 %Deleted fuzzy
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
@@ -997,6 +1000,9 @@ end
 save (filename)
 %Close goggles
 % Shut down ARDUINO
+ToggleArd(ard,'AllOff');
+ShutdownArd(ard,comPort);
+disp('Arduino is off')
 sca
 catch OverallErr
     ToggleArd(ard,'AllOff')
