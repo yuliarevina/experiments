@@ -17,6 +17,8 @@ distance2screen = 42; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 
+brightness = 0.2;
+textcolor = [0.4 0.4 0.4];
 
 % ASK FOR SUBJECT DETAILS
 
@@ -68,7 +70,9 @@ screenNumber = max(screens);  % puts stimulus on external screen
 white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
 black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
 grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
-grey_bkg = white*0.10
+% grey_bkg = white*0.10
+% grey_bkg = grey*brightness/10
+grey_bkg = black
 
 
 % Open an on screen window and color it grey
@@ -193,7 +197,7 @@ Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
 
 instructions = 'Hello and welcome \n \n to the demo experiment for perceptual filling-in \n \n Press any key to continue';
-DrawFormattedText(window, instructions, 'center', 'center', white, [], []);
+DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 %flip to screen
 Screen('Flip', window);
@@ -208,7 +212,7 @@ if ~exist('BS_diameter_h') || ~exist('BS_diameter_v')
     Screen('TextSize', window, 20);
     Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
     % instructions
-    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press any key...', 'center', 'center', white, [], []);
+    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
     KbStrokeWait;
     ToggleArd(ard,'LeftOff') % close left eye so we can look with our right and measure BS
@@ -227,8 +231,8 @@ Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
 
 % show blind spot
-Screen('FillOval', window, uint8(white), oval_rect_centred);
-DrawFormattedText(window, 'This is the location of BS', 'center', 'center', white, [],[]);
+Screen('FillOval', window, uint8(textcolor), oval_rect_centred);
+DrawFormattedText(window, 'This is the location of BS', 'center', 'center', textcolor, [],[]);
 
 Screen('Flip', window);
 KbStrokeWait;
@@ -293,7 +297,8 @@ cyclesPerDeg = [ .25 .30 .35 .40 .45];
 
 constant_tempFreq = 1;
 
-maxContrast = .75;
+maxContrast = .75; %original
+% maxContrast = 1;
 
 bar_width = 1.73; %1.73 deg like in gerrit's prev expts
 bar_width = round(deg2pix_YR(bar_width));
@@ -341,9 +346,13 @@ for p = 1:length(periods)
             case 'square'
                 grating(p,t,:) = grey + tcos(t)*maxContrast*inc*sign(sin(fr*x));
             case 'sine'
-                grating(p,t,:) = grey + tcos(t)*maxContrast*inc*sin(fr*x);
+%                 grating(p,t,:) = grey + tcos(t)*maxContrast*inc*sin(fr*x);
+                  grating(p,t,:) = (grey + tcos(t)*maxContrast*inc*sin(fr*x)) * 0.2;
+%                 grating2(p,t,:) = (grey + maxContrast*inc*sin(fr*x)) ; %removed the tcos. We need the same contrast every frame
+                  grating2(p,t,:) = ((grey + maxContrast*inc*sin(fr*x))) * brightness ; % scaled by 1/5th because screen is a 5th of the
+%                 original luminance
         end
-        gratingtex(p,t) = Screen('MakeTexture', window, squeeze(grating(p,t,:)), [], 1);
+        gratingtex(p,t) = Screen('MakeTexture', window, squeeze(grating2(p,t,:)), [], 1);
     end %for
 end %for
 
@@ -527,7 +536,7 @@ while exitDemo == false
                 
                 switch i
                     case 3
-                        Screen('FillOval', window, white*0.7, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
+                        Screen('FillOval', window, white*0.7*brightness, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
                         Screen('FrameOval', window, [0 0 0], occluderRectCentre_Demo, 3);
                     case 4
                         Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
@@ -592,7 +601,7 @@ Instructions2 = 'Press spacebar to start each trial';
 %show fix
 Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-DrawFormattedText(window, Instructions2, 'center', 'center', white, [],[]);
+DrawFormattedText(window, Instructions2, 'center', 'center', textcolor, [],[]);
 Screen('Flip', window);
 try
     while ~keyCode(space) %while the space bar has not been pressed....
@@ -812,7 +821,7 @@ try
                     %the LEFT EYE
                     %
                     %pop on the occluder
-                    Screen('FillOval', window, white*0.7, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
+                    Screen('FillOval', window, white*0.7*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
                     Screen('FrameOval', window, [0 0 0], occluderRectCentre_Expt, 3);
                 case 4 %Deleted sharp
                     %present the grating of the SF stored in thistrial(2) to
@@ -855,7 +864,7 @@ try
                 Screen('TextSize', window, 20);
                 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
                 
-                DrawFormattedText(window, 'Make response \n \n L = 1st was denser R = 2nd was denser', 'center', 'center', white, [],[]);
+                DrawFormattedText(window, 'Make response \n \n L = 1st was denser R = 2nd was denser', 'center', 'center', textcolor, [],[]);
                 Screen('Flip', window);
                 
                 if makescreenshotsforvideo
@@ -908,7 +917,7 @@ try
             end %while
                                     
         catch keyerr
-            save filename
+            save (filename)
             sca
             rethrow(keyerr)
             ToggleArd(ard,'AllOff');
@@ -944,7 +953,7 @@ try
             
             if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
                 messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break, have a kitkat! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
-                DrawFormattedText(window, messagetext, 'center', 'center', white,[],[]);
+                DrawFormattedText(window, messagetext, 'center', 'center', textcolor,[],[]);
                 Screen('Flip', window);
                 while ~keyCode(upKey)
                     [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
@@ -974,6 +983,7 @@ try
                 end
             end %end while. Move onto next trial
         catch whileerr
+            save (filename)
             sca
             ToggleArd(ard,'AllOff');
             ShutdownArd(ard,comPort);
@@ -983,6 +993,7 @@ try
     end %for
     
 catch ERR3
+    save (filename)
     sca
     rethrow(ERR3)
     disp('Experiment error! Plz check your code!')
