@@ -48,7 +48,7 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
 
-Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+% Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
 % 
 % This script calls Psychtoolbox commands available only in OpenGL-based 
 % versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
@@ -225,14 +225,14 @@ end
 %draw a blindspot oval to test its location
 oval_rect = [0 0 BS_diameter_h BS_diameter_v];
 oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h, BS_center_v);
-
-%show fix
+                    
+                                                                                     %                                                 show fix                                                         
 Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
 
-% show blind spot
-Screen('FillOval', window, uint8(textcolor), oval_rect_centred);
-DrawFormattedText(window, 'This is the location of BS', 'center', 'center', textcolor, [],[]);
+% show blind spot  
+Screen('FillOval', window, textcolor, oval_rect_centred);
+DrawFormattedText(window, 'This is the location of BS', 'center', 'center', [0.2 0.2 0.2], [],[]);
 
 Screen('Flip', window);
 KbStrokeWait;

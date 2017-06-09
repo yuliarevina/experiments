@@ -1,7 +1,7 @@
 meas_trials = 5;
 meas_positions_h = zeros(1,2*meas_trials);
 
-meas_stimRect = [0 0 10 10]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
+meas_stimRect = [0 0 5 5]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
 
 SetMouse(xCenter,yCenter, window);
 

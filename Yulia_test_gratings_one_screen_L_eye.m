@@ -230,8 +230,8 @@ Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
 
 % show blind spot
-Screen('FillOval', window, uint8(textcolor), oval_rect_centred);
-DrawFormattedText(window, 'This is the location of BS', 'center', 'center', textcolor, [],[]);
+Screen('FillOval', window, textcolor, oval_rect_centred);
+DrawFormattedText(window, 'This is the location of BS', 'center', 'center', [0.2 0.2 0.2], [],[]);
 
 Screen('Flip', window);
 KbStrokeWait;
