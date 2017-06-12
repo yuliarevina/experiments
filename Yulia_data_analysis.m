@@ -4,8 +4,10 @@
 % For every condition [subjectdata(1)] we need to find when comparison was
 % rated as denser [subjetdata(3) == 2], for each SF (subjectdata(2))
 
-ntrialseachcond = 20;
+ntrialseachcond = 80;
 
+
+%% extract data
 conditions = nan(5,ntrialseachcond,5);
 tmp = [];
 results = nan(5,1,5);
@@ -25,7 +27,7 @@ for i = 1:5; %conditions
     end
 end
 
-
+%% figure
 figure; plot(1:5, results(1:5,1,1), 'ro-') %intact
 hold on;
 plot(1:5, results(1:5,1,2), 'bs-') %BS
@@ -38,6 +40,7 @@ ax = findobj(gcf,'type','axes'); %Retrieve the axes to be copied
 hold off;
 
 %% psignifit stuff
+psignifitdata = zeros(5,3,5);
 psignifitdata(1,1,:) = 0.25;
 psignifitdata(2,1,:) = 0.30;
 psignifitdata(3,1,:) = 0.35;
@@ -85,7 +88,7 @@ end
 legend('Intact', 'BS', 'Occl', 'Del Sharp', 'Del Fuzz', 'Location', 'Southeast');
 
 for condition = 1:5
-    plotpd(psignifitdata(:,:,condition), 'LineStyle', 'None', 'Color', colorpoints(condition), 'Marker', markershape(condition), 'MarkerFaceColor', 'None','MarkerSize', 20)  % plots the points
+    plotpd(psignifitdata(:,:,condition), 'LineStyle', 'None', 'Color', colorpoints(condition), 'Marker', markershape(condition), 'MarkerFaceColor', 'None','MarkerSize', 10)  % plots the points
     shape = 'cumulative Gaussian';   % what curve you want to fit
     prefs = batch('shape', shape, 'n_intervals', 1, 'runs', 2000);
     % n intervals corresponds to the space between the choices I think, runs is
@@ -106,6 +109,8 @@ for condition = 1:5
     % Plot the fit to the original data
 end
 
+plot([0 5],[0.5 0.5])
+plot([0.3 0.3], [0 1], 'LineStyle', '--')
 
 % plot1 = gcf;
 % set(plot1(1),'DisplayName','Intact','Marker','o','Color',[1 0 0]);
