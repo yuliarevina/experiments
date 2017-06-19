@@ -1,12 +1,13 @@
 meas_trials = 5;
 meas_positions_h = zeros(1,2*meas_trials);
 
-meas_stimRect = [0 0 10 10]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
+meas_stimRect = [0 0 5 5]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
 
 SetMouse(xCenter,yCenter, window);
 
 flickFreq = 4;
-flickCol = [0 255];
+% flickCol = [0 255]; %b&w
+flickCol = [0 0 0; 0.4 0.4 0.4]; %B&grey
 %% instruct
 flickInd = 0;
 Screen('TextSize', window, 30);
@@ -15,10 +16,13 @@ for mt = 1:2*meas_trials
 %     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     if mt <= meas_trials
         DrawFormattedText(window,'INNER',500,400,white,[],[]);
+%         DrawFormattedText(window,'INNER',500,500,[0.1 0.1 0.1],[],[]);
+%         DrawFormattedText(window,'INNER',500,600,[0.5 0.5 0.5],[],[]);
+%         DrawFormattedText(window,'INNER',500,700,[1 1 1],[],[]);
     elseif mt == meas_trials+1
         DrawFormattedText(window,'OUTER',500,400,[1 0 0],[],[]);
     else
-        DrawFormattedText(window,'OUTER',500,400,[1 0 0],[],[]);
+        DrawFormattedText(window,'OUTER',500,400,white,[],[]);
     end
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
@@ -65,12 +69,12 @@ for mt = 1:2*meas_trials
 %        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
 
            % draw fixation dot 
-           Screen('CopyWindow', leftFixWin, window, [], windowRect);	  
+%            Screen('CopyWindow', leftFixWin, window, [], windowRect);	  
 
            if isequal(bs_eye,'left')
                 % draw fixation dot 
-               Screen('CopyWindow', leftFixWin, window, [], windowRect);
-               Screen('FillRect', window, flickCol(flickInd+1), targetRect);
+               Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+               Screen('FillRect', window, flickCol(flickInd+1, :), targetRect);
           
            end
            
@@ -82,7 +86,7 @@ for mt = 1:2*meas_trials
            
            if isequal(bs_eye,'right')
                 % draw fixation dot 
-               Screen('CopyWindow', leftFixWin, window, [], windowRect);
+               Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            Screen('TextSize', window, 20);
