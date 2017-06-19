@@ -4,7 +4,7 @@
 % For every condition [subjectdata(1)] we need to find when comparison was
 % rated as denser [subjetdata(3) == 2], for each SF (subjectdata(2))
 
-ntrialseachcond = 80;
+ntrialseachcond = 120;
 
 
 %% extract data
@@ -88,7 +88,7 @@ end
 legend('Intact', 'BS', 'Occl', 'Del Sharp', 'Del Fuzz', 'Location', 'Southeast');
 
 for condition = 1:5
-    plotpd(psignifitdata(:,:,condition), 'LineStyle', 'None', 'Color', colorpoints(condition), 'Marker', markershape(condition), 'MarkerFaceColor', 'None','MarkerSize', 10)  % plots the points
+    plotpd(psignifitdata(:,:,condition), 'LineStyle', 'None', 'Color', colorpoints(condition), 'Marker', markershape(condition), 'MarkerFaceColor', 'None','MarkerSize', 5)  % plots the points
     shape = 'cumulative Gaussian';   % what curve you want to fit
     prefs = batch('shape', shape, 'n_intervals', 1, 'runs', 2000);
     % n intervals corresponds to the space between the choices I think, runs is
