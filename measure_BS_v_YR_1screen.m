@@ -94,12 +94,14 @@ for mt = 1:2*meas_trials
 
        % Abort demo if any key is pressed:
        if keyCode(KbName('ESCAPE'))
-          ToggleArd(ard,'AllOff')
-          disp('Check goggles are off')
-%         ShutdownArd(ard,comPort);
-%         disp('Arduino is off')
-%            cls
-            sca
+           if togglegoggle == 1
+               ToggleArd(ard,'AllOff')
+               disp('Check goggles are off')
+               ShutdownArd(ard,comPort);
+               disp('Arduino is off')
+               %            cls
+           end
+           sca
           break;
        end
     end
@@ -109,12 +111,12 @@ for mt = 1:2*meas_trials
 end
 
 %%
-upper_v = meas_positions_v(1:meas_trials);
-lower_v = meas_positions_v(meas_trials+1:end);
+upper_v = meas_positions_v(1:meas_trials)
+lower_v = meas_positions_v(meas_trials+1:end)
 figure;
 plot(1:meas_trials, upper_v, 1:meas_trials, lower_v);
 BS_center_v = mean(meas_positions_v)
-in_deg_v = pix2deg_YR(BS_center_v-mean(fix_cord1))
+% in_deg_v = pix2deg_YR(BS_center_v-mean(fix_cord1))
 BS_diameter_v = abs(mean(upper_v) - mean(lower_v))
 in_deg_v = pix2deg_YR(BS_diameter_v)
 title('vertical');

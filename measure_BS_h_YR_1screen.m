@@ -1,13 +1,13 @@
-meas_trials = 5;
+meas_trials = 3;
 meas_positions_h = zeros(1,2*meas_trials);
 
-meas_stimRect = [0 0 5 5]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
+meas_stimRect = [0 0 10 10]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
 
 SetMouse(xCenter,yCenter, window);
 
 flickFreq = 4;
-% flickCol = [0 255]; %b&w
-flickCol = [0 0 0; 0.4 0.4 0.4]; %B&grey
+flickCol = [0 255]; %b&w
+% flickCol = [0.1 0.1 0.1; 0.3 0.3 0.3]; %B&grey
 %% instruct
 flickInd = 0;
 Screen('TextSize', window, 30);
@@ -74,7 +74,7 @@ for mt = 1:2*meas_trials
            if isequal(bs_eye,'left')
                 % draw fixation dot 
                Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-               Screen('FillRect', window, flickCol(flickInd+1, :), targetRect);
+               Screen('FillRect', window, flickCol(flickInd+1), targetRect);
           
            end
            
@@ -98,11 +98,13 @@ for mt = 1:2*meas_trials
 
        % Abort demo if any key is pressed:
        if keyCode(KbName('ESCAPE'))
-          ToggleArd(ard,'AllOff')
-          disp('Check goggles are off')
-%           ShutdownArd(ard,comPort);
-%           disp('Arduino is off')
-%            cls
+            if togglegoggle == 1
+                ToggleArd(ard,'AllOff')
+                disp('Check goggles are off')
+%                   ShutdownArd(ard,comPort);
+%                   disp('Arduino is off')
+%                cls
+            end
            sca
           break;
        end
@@ -114,13 +116,13 @@ for mt = 1:2*meas_trials
 end;
 
 %%
-inner_h = meas_positions_h(1:meas_trials);
-outer_h = meas_positions_h(meas_trials+1:end);
+inner_h = meas_positions_h(1:meas_trials)
+outer_h = meas_positions_h(meas_trials+1:end)
 figure;
 plot(1:meas_trials, inner_h, 1:meas_trials, outer_h);
 BS_center_h = mean(meas_positions_h)
 %mean(fix_cord1) is probably a BUG because it has both x and y coordinates
-in_deg_h = pix2deg_YR(BS_center_h-mean(fix_cord1))
+% in_deg_h = pix2deg_YR(BS_center_h-mean(fix_cord1))
 BS_diameter_h = abs(mean(inner_h) - mean(outer_h))
 in_deg_h = pix2deg_YR(BS_diameter_h)
 title('horizontal');

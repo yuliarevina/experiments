@@ -3,37 +3,16 @@
 
 % clear all; %don't want to do this for the real expt otherwise it will delete the blindspot measurements
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Get some hardware info %%%%%%%%%%%%%%%%%%%%%%%
-
-% if ~IsWin
-    devices = PsychHID('Devices');
-% end
-keyboardind = GetKeyboardIndices();
-mouseind = GetMouseIndices();
-
-% for linux try additional params when hiding cursor
-
-% HideCursor([screenid=0][, mouseid])
-
-% By default, the cursor of screen zero on Linux, and all screens on
-% Windows and Mac OS/X is hidden. 'mouseid' defines which of multiple
-% cursors shall be hidden on Linux. The parameter is silently ignored
-% on other systems.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 todaydate = date;
 
 stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
 stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
 
-BS_measurementON = 1;                     
+BS_measurementON = 1;
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                       %%%%%%%%%%%%%%%%
 
 
@@ -44,12 +23,8 @@ distance2screen = 42; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 
-brightness = 0.1;
-% brightness = 0.006;
-textcolor = [0 0 0];
-
-% timing
-goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
+brightness = 0.06;
+textcolor = [0.2 0.2 0.2];
 
 % GAMMA CORRECTION
 load CLUT_Station1_1152x864_100Hz_25_Apr_2016.mat
@@ -82,9 +57,7 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
 
-if ~IsWin
-    Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
-end
+Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
 % 
 % This script calls Psychtoolbox commands available only in OpenGL-based 
 % versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
@@ -111,16 +84,6 @@ grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
 grey_bkg = black
 
 
-
-% % Set the blend function for the screen
-% Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-
-% % % correct non-linearity from CLUT
-oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
-
-
-
-
 % Open an on screen window and color it grey
 
 if stereoModeOn
@@ -135,16 +98,11 @@ else %just open one window
 end
 
 
-% % Set the blend function for the screen
+% Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-% 
-% % % % correct non-linearity from CLUT
-oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 
-white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
-black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
-grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
-
+% % % correct non-linearity from CLUT
+% % oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 
 % Get the size of the on screen window in pixels
 % For help see: Screen WindowSize?
@@ -163,6 +121,15 @@ waitframes = 1; % update every frame?
 waitduration = waitframes * ifi; % basically just = ifi if we update on every frame
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Get some hardware info %%%%%%%%%%%%%%%%%%%%%%%
+
+% devices = PsychHID('Devices');
+keyboardind = GetKeyboardIndices();
+mouseind = GetMouseIndices();
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 % The avaliable keys to press
 escapeKey = KbName('ESCAPE');
@@ -171,6 +138,7 @@ downKey = KbName('DownArrow');
 leftKey = KbName('LeftArrow');
 rightKey = KbName('RightArrow');
 space = KbName('space');
+scannertrigger = KbName('t');
 
 
 
@@ -181,6 +149,7 @@ lastKeyTime = GetSecs;
 SetMouse(xCenter,yCenter,window);
 WaitSecs(.1);
 [mouseX, mouseY, buttons] = GetMouse(window);
+
 
 %% Fix frame
 
@@ -248,8 +217,6 @@ try
 %  Intro screen  |
 %-----------------
 %show fix
-
-Screen('FillRect', window, grey) % make the whole screen grey_bkg
 Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
 
@@ -275,8 +242,7 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v')) && BS_measurementON == 1
     if togglegoggle == 1;
         ToggleArd(ard,'LeftOff') % close left eye so we can look with our right and measure BS
     end
-    HideCursor(1,0)
-    Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    HideCursor()
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
     if togglegoggle == 1;
@@ -362,8 +328,7 @@ cyclesPerDeg = [ .25 .30 .35 .40 .45];
 constant_tempFreq = 1;
 
 % maxContrast = .75; %original
-% maxContrast = 0.97;
-maxContrast = 1;
+maxContrast = 0.97;
 
 bar_width = 1.73; %1.73 deg like in gerrit's prev expts
 bar_width = round(deg2pix_YR(bar_width));
@@ -555,7 +520,7 @@ fuzzyRectCentre_Expt = CenterRectOnPointd(gaussRect, BS_center_h,BS_center_v);
 %% -----------------------------------------------
 % Present stimuli - altogether here for debugging |
 %-------------------------------------------------
-Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+ 
 
 incrementframe = 0;
 direction = 1;
@@ -564,7 +529,6 @@ xoffset = 0;
 framenumber = 1;
 exitDemo = false; %demo = stims presented side by side just for checking
 while exitDemo == false
-    Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
     % Check the keyboard to see if a button has been pressed
     [keyIsDown,secs, keyCode] = KbCheck;
     
@@ -585,8 +549,7 @@ while exitDemo == false
             % Shift the grating by "shiftperframe" pixels per frame:
             % the mod'ulo operation makes sure that our "aperture" will snap
             % back to the beginning of the grating, once the border is reached.
-%             xoffset = mod(incrementframe*shiftperframe,periods(i));
-            xoffset = mod(1*shiftperframe,periods(i));
+            xoffset = mod(incrementframe*shiftperframe,periods(i));
             % incrementframe=incrementframe+1;
             
             
@@ -603,8 +566,8 @@ while exitDemo == false
                 
                 switch i
                     case 3
-                        Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
-                        Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Demo, 3);
+                        Screen('FillOval', window, white*0.7*brightness, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
+                        Screen('FrameOval', window, [0 0 0], occluderRectCentre_Demo, 3);
                     case 4
                         Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
                     case 5
@@ -666,7 +629,6 @@ end %while
 
 Instructions2 = 'Press spacebar to start each trial';
 %show fix
-Screen('FillRect', window, grey) % make the whole screen grey
 Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
 DrawFormattedText(window, Instructions2, 'center', 'center', textcolor, [],[]);
@@ -693,8 +655,7 @@ try
    %show fix
     Screen('TextSize', window, 20);
     Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-%     Screen('CopyWindow', leftFixWin, window, [], windowRect);
-    Screen('FillRect', window, grey) % make the whole screen grey
+    Screen('CopyWindow', leftFixWin, window, [], windowRect);
     DrawFormattedText(window, 'RIGHT eye blindspot, \n \n LEFT Fellow eye, \n \n Fix on the LEFT', 'center', 'center', white,[],[]);
     Screen('Flip', window);
     
@@ -744,18 +705,28 @@ try
     
      
     
-    %show fix
+%     %show fix
+%     Screen('TextSize', window, 20);
+%     Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+%         
+%     
+%     % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],1);
+%        
+%     
+%     Screen('Flip', window);
+%     
+%     KbStrokeWait;
+
+
+
     Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-        
-    
-    % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],1);
-       
-    
+    DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', textcolor,[],[]);
     Screen('Flip', window);
     
-    KbStrokeWait;
-    
+    while ~keyCode(scannertrigger)
+        [keyIsDown, secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+    end
+%     
     
     for ntrials = 1:length(condsorder)
                 
@@ -767,8 +738,8 @@ try
         
         start_time = vbl;
         
-% _________________________________________________
-% SHOW THE CONTROL
+        % _________________________________________________
+        % SHOW THE CONTROL
         if togglegoggle == 1;
             ToggleArd(ard,'RightOff') % turn right lens off
         end
@@ -789,7 +760,6 @@ try
             
             
             %show fix
-            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
             Screen('TextSize', window, 20);
             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
             
@@ -812,24 +782,20 @@ try
         end    %while
         
         
- % _________________________________________________
- % SHOW BLANK SCREEN FOR 500 ms
-       
+        % _________________________________________________
+        % SHOW BLANK SCREEN FOR 500 ms
+        if togglegoggle == 1
+            ToggleArd(ard,'LensOn') %all on for the ISI
+        end
         % blank ISI
                
         % do this ONCE outside the loop
         %show fix
         Screen('TextSize', window, 20);
         Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);                                                                                                                 - 0.2) * ifi);
-        
-        if togglegoggle == 1
-            WaitSecs(goggle_delay)
-            ToggleArd(ard,'LensOn') %all on for the ISI
-        end
-        
+        vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
         %        then do another flip to clear this half a sec later
-        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2 - goggle_delay) * ifi); %compensate for the goggle delay
+        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2) * ifi);
       
         if makescreenshotsforvideo
             for imageframes = 1:30 %for 30 frames (0.5s)
@@ -849,8 +815,8 @@ try
         start_time = vbl;
         stimdurframes = round(0.8/ifi); % 48 frames on 60 hz
         
- % ___________________________________________________________________________________
- % SHOW THE COMPARISON STIM
+        % ___________________________________________________________________________________
+        % SHOW THE COMPARISON STIM
         if strcmp(whicheye, 'right'); %compare strings
             if togglegoggle == 1;
                 % BS trial so open right lens
@@ -901,8 +867,8 @@ try
                     %the LEFT EYE
                     %
                     %pop on the occluder
-                    Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
-                    Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Expt, 3);
+                    Screen('FillOval', window, white*0.7*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
+                    Screen('FrameOval', window, [0 0 0], occluderRectCentre_Expt, 3);
                 case 4 %Deleted sharp
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
@@ -926,8 +892,7 @@ try
             incrementframe = incrementframe + 1;
             
         end %while 
-  %_________________________________________________________
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+        
         try
             resp2Bmade = true;
             curr_response = 0;
@@ -944,8 +909,6 @@ try
                 
                 
                 %show fix
-                
-                Screen('FillRect', window, grey) % make the whole screen grey_bkg
                 Screen('TextSize', window, 20);
                 Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
                 
@@ -975,8 +938,8 @@ try
                         if togglegoggle == 1;
                             ToggleArd(ard,'AllOff'); ShutdownArd(ard,comPort); disp('Arduino is off')
                         end
-                    elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
-                    elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
+                    elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; save (filename); endtime = GetSecs;
+                    elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; save (filename); endtime = GetSecs;
                     else
                         %just go through the while loop since resp2Bmade is
                         %still true
@@ -1002,9 +965,7 @@ try
                 end
                                          
             end %while
-               
-            
-            
+                                    
         catch keyerr
             save (filename)
             sca
@@ -1037,20 +998,16 @@ try
                         messagenexttrial = 'Next: Deleted Fuzzy';
                         whicheye = 'left';
                 end
-                
+                disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
             end
             %show fix
-            
-            
             Screen('TextSize', window, 20);
             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
             
             if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
-                Screen('FillRect', window, grey) % make the whole screen grey
                 messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break, have a kitkat! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
-                DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],[]);
+                DrawFormattedText(window, messagetext, 'center', 'center', textcolor,[],[]);
                 Screen('Flip', window);
-                
                 while ~keyCode(upKey)
                     [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
                 end
@@ -1059,16 +1016,9 @@ try
             %  DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
             
             %show fix
-%             Screen('TextSize', window, 20);
-%             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+            Screen('TextSize', window, 20);
+            Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
             Screen('Flip', window);
-            disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
-            
-            % saving seems to slow everything down. Maybe let's only save
-            % at the end, or if ESC is pressed or if catch statement is
-            % executed
-%             save (filename)
             
             [secs, keyCode, deltaSecs] = KbStrokeWait; %wait for space
             

@@ -3,6 +3,16 @@
 
 % clear all; %don't want to do this for the real expt otherwise it will delete the blindspot measurements
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Get some hardware info %%%%%%%%%%%%%%%%%%%%%%%
+
+devices = PsychHID('Devices');
+keyboardind = GetKeyboardIndices();
+mouseind = GetMouseIndices();
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 todaydate = date;
 
 stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
@@ -10,7 +20,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 bs_eye = 'left';   %% Left eye has the blind spot. Left fixation spot
@@ -20,8 +30,12 @@ distance2screen = 42; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 
-brightness = 0.2;
-textcolor = [0.4 0.4 0.4];
+brightness = 0.1;
+textcolor = [0 0 0];
+
+
+% timing
+goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
 
 
 % GAMMA CORRECTION
@@ -101,7 +115,7 @@ Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 
 % % correct non-linearity from CLUT
-% oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
+oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
 
 % Get the size of the on screen window in pixels
 % For help see: Screen WindowSize?
@@ -205,6 +219,7 @@ try
 %  Intro screen  |
 %-----------------
 %show fix
+Screen('FillRect', window, grey) % make the whole screen grey_bkg
 Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
 
@@ -230,11 +245,14 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     if togglegoggle == 1;
         ToggleArd(ard,'RightOff') % close left eye so we can look with our right and measure BS
     end
+    HideCursor(1,0)
+    Screen('FillRect', window, grey) % make the whole screen grey_bkg
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
     if togglegoggle == 1;
         ToggleArd(ard,'LensOn') %put goggles back on
     end
+    ShowCursor()
 end
 
 
@@ -247,7 +265,7 @@ Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
 
 % show blind spot
-Screen('FillOval', window, textcolor, oval_rect_centred);
+Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
 DrawFormattedText(window, 'This is the location of BS', 'center', 'center', [0.2 0.2 0.2], [],[]);
 
 Screen('Flip', window);
@@ -313,8 +331,8 @@ cyclesPerDeg = [ .25 .30 .35 .40 .45];
 
 constant_tempFreq = 1;
 
-maxContrast = .75; %original
-% maxContrast = 1;
+% maxContrast = .75; %original
+maxContrast = 1;
 
 bar_width = 1.73; %1.73 deg like in gerrit's prev expts
 bar_width = round(deg2pix_YR(bar_width));
@@ -515,6 +533,7 @@ xoffset = 0;
 framenumber = 1;
 exitDemo = false; %demo = stims presented side by side just for checking
 while exitDemo == false
+     Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
     % Check the keyboard to see if a button has been pressed
     [keyIsDown,secs, keyCode] = KbCheck;
     
@@ -615,6 +634,7 @@ end %while
 
 Instructions2 = 'Press spacebar to start each trial';
 %show fix
+Screen('FillRect', window, grey) % make the whole screen grey
 Screen('TextSize', window, 20);
 Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
 DrawFormattedText(window, Instructions2, 'center', 'center', textcolor, [],[]);
@@ -736,6 +756,7 @@ try
             
             
             %show fix
+            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
             Screen('TextSize', window, 20);
             Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
             
@@ -761,9 +782,7 @@ try
         % _________________________________________________
         % SHOW BLANK SCREEN FOR 500 ms
         
-        if togglegoggle == 1;
-            ToggleArd(ard,'LensOn') %all on for the ISI
-        end
+        
         
         % blank ISI
                
@@ -772,8 +791,18 @@ try
         Screen('TextSize', window, 20);
         Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
         vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+        
+        
+        if togglegoggle == 1;
+            WaitSecs(goggle_delay)
+            ToggleArd(ard,'LensOn') %all on for the ISI
+        end
+        
+        
         %        then do another flip to clear this half a sec later
-        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2) * ifi);
+       vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2 - goggle_delay) * ifi); %compensate for the goggle delay
+       
+       
       
         if makescreenshotsforvideo
             for imageframes = 1:30 %for 30 frames (0.5s)
@@ -845,8 +874,8 @@ try
                     %the LEFT EYE
                     %
                     %pop on the occluder
-                    Screen('FillOval', window, white*0.7*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
-                    Screen('FrameOval', window, [0 0 0], occluderRectCentre_Expt, 3);
+                    Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
+                    Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Expt, 3);
                 case 4 %Deleted sharp
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
@@ -887,6 +916,7 @@ try
                 
                 
                 %show fix
+                Screen('FillRect', window, grey) % make the whole screen grey_bkg
                 Screen('TextSize', window, 20);
                 Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
                 
@@ -976,15 +1006,17 @@ try
                         messagenexttrial = 'Next: Deleted Fuzzy';
                         whicheye = 'right';
                 end
-                disp(sprintf('Trial %d out of %d completed.', ntrials))
+                disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
             end
             %show fix
-            Screen('TextSize', window, 20);
-            Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+%             Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+%             Screen('TextSize', window, 20);
+%             Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
             
             if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
+                Screen('FillRect', window, grey) % make the whole screen grey
                 messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break, have a kitkat! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
-                DrawFormattedText(window, messagetext, 'center', 'center', textcolor,[],[]);
+                DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],[]);
                 Screen('Flip', window);
                 while ~keyCode(upKey)
                     [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
@@ -994,6 +1026,7 @@ try
             %  DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
             
             %show fix
+            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
             Screen('TextSize', window, 20);
             Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
             Screen('Flip', window);
