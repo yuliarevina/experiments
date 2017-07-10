@@ -15,14 +15,14 @@ Screen('TextSize', window, 30);
 for mt = 1:2*meas_trials    
 %     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     if mt <= meas_trials
-        DrawFormattedText(window,'INNER',500,400,white,[],[]);
+        DrawFormattedText(window,'INNER',500,400,black,[],[]);
 %         DrawFormattedText(window,'INNER',500,500,[0.1 0.1 0.1],[],[]);
 %         DrawFormattedText(window,'INNER',500,600,[0.5 0.5 0.5],[],[]);
 %         DrawFormattedText(window,'INNER',500,700,[1 1 1],[],[]);
     elseif mt == meas_trials+1
         DrawFormattedText(window,'OUTER',500,400,[1 0 0],[],[]);
     else
-        DrawFormattedText(window,'OUTER',500,400,white,[],[]);
+        DrawFormattedText(window,'OUTER',500,400,black,[],[]);
     end
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
@@ -73,7 +73,7 @@ for mt = 1:2*meas_trials
 
            if isequal(bs_eye,'left')
                 % draw fixation dot 
-               Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+               Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
           
            end
@@ -86,7 +86,7 @@ for mt = 1:2*meas_trials
            
            if isequal(bs_eye,'right')
                 % draw fixation dot 
-               Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+               Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            Screen('TextSize', window, 20);

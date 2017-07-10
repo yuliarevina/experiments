@@ -10,6 +10,7 @@ devices = PsychHID('Devices');
 keyboardind = GetKeyboardIndices();
 mouseind = GetMouseIndices();
 
+KbName('UnifyKeyNames')
 
 
 % The avaliable keys to press
@@ -19,8 +20,14 @@ downKey = KbName('DownArrow');
 leftKey = KbName('LeftArrow');
 rightKey = KbName('RightArrow');
 space = KbName('space');
-scannertrigger = KbName('t');
+scannertrigger = KbName('s');
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+block = 1;
+stim = 1;
+thisrun = 1
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -33,7 +40,12 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 bs_eye = 'left';   %% Left eye has the blind spot. Left fixation spot
@@ -43,8 +55,14 @@ distance2screen = 42; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 
-brightness = 0.2;
-textcolor = [0.4 0.4 0.4];
+brightness = 0.1;
+textcolor = [0 0 0];
+
+% timing
+goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
+fix_black = 12; %seconds
+fix_grey = 6; %seconds
+stim_dur = 12; %seconds
 
 
 % GAMMA CORRECTION
@@ -79,7 +97,9 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
 
-% Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+if IsWin
+    Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+end
 % 
 % This script calls Psychtoolbox commands available only in OpenGL-based 
 % versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
@@ -108,14 +128,14 @@ grey_bkg = black
 % Open an on screen window and color it grey
 
 if stereoModeOn
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
         Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
     end
 else %just open one window
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey);
 end
 
 
@@ -221,11 +241,9 @@ try
 %% ---------------
 %  Intro screen  |
 %-----------------
-%show fix
-Screen('TextSize', window, 20);
-Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+ShowFix()
 
-instructions = 'Hello and welcome \n \n to the demo experiment for perceptual filling-in \n \n Press any key to continue';
+instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
 DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 %flip to screen
@@ -241,13 +259,13 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     Screen('TextSize', window, 20);
     Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
     % instructions
-    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press any key...', 'center', 'center', textcolor, [], []);
+    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press the [?] button the flickering marker \n \n completely disappears for you \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
     KbStrokeWait; 
     if togglegoggle == 1;
         ToggleArd(ard,'RightOff') % close left eye so we can look with our right and measure BS
     end
-    HideCursor()
+    HideCursor(1,0)
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
     if togglegoggle == 1;
@@ -261,13 +279,11 @@ end
 oval_rect = [0 0 BS_diameter_h BS_diameter_v];
 oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h, BS_center_v);
 
-%show fix
-Screen('TextSize', window, 20);
-Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+ShowFix()
 
 % show blind spot
 Screen('FillOval', window, textcolor, oval_rect_centred);
-DrawFormattedText(window, 'This is the location of BS', 'center', 'center', [0.2 0.2 0.2], [],[]);
+DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
 
 Screen('Flip', window);
 KbStrokeWait;
@@ -275,17 +291,49 @@ KbStrokeWait;
 %% --------------------
 % Recording responses |
 % ---------------------
+nRuns = 6;
+nSeqs = 5;
+nStimsInSeq = 6;
 
-numberofreps = 10; %how many repetitions of each type of trial?
+allperms = perms([1:6]);
 
-allcondscombos = CombVec(1:5,1:5)'; %generate all combinations of conditions and SFs, eg 1 1, 1 2, 1 3, ... 3 3, 3 4 etc
-allcondscombos(:,[1,2]) = allcondscombos(:,[2,1]); %swap columns because it's easier for me to look at that way haha
-allcondscombos = repmat(allcondscombos,numberofreps,1); % multiply the combinations by how many times we want to repeat them.
+runseq = nan(nSeqs,nStimsInSeq,nRuns);
+
+totalnSeqs= nSeqs*nRuns; %5 seqs x 8 runs
+
+% a = 1;
+% b = 120;
+% r = round((b-a).*rand(numberofseqs,1) + a); % generate random n's from 1 to 120 with repetition
+r = randperm(size(allperms,1),totalnSeqs); %generate 40 unique numbers from 1 to 120
+
+% generate unique sequences for all runs
+allseqs = allperms(r,:);
+
+counter = 1;
+for run = 1:nRuns
+    runseq(:,:,run) = allseqs(counter:counter+nSeqs-1,:); %e.g 1:6, 7:11
+    counter = counter+nSeqs;
+end
+
+
+% runseq(:,:,2) = allseqs(6:10,:); %run2
+% runseq(:,:,3) = allseqs(11:15,:); % etc
+% runseq(:,:,4) = allseqs(16:20,:);
+% runseq(:,:,5) = allseqs(21:25,:);
+% runseq(:,:,6) = allseqs(26:30,:);
+% runseq(:,:,7) = allseqs(31:35,:);
+% runseq(:,:,8) = allseqs(36:40,:);
+
+% numberofreps = 10; %how many repetitions of each type of trial?
+
+% allcondscombos = CombVec(1:5,1:5)'; %generate all combinations of conditions and SFs, eg 1 1, 1 2, 1 3, ... 3 3, 3 4 etc
+% allcondscombos(:,[1,2]) = allcondscombos(:,[2,1]); %swap columns because it's easier for me to look at that way haha
+% allcondscombos = repmat(allcondscombos,numberofreps,1); % multiply the combinations by how many times we want to repeat them.
 % This will be the full matrix for the whole expt for this subject (for one
 % run possibly. Depending on how we wannna split it up).
 
 %shuffle rows
-condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditions for each subject
+% condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditions for each subject
 
 %make a subject data matrix
 % ntrials rows
@@ -297,8 +345,10 @@ condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditi
 %   5. RT using number of frames elapsed
 %   6. RT using GetSecs; %should be similar to above, just for debugging
 %   mostly
-subjectdata = nan(size(allcondscombos,1), 6);
-curr_response = 0; %store current response on trial n
+
+
+% subjectdata = nan(size(allcondscombos,1), 6);
+% curr_response = 0; %store current response on trial n
 
 
 
@@ -533,6 +583,7 @@ xoffset = 0;
 
 framenumber = 1;
 exitDemo = false; %demo = stims presented side by side just for checking
+if Demo == 1
 while exitDemo == false
     % Check the keyboard to see if a button has been pressed
     [keyIsDown,secs, keyCode] = KbCheck;
@@ -540,9 +591,7 @@ while exitDemo == false
     % KbStrokeWait; %wait for key press
     try
                    
-        %show fix
-        Screen('TextSize', window, 20);
-        Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+        ShowFix()
         
         
         for i = 1:5
@@ -620,133 +669,151 @@ while exitDemo == false
     % Screen('AddFrameToMovie', window);
     
 end %while
-
+end %demo
 % Screen('FinalizeMovie', movie1);
-%% --------------------------------------------------------
-% Stim presentation for the real experiment ie one by one |
-% ---------------------------------------------------------
-
-% Subject to press spacebar to start the trial
-% Control intact stimulus will be presented with SF of 0.3? for x seconds
-% Comparison stimulus will be presented in a random condition with a random
-% SF. 5 conditions. 5 SFs
 
 
-Instructions2 = 'Press spacebar to start each trial';
-%show fix
-Screen('TextSize', window, 20);
-Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-DrawFormattedText(window, Instructions2, 'center', 'center', textcolor, [],[]);
-Screen('Flip', window);
-try
-    while ~keyCode(space) %while the space bar has not been pressed....
-        [keyIsDown,secs, keyCode] = KbCheck;
-    end %while
-      
+%% BLOCK
+
+
+
+
+
+
     
-    % Show control
-    % show comparison
-    % Wait for response
-    % Record response
-    % Wait for spacebar
-    % start new trial
- 
-  
-       
-    % Right eye blindspot, Left Fellow eye, Fix on the LEFT, Grating on the
-    % RIGHT
-    subjectdata(:,4) = 1; % LEFT eye was the fellow eye
-    
-   %show fix
-    Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-    Screen('CopyWindow', leftFixWin, window, [], windowRect);
-    DrawFormattedText(window, 'LEFT eye blindspot, \n \n RIGHT Fellow eye, \n \n Fix on the RIGHT', 'center', 'center', white,[],[]);
-    Screen('Flip', window);
-    
-    KbStrokeWait;
-    
-    %show fix
-    Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-    vbl = Screen('Flip', window);
-    
-        
-    % Motion
-    shiftperframe = cyclespersecond * periods(i) * waitduration;
-    
-    
-    % Shift the grating by "shiftperframe" pixels per frame:
-    % the mod'ulo operation makes sure that our "aperture" will snap
-    % back to the beginning of the grating, once the border is reached.
-    xoffset = mod(incrementframe*shiftperframe,periods(i));
-        
-    
-    % Define shifted srcRect that cuts out the properly shifted rectangular
-    % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-    srcRect=[0, xoffset, bar_width, xoffset + bar_length];
-    
-    stimdurframes = round(0.8/ifi);
-         
-    framenumber = 1;
-    whicheye = 'right';
-    
-    nexttrial = allcondscombos(condsorder(1),:);
-    switch nexttrial(1)
-        case 1
-            messagenexttrial = 'Next: Intact';
-        case 2
-            messagenexttrial = 'Next: Blindspot';
-            whicheye = 'left';
-        case 3
-            messagenexttrial = 'Next: Occluded';
-        case 4
-            messagenexttrial = 'Next: Deleted Sharp';
-        case 5
-            messagenexttrial = 'Next: Deleted Fuzzy';
+    if togglegoggle == 1;
+        ToggleArd(ard,'LensOn') % both lens open
     end
     
-      
-    
-     
-    
-%     %show fix
-%     Screen('TextSize', window, 20);
-%     Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-%         
-%     
-%     % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],1);
-%        
-%     
-%     Screen('Flip', window);
-    
-
+    %get timestamp
     Screen('TextSize', window, 20);
-    DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', textcolor,[],[]);
+    DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', white,[],[]);
     Screen('Flip', window);
+    
+    [secs, keyCode, deltaSecs]=    KbStrokeWait;
     
     while ~keyCode(scannertrigger)
         [keyIsDown, secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
     end
     
+
+timestart = GetSecs;
+KbQueueCreate();
+for block = 1:nSeqs
     
-    for ntrials = 1:length(condsorder)
-                
-        ourtime = 0;
-        incrementframe = 0;
+    disp(sprintf('Block %d', block));
+    % Grey fix 6s
+    % Stim
+    % and repeat
+    % end of last seq we need an extra 6s grey fix
+    vbl =  Screen('Flip', window);
+    startblock = vbl;
+    
+    for stim = 1:nStimsInSeq
         
-        %get timestamp
-        vbl = Screen('Flip', window);
+%         KbQueueCreate();
+        KbQueueStart();
+        %show stims interleaved by 6s fix
         
-        start_time = vbl;
-        
-        % _________________________________________________
-        % SHOW THE CONTROL
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
         if togglegoggle == 1;
-            ToggleArd(ard,'LeftOff') % turn left lens off
+             ToggleArd(ard,'LensOn') % both lens open
+        end
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+        ShowFix()
+        DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+        vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
+        time_zero = vbl;
+        %        then do another flip to clear this half a sec later
+%         KbQueueStop();
+        %check for ESC key
+      
+        vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
+        [pressed, firstPress]=KbQueueCheck();
+        pressedKeys = KbName(firstPress);
+        if max(strcmp(pressedKeys,'ESCAPE'))
+            ToggleArd(ard,'AllOff');
+            ShutdownArd(ard,comPort);
+%             close goggles
+%             save any data
+            pressedKeys
+            disp('Escape this madness!!')
+            sca
+        end
+        time_elapsed = vbl - time_zero;
+        disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds',time_elapsed));
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+        
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%% STIMULUS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        whicheye = 'right';
+        
+%         nexttrial = allcondscombos(condsorder(1),:);
+        switch runseq(block,stim,thisrun)
+            case 1
+                messagenexttrial = 'Next: Intact';
+                disp(messagenexttrial);
+            case 2
+                messagenexttrial = 'Next: Blindspot';
+                whicheye = 'left';
+                disp(messagenexttrial);
+            case 3
+                messagenexttrial = 'Next: Occluded';
+                disp(messagenexttrial);
+            case 4
+                messagenexttrial = 'Next: Deleted Sharp';
+                disp(messagenexttrial);
+            case 5
+                messagenexttrial = 'Next: Deleted Fuzzy';
+                disp(messagenexttrial);
+            case 6
+                messagenexttrial = 'Next: Black 12s fix';
+                disp(messagenexttrial);
+                whicheye = 'both';
         end
         
-        while vbl - start_time < 0.8
+        
+        
+        %goggles
+       if strcmp(whicheye, 'right'); %compare strings
+            % BS trial so open right lens
+            if togglegoggle == 1;
+                ToggleArd(ard,'LeftOff') %close left, RIGHT on
+            end
+        elseif strcmp(whicheye, 'left')
+            if togglegoggle == 1;
+                ToggleArd(ard,'RightOff') %close right, LEFT on
+            end
+        else
+            if togglegoggle == 1;
+                ToggleArd(ard,'LensOn') %open both eyes
+            end
+        end
+%         Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+%         ShowFix()
+%         vbl = Screen('Flip', window);
+        start_time = vbl;
+        incrementframe = 0;
+        while (vbl - start_time) < (stim_dur) 
+             %check for ESC key
+            [pressed, firstPress]=KbQueueCheck();
+            pressedKeys = KbName(firstPress);
+            if  max(strcmp(pressedKeys,'ESCAPE'))
+                ToggleArd(ard,'AllOff');
+                ShutdownArd(ard,comPort);
+%               close goggles
+%               save any data
+                pressedKeys
+                disp('Escape this madness!!')
+                sca
+            end
             % Motion
             shiftperframe = cyclespersecond * periods(2) * waitduration;
             
@@ -761,130 +828,51 @@ try
             srcRect=[0, xoffset, bar_width, xoffset + bar_length];
             
             
-            %show fix
-            Screen('TextSize', window, 20);
-            Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+            ShowFix()
             
             
-            %        %   fix point
-            %           Screen('FillOval', window, uint8(white), l_fix_cord1);
-            %            Screen('FillOval', window, uint8(black), l_fix_cord2);
-            % display intact at SF of 0.3 ir gratingtex(2)
-            Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
-            %             Screen('Flip', window);
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
-%             ourtime = ourtime + ifi;
-            incrementframe = incrementframe + 1;
-                    if makescreenshotsforvideo
-                          imageArray = Screen('GetImage', window);
-                          filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
-                          imwrite(imageArray, filenameimage);
-                          framenumber = framenumber+1;
-                    end
-        end    %while
-        
-        
-        % _________________________________________________
-        % SHOW BLANK SCREEN FOR 500 ms
-        
-        if togglegoggle == 1;
-            ToggleArd(ard,'LensOn') %all on for the ISI
-        end
-        
-        % blank ISI
-               
-        % do this ONCE outside the loop
-        %show fix
-        Screen('TextSize', window, 20);
-        Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
-        %        then do another flip to clear this half a sec later
-        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2) * ifi);
-      
-        if makescreenshotsforvideo
-            for imageframes = 1:30 %for 30 frames (0.5s)
-                imageArray = Screen('GetImage', window);
-                filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
-                imwrite(imageArray, filenameimage);
-                framenumber = framenumber+1;
-            end
-        end
-       
-        incrementframe = 0;
-        
-        thistrial = allcondscombos(condsorder(ntrials),:); %determine the trial. Conds order has the trial order. Go through it one by one until ntrials
-        
-                
-               
-        start_time = vbl;
-        stimdurframes = round(0.8/ifi); % 48 frames on 60 hz
-        
-        % ___________________________________________________________________________________
-        % SHOW THE COMPARISON STIM
-        if strcmp(whicheye, 'right'); %compare strings
-            % BS trial so open right lens
-            if togglegoggle == 1;
-                ToggleArd(ard,'LeftOff') %close left
-            end
-        else
-            if togglegoggle == 1;
-                ToggleArd(ard,'RightOff') %close right
-            end
-        end
-        
-        while vbl - start_time < 0.8
-            % Motion
-            shiftperframe = cyclespersecond * periods(thistrial(2)) * waitduration;
-            
-            % Shift the grating by "shiftperframe" pixels per frame:
-            % the mod'ulo operation makes sure that our "aperture" will snap
-            % back to the beginning of the grating, once the border is reached.
-            xoffset = mod(incrementframe*shiftperframe,periods(thistrial(2)));
-            %incrementframe=incrementframe+1;
-            
-            % Define shifted srcRect that cuts out the properly shifted rectangular
-            % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-            srcRect=[0, xoffset, bar_width, xoffset + bar_length];
-            
-                        
-            
-            %show fix
-            Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+%             Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
             
             
-            Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
-            
-            
-            switch thistrial(1)
+            switch runseq(block,stim,thisrun)
                 case 1 %intact
+                    Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
                     %
                     %we don't need to do anything else
                 case 2 %Blindspot - special case, we need to present to the other eye!
+                    Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %present the grating of the SF stored in thistrial(2) to
                     %the RIGHT EYE
                     %
                     %we don't need to do anything else
                 case 3 %Occluded
+                    Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
                     %
                     %pop on the occluder
-                    Screen('FillOval', window, white*0.7*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
-                    Screen('FrameOval', window, [0 0 0], occluderRectCentre_Expt, 3);
+                    Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
+                    Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Expt, 3);
                 case 4 %Deleted sharp
+                    Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
                     %
                     %grey mask
                     Screen('FillOval', window, grey_bkg, occluderRectCentre_Expt, maxDiameter); %grey occluder
                 case 5 %Deleted fuzzy
+                    Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
-                    Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+                    %                     Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %fuzzy mask
                     Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Expt);
+                case 6 % black fix
+                    % we dont need to do anything else. Just blank screen
+                    % for 12 seconds
             end %switch
             
             Screen('DrawingFinished', window);
@@ -892,200 +880,226 @@ try
             % fix point
             
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
-           
+            
             incrementframe = incrementframe + 1;
             
-        end %while 
-        
-        try
-            resp2Bmade = true;
-            curr_response = 0;
-            numFrames = 0;
-            starttime = GetSecs;
-            
-            if togglegoggle == 1;
-                ToggleArd(ard,'LensOn') %both eyes back on
-            end
-                        
-            while resp2Bmade == true;
-                                
-                numFrames = numFrames + 1;
-                
-                
-                %show fix
-                Screen('TextSize', window, 20);
-                Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-                
-                DrawFormattedText(window, 'Make response \n \n L = 1st more stripes R = 2nd more stripes', 'center', 'center', textcolor, [],[]);
-                Screen('Flip', window);
-                
-                if makescreenshotsforvideo
-                    for imageframes = 1:60 %for 60 frames (1s)
-                        imageArray = Screen('GetImage', window);
-                        filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
-                        imwrite(imageArray, filenameimage);
-                        framenumber = framenumber+1;
-                    end
-                end
-                %
-                
-                [keyIsDown,secs, keyCode] = KbCheck;%
-                
-                % leftKey = KbName('LeftArrow');
-                % rightKey = KbName('RightArrow');
-                
-                endtime = 0;
-                
-                if keyIsDown
-                    if keyCode(escapeKey);
-                        resp2Bmade = false; endtime = GetSecs; save (filename); sca; 
-                        if togglegoggle == 1;
-                            ToggleArd(ard,'AllOff'); ShutdownArd(ard,comPort); disp('Arduino is off')
-                        end
-                    elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; save (filename); endtime = GetSecs;
-                    elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; save (filename); endtime = GetSecs;
-                    else
-                        %just go through the while loop since resp2Bmade is
-                        %still true
-                    end %end if
-                    
-                    % if L or R has been pressed, record response
-                    % Clear screen
-                    subjectdata(ntrials,3) = curr_response; % LEFT eye was the fellow eye
-                    subjectdata(ntrials,1) = thistrial(1); %record cond of this trial
-                    subjectdata(ntrials,2) = thistrial(2); %record SF of this trial
-                    subjectdata(ntrials,5) = numFrames*ifi; % Record RT in secs
-                    subjectdata(ntrials,6) = endtime - starttime; % Record RT in secs
-                    
-                end
-                
-                if makescreenshotsforvideo
-                    for imageframes = 1:100 %for 100 frames
-                        imageArray = Screen('GetImage', window);
-                        filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
-                        imwrite(imageArray, filenameimage);
-                        framenumber = framenumber+1;
-                    end
-                end
-                                         
-            end %while
-                                    
-        catch keyerr
-            save (filename)
-            sca
-            rethrow(keyerr)
-            if togglegoggle == 1;
-                ToggleArd(ard,'AllOff');
-                ShutdownArd(ard,comPort);
-                disp('Arduino is off')
-            end
-        end
-                
-        
-        try
-            if ntrials ~=length(condsorder)
-                nexttrial = allcondscombos(condsorder(ntrials+1),:);
-                switch nexttrial(1)
-                    case 1
-                        messagenexttrial = 'Next: Intact';
-                        whicheye = 'right';
-                    case 2
-                        messagenexttrial = 'Next: Blindspot';
-                        whicheye = 'left';
-                    case 3
-                        messagenexttrial = 'Next: Occluded';
-                        whicheye = 'right';
-                    case 4
-                        messagenexttrial = 'Next: Deleted Sharp';
-                        whicheye = 'right';
-                    case 5
-                        messagenexttrial = 'Next: Deleted Fuzzy';
-                        whicheye = 'right';
-                end
-                disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
-            end
-            %show fix
-            Screen('TextSize', window, 20);
-            Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-            
-            if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
-                messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break, have a kitkat! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
-                DrawFormattedText(window, messagetext, 'center', 'center', textcolor,[],[]);
-                Screen('Flip', window);
-                while ~keyCode(upKey)
-                    [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
-                end
-            end
-            
-            %  DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
-            
-            %show fix
-            Screen('TextSize', window, 20);
-            Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
-            Screen('Flip', window);
-            
-            [secs, keyCode, deltaSecs] = KbStrokeWait; %wait for space
-            
-            while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
-                
-                [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
-                %
-                if keyCode(escapeKey)
-                    save (filename)
-                    sca %if esc then just quit demo
-                    if togglegoggle == 1;
-                        ToggleArd(ard,'AllOff');
-                        ShutdownArd(ard,comPort);
-                        disp('Arduino is off')
-                    end
-                    break;
-                end
-            end %end while. Move onto next trial
-        catch whileerr
-            save (filename)
-            sca
-            if togglegoggle == 1;
-                ToggleArd(ard,'AllOff');
-                ShutdownArd(ard,comPort);
-                disp('Arduino is off')
-            end
-            rethrow(whileerr)
-        end
-    end %for
-    
-catch ERR3
-    save (filename)
-    sca
-    rethrow(ERR3)
-    disp('Experiment error! Plz check your code!')
-   
-    if togglegoggle == 1;
-        %Close goggles
-        %shut down ARDUINO
-        ToggleArd(ard,'AllOff');
-        ShutdownArd(ard,comPort);
-        disp('Arduino is off')
+        end %while
+        time_elapsed = vbl - start_time;
+        disp(sprintf('    Time elapsed for stimulus:  %.5f seconds',time_elapsed));
+%         %fix
+%         Screen('FillRect', window, grey) % make the whole screen grey_bkg
+%         ShowFix()
+%         DrawFormattedText(window, '3s fixation...', 'center', 'center', black,[],[]);
+%         vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+%         %        then do another flip to clear this half a sec later
+%         vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
+%         time_elapsed = vbl - time_zero;
+%         disp(sprintf('Time elapsed:  %d seconds',time_elapsed));
+
+         
+
     end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+%     % ---------------------------------------------------
+%     % Fixation 12 s
+%     % ----------------------------------------------------
+%     disp(sprintf('Block %d', block));
+%     
+%     if togglegoggle == 1;
+%         ToggleArd(ard,'LensOn') % both lens open
+%     end
+%     
+%     %get timestamp
+%     Screen('TextSize', window, 20);
+%     DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', white,[],[]);
+%     Screen('Flip', window);
+    
+%         KbStrokeWait;
+%     
+%     while ~keyCode(scannertrigger)
+%         [keyIsDown, secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+%     end
+%     
+%     
+%     vbl = Screen('Flip', window);
+%     
+    
+    % start_time = vbl;
+    %  show black screen
+%     Screen('FillRect', window, black) % make the whole screen grey_bkg
+%     ShowFix()
+%     DrawFormattedText(window, '12s fixation...', 'center', 'center', white,[],[]);
+%     vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+%     time_zero = vbl;
+%     %        then do another flip to clear this half a sec later
+%     vbl = Screen('Flip', window, vbl + (fix_black/ifi - 0.2) * ifi);
+    
+    
+    % while vbl - start_time < fix_black %for 12 secs
+    %     %show black screen
+    %     Screen('FillRect', window, black) % make the whole screen grey_bkg
+    %     Screen('TextSize', window, 20);
+    %     Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+    % end
+    
+%     time_elapsed = vbl - time_zero;
+%     disp(sprintf('Time elapsed:  %d seconds',time_elapsed));
+%     
+%     KbQueueStop();
+%     [pressed, firstPress]=KbQueueCheck();
+%     pressedKeys = KbName(firstPress);
+%     if pressedKeys == 'ESCAPE'
+%         close goggles
+%         save any data
+%         sca
+%     end
+%     %% sequence of stims
+%     for stim = 1:5
+%         %show stims interleaved by 5s fix
+%         
+%         whicheye = 'right';
+%         
+% %         nexttrial = allcondscombos(condsorder(1),:);
+%         switch runseq(block,stim,thisrun)
+%             case 1
+%                 messagenexttrial = 'Next: Intact';
+%                 disp(messagenexttrial);
+%             case 2
+%                 messagenexttrial = 'Next: Blindspot';
+%                 whicheye = 'left';
+%                 disp(messagenexttrial);
+%             case 3
+%                 messagenexttrial = 'Next: Occluded';
+%                 disp(messagenexttrial);
+%             case 4
+%                 messagenexttrial = 'Next: Deleted Sharp';
+%                 disp(messagenexttrial);
+%             case 5
+%                 messagenexttrial = 'Next: Deleted Fuzzy';
+%                 disp(messagenexttrial);
+%         end
+%         
+%         
+%         
+%         
+%         %stim
+%         if strcmp(whicheye, 'right'); %compare strings
+%             % BS trial so open right lens
+%             if togglegoggle == 1;
+%                 ToggleArd(ard,'LeftOff') %close left
+%             end
+%         else
+%             if togglegoggle == 1;
+%                 ToggleArd(ard,'RightOff') %close right
+%             end
+%         end
+%         Screen('FillRect', window, black) % make the whole screen grey_bkg
+%         vbl = Screen('Flip', window);
+%         start_time = vbl;
+%         incrementframe = 0;
+%         while vbl - start_time < 12
+%             % Motion
+%             shiftperframe = cyclespersecond * periods(2) * waitduration;
+%             
+%             % Shift the grating by "shiftperframe" pixels per frame:
+%             % the mod'ulo operation makes sure that our "aperture" will snap
+%             % back to the beginning of the grating, once the border is reached.
+%             xoffset = mod(incrementframe*shiftperframe,periods(2));
+%             %incrementframe=incrementframe+1;
+%             
+%             % Define shifted srcRect that cuts out the properly shifted rectangular
+%             % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
+%             srcRect=[0, xoffset, bar_width, xoffset + bar_length];
+%             
+%             
+%             
+%             ShowFix()
+%             
+%             
+%             Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+%             
+%             
+%             switch runseq(block,stim,thisrun)
+%                 case 1 %intact
+%                     %present the grating of the SF stored in thistrial(2) to
+%                     %the LEFT EYE
+%                     %
+%                     %we don't need to do anything else
+%                 case 2 %Blindspot - special case, we need to present to the other eye!
+%                     %present the grating of the SF stored in thistrial(2) to
+%                     %the RIGHT EYE
+%                     %
+%                     %we don't need to do anything else
+%                 case 3 %Occluded
+%                     %present the grating of the SF stored in thistrial(2) to
+%                     %the LEFT EYE
+%                     %
+%                     %pop on the occluder
+%                     Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
+%                     Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Expt, 3);
+%                 case 4 %Deleted sharp
+%                     %present the grating of the SF stored in thistrial(2) to
+%                     %the LEFT EYE
+%                     %
+%                     %grey mask
+%                     Screen('FillOval', window, grey_bkg, occluderRectCentre_Expt, maxDiameter); %grey occluder
+%                 case 5 %Deleted fuzzy
+%                     %present the grating of the SF stored in thistrial(2) to
+%                     %the LEFT EYE
+%                     %                     Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+%                     %fuzzy mask
+%                     Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Expt);
+%             end %switch
+%             
+%             Screen('DrawingFinished', window);
+%             
+%             % fix point
+%             
+%             vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+%             
+%             incrementframe = incrementframe + 1;
+%             
+%         end %while
+%         time_elapsed = vbl - time_zero;
+%         disp(sprintf('Time elapsed:  %.2d seconds',time_elapsed));
+%         %fix
+%         Screen('FillRect', window, grey) % make the whole screen grey_bkg
+%         ShowFix()
+%         DrawFormattedText(window, '3s fixation...', 'center', 'center', black,[],[]);
+%         vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+%         %        then do another flip to clear this half a sec later
+%         vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
+%         time_elapsed = vbl - time_zero;
+%         disp(sprintf('Time elapsed:  %d seconds',time_elapsed));
+%     end
+totalblocktime(block) = vbl - startblock;
+disp(sprintf('    Time elapsed for block:  %.5f seconds \n \n',totalblocktime));       
 end
-
-
-
-save (filename)
-
-if togglegoggle == 1;
-    %Close goggles
-    % Shut down ARDUINO
+KbQueueStop();
+totalexpttime = sum(totalblocktime);
+disp(sprintf('    Time elapsed for experiment:  %.5f seconds',totalexpttime));  
+timeend = GetSecs;
+totalexpttime2 = timeend -timestart;
+disp(sprintf('    Time elapsed for experiment:  %.5f seconds (Using GetSecs)',totalexpttime));  
+     
+%     disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
+% close goggles
+ToggleArd(ard,'AllOff');
+ShutdownArd(ard,comPort);
+sca
+      
+catch overallerror
     ToggleArd(ard,'AllOff');
     ShutdownArd(ard,comPort);
-    disp('Arduino is off')
-end
-sca
-catch OverallErr
-    if togglegoggle == 1;
-        ToggleArd(ard,'AllOff')
-        disp('Check goggles are off')
-        ShutdownArd(ard,comPort);
-        disp('Arduino is off')
-    end
-    rethrow(OverallErr)
+    rethrow(overallerror)
+    sca
+    disp('Something is wrong!')
 end

@@ -33,8 +33,12 @@ makescreenshotsforvideo = 0;
 BS_measurementON = 1;                     
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                       %%%%%%%%%%%%%%%%
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
@@ -82,7 +86,7 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 % Here we call some default settings for setting up Psychtoolbox
 PsychDefaultSetup(2);
 
-if ~IsWin
+if IsWin
     Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
 end
 % 
@@ -138,8 +142,13 @@ end
 % % Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 % 
-% % % % correct non-linearity from CLUT
-oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
+
+
+
+if ~IsWin
+    % % % % correct non-linearity from CLUT
+    oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
+end
 
 white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
 black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
@@ -250,10 +259,9 @@ try
 %show fix
 
 Screen('FillRect', window, grey) % make the whole screen grey_bkg
-Screen('TextSize', window, 20);
-Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+ShowFix()
 
-instructions = 'Hello and welcome \n \n to the demo experiment for perceptual filling-in \n \n Press any key to continue';
+instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
 DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 %flip to screen
@@ -266,10 +274,9 @@ KbStrokeWait;
 
 if (~exist('BS_diameter_h') || ~exist('BS_diameter_v')) && BS_measurementON == 1;
     %show fix
-    Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+    ShowFix()
     % instructions
-    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press any key...', 'center', 'center', textcolor, [], []);
+    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Click the mouse when the flickering marker \n \n completely disappears for you \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
     KbStrokeWait;
     if togglegoggle == 1;
@@ -289,14 +296,12 @@ end
 %draw a blindspot oval to test its location
 oval_rect = [0 0 BS_diameter_h BS_diameter_v];
 oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h, BS_center_v);
-                    
-                                                                                     %                                                 show fix                                                         
-Screen('TextSize', window, 20);
-Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+                                                                           
+ShowFix()
 
 % show blind spot  
 Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
-DrawFormattedText(window, 'This is the location of BS', 'center', 'center', textcolor, [],[]);
+DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your LEFT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
 
 Screen('Flip', window);
 KbStrokeWait;
@@ -328,6 +333,13 @@ condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditi
 %   mostly
 subjectdata = nan(size(allcondscombos,1), 6);
 curr_response = 0; %store current response on trial n
+
+% Right eye blindspot, Left Fellow eye, Fix on the LEFT, Grating on the
+    % RIGHT
+    subjectdata(:,4) = 1; % LEFT eye was the fellow eye
+    % 1 = R blindspot
+    % 2 = L blindspot
+    
 
 
 
@@ -555,104 +567,103 @@ fuzzyRectCentre_Expt = CenterRectOnPointd(gaussRect, BS_center_h,BS_center_v);
 %% -----------------------------------------------
 % Present stimuli - altogether here for debugging |
 %-------------------------------------------------
-Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
-
-incrementframe = 0;
-direction = 1;
-xoffset = 0;
-
-framenumber = 1;
-exitDemo = false; %demo = stims presented side by side just for checking
-while exitDemo == false
+if Demo == 1
     Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
-    % Check the keyboard to see if a button has been pressed
-    [keyIsDown,secs, keyCode] = KbCheck;
     
-    % KbStrokeWait; %wait for key press
-    try
-                   
-        %show fix
-        Screen('TextSize', window, 20);
-        Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+    incrementframe = 0;
+    direction = 1;
+    xoffset = 0;
+    
+    framenumber = 1;
+    exitDemo = false; %demo = stims presented side by side just for checking
+    while exitDemo == false
+        Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+        % Check the keyboard to see if a button has been pressed
+        [keyIsDown,secs, keyCode] = KbCheck;
         
-        
-        for i = 1:5
+        % KbStrokeWait; %wait for key press
+        try
             
-            % Motion
-            shiftperframe = cyclespersecond * periods(i) * waitduration;
-            
-            
-            % Shift the grating by "shiftperframe" pixels per frame:
-            % the mod'ulo operation makes sure that our "aperture" will snap
-            % back to the beginning of the grating, once the border is reached.
-%             xoffset = mod(incrementframe*shiftperframe,periods(i));
-            xoffset = mod(1*shiftperframe,periods(i));
-            % incrementframe=incrementframe+1;
+            ShowFix()
             
             
-            % Define shifted srcRect that cuts out the properly shifted rectangular
-            % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-            srcRect=[0, xoffset, bar_width, xoffset + bar_length];
-            
-%           
-            
-            Screen('DrawTexture', window, gratingtex(i,1), srcRect, dstRect(i, :)); %gratingtex(i,1) high amplitude ie high contrast
-            %put on the occluders
-            if i >= 3 || i <= 5
-                %then put on masks on the last 3 stims (1st is intact, 2nd is BS, 3rd is occluded, 4th & 5th is deleted sharp and fuzzy)
+            for i = 1:5
                 
-                switch i
-                    case 3
-                        Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
-                        Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Demo, 3);
-                    case 4
-                        Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
-                    case 5
-                        Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Demo);
-                        Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
-                end   %switch
-            end  %if
-        end %for
+                % Motion
+                shiftperframe = cyclespersecond * periods(i) * waitduration;
+                
+                
+                % Shift the grating by "shiftperframe" pixels per frame:
+                % the mod'ulo operation makes sure that our "aperture" will snap
+                % back to the beginning of the grating, once the border is reached.
+                %             xoffset = mod(incrementframe*shiftperframe,periods(i));
+                xoffset = mod(1*shiftperframe,periods(i));
+                % incrementframe=incrementframe+1;
+                
+                
+                % Define shifted srcRect that cuts out the properly shifted rectangular
+                % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
+                srcRect=[0, xoffset, bar_width, xoffset + bar_length];
+                
+                %
+                
+                Screen('DrawTexture', window, gratingtex(i,1), srcRect, dstRect(i, :)); %gratingtex(i,1) high amplitude ie high contrast
+                %put on the occluders
+                if i >= 3 || i <= 5
+                    %then put on masks on the last 3 stims (1st is intact, 2nd is BS, 3rd is occluded, 4th & 5th is deleted sharp and fuzzy)
+                    
+                    switch i
+                        case 3
+                            Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Demo, maxDiameter); %'white' occluder of 0.7 greyness
+                            Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Demo, 3);
+                        case 4
+                            Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
+                        case 5
+                            Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Demo);
+                            Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
+                    end   %switch
+                end  %if
+            end %for
+            
+            % Screen('FillRect', window, black, srcRect(:,:));
+            % srcRect(1) = CenterRectOnPointd(baseRect, xCenter, yCenter);
+            % Screen('DrawTextures', window, gratingtex(:,t), srcRect);
+            % Screen('DrawTexture', window, gratingtex(midCS,t), srcRect , targetRect);
+            % Screen('DrawTexture', window, gratingtex(midCS,t), srcRect);
+            % Screen('DrawTexture', window, gratingtex(1,t), srcRect(:,1));
+            % Screen('FillRect', window, black, srcRect(:,1));
+            % Screen('DrawTextures', window, gratingtex(1,t), [], srcRect);
+            % Screen('Flip', window);
+            
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+            incrementframe=incrementframe+1;
+            
+            if makescreenshotsforvideo
+                imageArray = Screen('GetImage', window);
+                filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
+                imwrite(imageArray, filenameimage);
+                framenumber = framenumber+1;
+            end
+        catch ERR
+            sca %just close psychtoolbox if something errors above. No need to Ctrl+Alt+Del
+            disp('Error in displaying stimuli!')
+            rethrow(ERR)
+        end %try catch
         
-        % Screen('FillRect', window, black, srcRect(:,:));
-        % srcRect(1) = CenterRectOnPointd(baseRect, xCenter, yCenter);
-        % Screen('DrawTextures', window, gratingtex(:,t), srcRect);
-        % Screen('DrawTexture', window, gratingtex(midCS,t), srcRect , targetRect);
-        % Screen('DrawTexture', window, gratingtex(midCS,t), srcRect);
-        % Screen('DrawTexture', window, gratingtex(1,t), srcRect(:,1));
-        % Screen('FillRect', window, black, srcRect(:,1));
-        % Screen('DrawTextures', window, gratingtex(1,t), [], srcRect);
-        % Screen('Flip', window);
+        if keyCode(escapeKey)
+            % GetImage call. Alter the rect argument to change the location of the screen shot
+            imageArray = Screen('GetImage', window); %omitting rect argument means the whole screen is taken
+            
+            % imwrite is a Matlab function, not a PTB-3 function
+            imwrite(imageArray, 'myscreenshot.jpg');
+            
+            exitDemo = true; %move onto the proper experiment
+            % sca %close psychtoolbox window
+        end %if
+        % Screen('AddFrameToMovie', window);
         
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
-        incrementframe=incrementframe+1;
-        
-        if makescreenshotsforvideo
-            imageArray = Screen('GetImage', window);
-            filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
-            imwrite(imageArray, filenameimage);
-            framenumber = framenumber+1;
-        end
-    catch ERR
-        sca %just close psychtoolbox if something errors above. No need to Ctrl+Alt+Del
-        disp('Error in displaying stimuli!')
-        rethrow(ERR)
-    end %try catch
-    
-    if keyCode(escapeKey)
-        % GetImage call. Alter the rect argument to change the location of the screen shot
-        imageArray = Screen('GetImage', window); %omitting rect argument means the whole screen is taken
-        
-        % imwrite is a Matlab function, not a PTB-3 function
-        imwrite(imageArray, 'myscreenshot.jpg');
-        
-        exitDemo = true; %move onto the proper experiment
-        % sca %close psychtoolbox window
-    end %if
-    % Screen('AddFrameToMovie', window);
-    
-end %while
-
+    end %while
+end % if
 % Screen('FinalizeMovie', movie1);
 %% --------------------------------------------------------
 % Stim presentation for the real experiment ie one by one |
@@ -666,9 +677,8 @@ end %while
 
 Instructions2 = 'Press spacebar to start each trial';
 %show fix
-Screen('FillRect', window, grey) % make the whole screen grey
-Screen('TextSize', window, 20);
-Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+Screen('FillRect', window, grey); % make the whole screen grey
+ShowFix()
 DrawFormattedText(window, Instructions2, 'center', 'center', textcolor, [],[]);
 Screen('Flip', window);
 try
@@ -686,24 +696,18 @@ try
  
   
        
-    % Right eye blindspot, Left Fellow eye, Fix on the LEFT, Grating on the
-    % RIGHT
-    subjectdata(:,4) = 1; % LEFT eye was the fellow eye
     
-   %show fix
-    Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+   
 %     Screen('CopyWindow', leftFixWin, window, [], windowRect);
-    Screen('FillRect', window, grey) % make the whole screen grey
-    DrawFormattedText(window, 'RIGHT eye blindspot, \n \n LEFT Fellow eye, \n \n Fix on the LEFT', 'center', 'center', white,[],[]);
+    Screen('FillRect', window, grey); % make the whole screen grey
+    ShowFix();
+    DrawFormattedText(window, 'Please fixate on the cross at all times... \n \n Press any key when you''re ready... \n \n then SPACE to start the trial', 'center', 'center', black,[],[]);
     Screen('Flip', window);
     
     KbStrokeWait;
-    
-    %show fix
-    Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-    vbl = Screen('Flip', window);
+%     
+%     ShowFix();
+%     vbl = Screen('Flip', window);
     
         
     % Motion
@@ -740,20 +744,16 @@ try
             messagenexttrial = 'Next: Deleted Fuzzy';
     end
     
-      
+        
     
-     
-    
-    %show fix
-    Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
         
     
     % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],1);
        
-    
+    Screen('FillRect', window, grey_bkg); % make the whole screen grey
+    ShowFix()
     Screen('Flip', window);
-    
+%     
     KbStrokeWait;
     
     
@@ -789,19 +789,14 @@ try
             
             
             %show fix
-            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
-            Screen('TextSize', window, 20);
-            Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+            Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
+            ShowFix();
             
-            
-            %        %   fix point
-            %           Screen('FillOval', window, uint8(white), l_fix_cord1);
-            %            Screen('FillOval', window, uint8(black), l_fix_cord2);
             % display intact at SF of 0.3 ir gratingtex(2)
             Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
-            %             Screen('Flip', window);
+           
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
-%             ourtime = ourtime + ifi;
+%            
             incrementframe = incrementframe + 1;
                     if makescreenshotsforvideo
                           imageArray = Screen('GetImage', window);
@@ -818,18 +813,25 @@ try
         % blank ISI
                
         % do this ONCE outside the loop
-        %show fix
-        Screen('TextSize', window, 20);
-        Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);                                                                                                                 - 0.2) * ifi);
+        ShowFix()
+        vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
+        startISI = vbl;
+        disp('start')
         
+        wakeup = WaitSecs(goggle_delay);
+        wakeup - startISI
+        disp('Wait10')
         if togglegoggle == 1
-            WaitSecs(goggle_delay)
+%             WaitSecs(goggle_delay)
             ToggleArd(ard,'LensOn') %all on for the ISI
         end
         
         %        then do another flip to clear this half a sec later
-        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2 - goggle_delay) * ifi); %compensate for the goggle delay
+        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2) * ifi);
+        endISI = GetSecs;
+        disp('End')
+        ISI = endISI - startISI
+       
       
         if makescreenshotsforvideo
             for imageframes = 1:30 %for 30 frames (0.5s)
@@ -843,8 +845,7 @@ try
         incrementframe = 0;
         
         thistrial = allcondscombos(condsorder(ntrials),:); %determine the trial. Conds order has the trial order. Go through it one by one until ntrials
-        
-                
+         
                
         start_time = vbl;
         stimdurframes = round(0.8/ifi); % 48 frames on 60 hz
@@ -878,8 +879,7 @@ try
             
                         
             
-            %show fix
-            Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+            ShowFix()
             
             
             Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
@@ -912,7 +912,7 @@ try
                 case 5 %Deleted fuzzy
                     %present the grating of the SF stored in thistrial(2) to
                     %the LEFT EYE
-                    Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+%                     Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
                     %fuzzy mask
                     Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Expt);
             end %switch
@@ -944,11 +944,8 @@ try
                 
                 
                 %show fix
-                
-                Screen('FillRect', window, grey) % make the whole screen grey_bkg
-                Screen('TextSize', window, 20);
-                Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-                
+                Screen('FillRect', window, grey); % make the whole screen grey_bkg
+                ShowFix()
                 DrawFormattedText(window, 'Make response \n \n L = 1st more stripes R = 2nd more stripes', 'center', 'center', textcolor, [],[]);
                 Screen('Flip', window);
                 
@@ -987,7 +984,9 @@ try
                     subjectdata(ntrials,3) = curr_response; % LEFT eye was the fellow eye
                     subjectdata(ntrials,1) = thistrial(1); %record cond of this trial
                     subjectdata(ntrials,2) = thistrial(2); %record SF of this trial
-                    subjectdata(ntrials,5) = numFrames*ifi; % Record RT in secs
+%                     subjectdata(ntrials,5) = numFrames*ifi; % Record RT
+%                     in secs using num of frames elapsed
+                    subjectdata(ntrials,5) = secs - starttime;
                     subjectdata(ntrials,6) = endtime - starttime; % Record RT in secs
                     
                 end
@@ -1042,12 +1041,11 @@ try
             %show fix
             
             
-            Screen('TextSize', window, 20);
-            Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+            
             
             if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
                 Screen('FillRect', window, grey) % make the whole screen grey
-                messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break, have a kitkat! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
+                messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
                 DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],[]);
                 Screen('Flip', window);
                 
@@ -1061,7 +1059,8 @@ try
             %show fix
 %             Screen('TextSize', window, 20);
 %             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
-            Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
+            Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
+            ShowFix();
             Screen('Flip', window);
             disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
             
