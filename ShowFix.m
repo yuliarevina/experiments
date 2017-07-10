@@ -4,8 +4,10 @@
 
 if strcmp(bs_eye,'right')
     Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', r_fix_cord1(1), yCenter,white);
+%     Screen('DrawFormattedText',window, '+', r_fix_cord1(1), yCenter,white);
+    [nx, ny] = DrawFormattedText(window, '+', r_fix_cord1(1), 'center', white);
 else %left eye BS, fix on RIGHT side
     Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', l_fix_cord1(1), yCenter,white);
+    [nx, ny] = DrawFormattedText(window, '+', l_fix_cord1(1), 'center', white);
+%     Screen('DrawFormattedText',window, '+', l_fix_cord1(1), yCenter,white);
 end

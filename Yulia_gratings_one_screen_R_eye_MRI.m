@@ -245,6 +245,7 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v')) && BS_measurementON == 1
     HideCursor()
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
+    measure_BS_h2_YR_1screen   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
     if togglegoggle == 1;
         ToggleArd(ard,'LensOn') %put goggles back on
     end
@@ -253,8 +254,8 @@ end
 
 
 %draw a blindspot oval to test its location
-oval_rect = [0 0 BS_diameter_h BS_diameter_v];
-oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h, BS_center_v);
+oval_rect = [0 0 BS_diameter_h2 BS_diameter_v];
+oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2, BS_center_v);
                     
                                                                                      %                                                 show fix                                                         
 Screen('TextSize', window, 20);
@@ -396,7 +397,7 @@ end %for
 
 % size of the occluders is the same as the blindspot (as measured earlier)
 BSh = BS_diameter_v; %blindspot height
-BSw = BS_diameter_h; %blindspot width
+BSw = BS_diameter_h2; %blindspot width
 
 % Make a base Rect
 baseTestRect = [0 0 30 BSh+60];
@@ -463,20 +464,20 @@ end
 
 % We need to present the stim over the blindspot. Get coords of the
 % blindspot as measured previously. 
-dstRectStim_BS_r = CenterRectOnPointd(dstRect(1, :),BS_center_h,BS_center_v);
+dstRectStim_BS_r = CenterRectOnPointd(dstRect(1, :),BS_center_h2,BS_center_v);
 
 
 
 occluderRectCentre_Demo = CenterRectOnPointd(occluderRect, squareXpos(3), yCenter);
 greyoccluderRectCentre_Demo = CenterRectOnPointd(occluderRect, squareXpos(4), yCenter);
 fuzzyoccluderRectCentre_Demo = CenterRectOnPointd(occluderRect, squareXpos(5), yCenter);
-occluderRectCentre_Expt = CenterRectOnPointd(occluderRect, BS_center_h,BS_center_v);
+occluderRectCentre_Expt = CenterRectOnPointd(occluderRect, BS_center_h2,BS_center_v);
 
 % fuzzyRect = [0 0 BSw+10 BSh+10]; %make the fuzzy rect a bit bigger cos it needs to spread out its fuzziness a bit
 
 % fuzzy mask rect
 fuzzyRectCentre_Demo = CenterRectOnPointd(gaussRect, squareXpos(5), yCenter);
-fuzzyRectCentre_Expt = CenterRectOnPointd(gaussRect, BS_center_h,BS_center_v);
+fuzzyRectCentre_Expt = CenterRectOnPointd(gaussRect, BS_center_h2,BS_center_v);
 
 
 

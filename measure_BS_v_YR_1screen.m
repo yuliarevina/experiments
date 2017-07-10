@@ -12,11 +12,14 @@ flickInd = 0;
 for mt = 1:2*meas_trials    
 %     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     if mt <= meas_trials
-       DrawFormattedText(window,'UPPER',500,400,black,[],[]);
+       Screen('TextSize', window, 30);
+       DrawFormattedText(window,'UPPER','center','center',black,[],[]);
     elseif mt == meas_trials+1
-        DrawFormattedText(window,'LOWER',500,400,[1 0 0],[],[]);
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'LOWER','center','center',[1 0 0],[],[]);
     else
-        DrawFormattedText(window,'LOWER',500,400,black,[],[]);
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'LOWER','center','center',black,[],[]);
     end
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
@@ -69,7 +72,8 @@ for mt = 1:2*meas_trials
 %            Screen('CopyWindow', leftFixWin, window, [], windowRect);	  
 
            if isequal(bs_eye,'left')
-               Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,black);
+               ShowFix()
+%                Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            
@@ -80,7 +84,8 @@ for mt = 1:2*meas_trials
 %            Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);	  
            
            if isequal(bs_eye,'right')
-               Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,black);
+               ShowFix()
+%                Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            
