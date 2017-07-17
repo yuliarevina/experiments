@@ -12,7 +12,7 @@
 % Yulia Revina, NTU, Singapore, 2017
 
 
-function goggles(bs_eye, viewing_eye)
+function goggles(bs_eye, viewing_eye, togglegoggle, ard)
 try    
     if togglegoggle == 1;
         if strcmp(bs_eye,'right')

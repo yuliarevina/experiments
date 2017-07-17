@@ -12,6 +12,9 @@
 keyboardind = GetKeyboardIndices();
 mouseind = GetMouseIndices();
 
+
+KbName('UnifyKeyNames')
+
 % for linux try additional params when hiding cursor
 
 % HideCursor([screenid=0][, mouseid])
@@ -21,10 +24,10 @@ mouseind = GetMouseIndices();
 % cursors shall be hidden on Linux. The parameter is silently ignored
 % on other systems.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-todaydate = date;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+                                                                                                                                                                                                     
+    
+todaydate  = date;
 
 stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
 stereoMode = 4;        % 4 for split screen, 10 for two screens
@@ -33,7 +36,7 @@ makescreenshotsforvideo = 0;
 BS_measurementON = 1;                     
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,7 +52,7 @@ outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 
 brightness = 0.1;
-% brightness = 0.006;
+% brightness = 0.7; % for debugging
 textcolor = [0 0 0];
 
 % timing
@@ -120,9 +123,9 @@ grey_bkg = black
 % Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 % % % correct non-linearity from CLUT
-oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
-
-
+if ~IsWin
+    oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
+end
 
 
 % Open an on screen window and color it grey
@@ -143,12 +146,6 @@ end
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 % 
 
-
-
-if ~IsWin
-    % % % % correct non-linearity from CLUT
-    oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
-end
 
 white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
 black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
@@ -194,7 +191,7 @@ WaitSecs(.1);
 %% Fix frame
 
 % Fixation point on the RIGHT
-fp_offset = 200;
+fp_offset = 400;
 % frame
 frameSize = 900;
 
@@ -242,11 +239,15 @@ frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
 % Set up Arduino for Goggles use
 % ________________________________________
 
+
+
+
 if togglegoggle == 1;
     [ard, comPort] = InitArduino;
     disp('Arduino Initiated')
     
-    ToggleArd(ard,'LensOn') % need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
+    goggles(bs_eye, 'both', togglegoggle,ard)
+%     ToggleArd(ard,'LensOn') % need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
     
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
@@ -279,17 +280,19 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v')) && BS_measurementON == 1
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Click the mouse when the flickering marker \n \n completely disappears for you \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
     KbStrokeWait;
-    if togglegoggle == 1;
-        ToggleArd(ard,'LeftOff') % close left eye so we can look with our right and measure BS
-    end
+    goggles(bs_eye, 'BS', togglegoggle,ard)
+%     if togglegoggle == 1;
+%         ToggleArd(ard,'LeftOff') % close left eye so we can look with our right and measure BS
+%     end
     HideCursor(1,0)
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
     measure_BS_h2_YR_1screen   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
-    if togglegoggle == 1;
-        ToggleArd(ard,'LensOn') %put goggles back on
-    end
+    goggles(bs_eye, 'both', togglegoggle,ard)
+%     if togglegoggle == 1;
+%         ToggleArd(ard,'LensOn') %put goggles back on
+%     end
     ShowCursor()
 end
 
@@ -302,7 +305,11 @@ ShowFix()
 
 % show blind spot  
 Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
-DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your LEFT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
+if strcmp(bs_eye, 'right')
+     DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your LEFT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
+else
+     DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
+end
 
 Screen('Flip', window);
 KbStrokeWait;
@@ -407,7 +414,7 @@ texsize=gratingSize / 2;
 % pixels and is therefore symmetric around the center of the texture:
 visiblesize=2*texsize+1;
 
-
+% tt = 1;
 % Grating from Gerrit's script. We don't really need the temporal cosine
 % bit... but haven't had time to edit this. It works in any case. Just use
 % one value of t
@@ -711,24 +718,24 @@ try
 %     vbl = Screen('Flip', window);
     
         
-    % Motion
-    shiftperframe = cyclespersecond * periods(i) * waitduration;
-    
-    
-    % Shift the grating by "shiftperframe" pixels per frame:
-    % the mod'ulo operation makes sure that our "aperture" will snap
-    % back to the beginning of the grating, once the border is reached.
-    xoffset = mod(incrementframe*shiftperframe,periods(i));
-        
-    
-    % Define shifted srcRect that cuts out the properly shifted rectangular
-    % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-    srcRect=[0, xoffset, bar_width, xoffset + bar_length];
-    
-    stimdurframes = round(0.8/ifi);
+% %     % Motion
+% %     shiftperframe = cyclespersecond * periods(i) * waitduration;
+% %     
+% %     
+% %     % Shift the grating by "shiftperframe" pixels per frame:
+% %     % the mod'ulo operation makes sure that our "aperture" will snap
+% %     % back to the beginning of the grating, once the border is reached.
+% %     xoffset = mod(incrementframe*shiftperframe,periods(i));
+% %         
+% %     
+% %     % Define shifted srcRect that cuts out the properly shifted rectangular
+% %     % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
+% %     srcRect=[0, xoffset, bar_width, xoffset + bar_length];
+% %     
+% %     stimdurframes = round(0.8/ifi);
          
     framenumber = 1;
-    whicheye = 'left';
+    whicheye = 'fellow';
     
     nexttrial = allcondscombos(condsorder(1),:);
     switch nexttrial(1)
@@ -736,7 +743,7 @@ try
             messagenexttrial = 'Next: Intact';
         case 2
             messagenexttrial = 'Next: Blindspot';
-            whicheye = 'right';
+            whicheye = 'BS';
         case 3
             messagenexttrial = 'Next: Occluded';
         case 4
@@ -749,9 +756,10 @@ try
     
         
     
-    % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],1);
+    
        
     Screen('FillRect', window, grey_bkg); % make the whole screen grey
+%     DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],1);
     ShowFix()
     Screen('Flip', window);
 %     
@@ -770,11 +778,13 @@ try
         
 % _________________________________________________
 % SHOW THE CONTROL
-        if togglegoggle == 1;
-            ToggleArd(ard,'RightOff') % turn right lens off
-        end
+        goggles(bs_eye, 'fellow', togglegoggle,ard)      
+
+%         if togglegoggle == 1;
+%             ToggleArd(ard,'RightOff') % turn right lens off
+%         end
         
-        while vbl - start_time < 0.8
+        while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
             % Motion
             shiftperframe = cyclespersecond * periods(2) * waitduration;
             
@@ -806,7 +816,8 @@ try
                           framenumber = framenumber+1;
                     end
         end    %while
-        
+        time_elapsed_control = vbl - start_time;
+        disp(sprintf('    Time elapsed for control:  %.5f seconds using VBL - start',time_elapsed_control));
         
  % _________________________________________________
  % SHOW BLANK SCREEN FOR 500 ms
@@ -817,21 +828,22 @@ try
         ShowFix()
         vbl = Screen('Flip', window, vbl + (waitframes - 0.5) * ifi);
         startISI = vbl;
-        disp('start')
+%         disp('start')
         
         wakeup = WaitSecs(goggle_delay);
-        wakeup - startISI
-        disp('Wait10')
-        if togglegoggle == 1
-%             WaitSecs(goggle_delay)
-            ToggleArd(ard,'LensOn') %all on for the ISI
-        end
+%         wakeup - startISI
+%         disp('Wait10')
+        goggles(bs_eye, 'both', togglegoggle,ard)
+%         if togglegoggle == 1
+% %             WaitSecs(goggle_delay)
+%             ToggleArd(ard,'LensOn') %all on for the ISI
+%         end
         
         %        then do another flip to clear this half a sec later
         vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2) * ifi);
         endISI = GetSecs;
-        disp('End')
-        ISI = endISI - startISI
+%         disp('End')
+%         ISI = endISI - startISI
        
       
         if makescreenshotsforvideo
@@ -853,18 +865,20 @@ try
         
  % ___________________________________________________________________________________
  % SHOW THE COMPARISON STIM
-        if strcmp(whicheye, 'right'); %compare strings
-            if togglegoggle == 1;
-                % BS trial so open right lens
-                ToggleArd(ard,'LeftOff') %close left
-            end
-        else
-            if togglegoggle == 1;
-                ToggleArd(ard,'RightOff') %close right
-            end
-        end
+%         if strcmp(whicheye, 'right'); %compare strings
+%             if togglegoggle == 1;
+%                 %BS trial so open right lens
+%                 ToggleArd(ard,'LeftOff') %close left
+%             end
+%         else
+%             if togglegoggle == 1;
+%                 ToggleArd(ard,'RightOff') %close right
+%             end
+%         end
         
-        while vbl - start_time < 0.8
+        goggles(bs_eye, whicheye, togglegoggle,ard)
+        
+        while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
             % Motion
             shiftperframe = cyclespersecond * periods(thistrial(2)) * waitduration;
             
@@ -927,6 +941,8 @@ try
             incrementframe = incrementframe + 1;
             
         end %while 
+        time_elapsed_comp = vbl - start_time;
+        disp(sprintf('    Time elapsed for comparison:  %.5f seconds using VBL - start',time_elapsed_comp));
   %_________________________________________________________
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
         try
@@ -935,9 +951,12 @@ try
             numFrames = 0;
             starttime = GetSecs;
             
-            if togglegoggle == 1;
-                ToggleArd(ard,'LensOn') %both eyes back on
-            end
+            
+            
+            goggles(bs_eye, 'both', togglegoggle,ard)
+%             if togglegoggle == 1;
+%                 ToggleArd(ard,'LensOn') %both eyes back on
+%             end
                         
             while resp2Bmade == true;
                                 
@@ -971,7 +990,7 @@ try
                     if keyCode(escapeKey);
                         resp2Bmade = false; endtime = GetSecs; save (filename); sca;
                         if togglegoggle == 1;
-                            ToggleArd(ard,'AllOff'); ShutdownArd(ard,comPort); disp('Arduino is off')
+                            goggles(bs_eye, 'neither', togglegoggle,ard); ShutdownArd(ard,comPort); disp('Arduino is off')
                         end
                     elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
                     elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
@@ -1010,7 +1029,7 @@ try
             sca
             rethrow(keyerr)
             if togglegoggle == 1;
-                ToggleArd(ard,'AllOff');
+                goggles(bs_eye, 'neither', togglegoggle,ard)
                 ShutdownArd(ard,comPort);
                 disp('Arduino is off')
             end
@@ -1023,19 +1042,19 @@ try
                 switch nexttrial(1)
                     case 1
                         messagenexttrial = 'Next: Intact';
-                        whicheye = 'left';
+                        whicheye = 'fellow';
                     case 2
                         messagenexttrial = 'Next: Blindspot';
-                        whicheye = 'right';
+                        whicheye = 'BS';
                     case 3
                         messagenexttrial = 'Next: Occluded';
-                        whicheye = 'left';
+                        whicheye = 'fellow';
                     case 4
                         messagenexttrial = 'Next: Deleted Sharp';
-                        whicheye = 'left';
+                        whicheye = 'fellow';
                     case 5
                         messagenexttrial = 'Next: Deleted Fuzzy';
-                        whicheye = 'left';
+                        whicheye = 'fellow';
                 end
                 
             end
@@ -1055,13 +1074,13 @@ try
                 end
             end
             
-            %  DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
             
             %show fix
 %             Screen('TextSize', window, 20);
 %             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
             Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
             ShowFix();
+%             DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
             Screen('Flip', window);
             disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
             
@@ -1080,7 +1099,7 @@ try
                     save (filename)
                     sca %if esc then just quit demo
                     if togglegoggle == 1;
-                        ToggleArd(ard,'AllOff');
+                        goggles(bs_eye, 'neither', togglegoggle,ard)
                         ShutdownArd(ard,comPort);
                         disp('Arduino is off')
                     end
@@ -1091,7 +1110,7 @@ try
             save (filename)
             sca
             if togglegoggle == 1;
-                ToggleArd(ard,'AllOff');
+                goggles(bs_eye, 'neither', togglegoggle,ard)
                 ShutdownArd(ard,comPort);
                 disp('Arduino is off')
             end
@@ -1107,7 +1126,7 @@ catch ERR3
     if togglegoggle == 1;
         %Close goggles
         %shut down ARDUINO
-        ToggleArd(ard,'AllOff');
+        goggles(bs_eye, 'neither', togglegoggle,ard)
         ShutdownArd(ard,comPort);
         disp('Arduino is off')
     end
@@ -1119,14 +1138,14 @@ save (filename)
 if togglegoggle == 1;
     %Close goggles
     % Shut down ARDUINO
-    ToggleArd(ard,'AllOff');
+    goggles(bs_eye, 'neither', togglegoggle,ard)
     ShutdownArd(ard,comPort);
     disp('Arduino is off')
 end
 sca
 catch OverallErr
     if togglegoggle == 1;
-        ToggleArd(ard,'AllOff')
+        goggles(bs_eye, 'neither', togglegoggle,ard)
         disp('Check goggles are off')
         ShutdownArd(ard,comPort);
         disp('Arduino is off')
