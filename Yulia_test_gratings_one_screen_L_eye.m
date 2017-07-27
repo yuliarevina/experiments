@@ -10,6 +10,8 @@ devices = PsychHID('Devices');
 keyboardind = GetKeyboardIndices();
 mouseind = GetMouseIndices();
 
+KbName('UnifyKeyNames')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -746,7 +748,7 @@ try
             ToggleArd(ard,'LeftOff') % turn left lens off
         end
         
-        while vbl - start_time < 0.8
+        while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
             % Motion
             shiftperframe = cyclespersecond * periods(2) * waitduration;
             
@@ -778,7 +780,8 @@ try
                           framenumber = framenumber+1;
                     end
         end    %while
-        
+        time_elapsed_control = vbl - start_time;
+        disp(sprintf('    Time elapsed for control:  %.5f seconds using VBL - start',time_elapsed_control));
         
         % _________________________________________________
         % SHOW BLANK SCREEN FOR 500 ms
@@ -806,8 +809,8 @@ try
         
         %        then do another flip to clear this half a sec later
        vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2) * ifi);
-       endISI = GetSecs;
-       disp('End')
+       endISI = vbl;
+%        disp('End')
        ISI = endISI - startISI
        
        
@@ -843,7 +846,7 @@ try
             end
         end
         
-        while vbl - start_time < 0.8
+        while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
             % Motion
             shiftperframe = cyclespersecond * periods(thistrial(2)) * waitduration;
             
@@ -906,6 +909,8 @@ try
             incrementframe = incrementframe + 1;
             
         end %while 
+        time_elapsed_comp = vbl - start_time;
+        disp(sprintf('    Time elapsed for comparison:  %.5f seconds using VBL - start',time_elapsed_comp));
         
         try
             resp2Bmade = true;
