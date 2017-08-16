@@ -12,11 +12,14 @@ flickInd = 0;
 for mt = 1:2*meas_trials    
 %     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     if mt <= meas_trials
-       DrawFormattedText(window,'UPPER',500,400,white,[],[]);
+       Screen('TextSize', window, 30);
+       DrawFormattedText(window,'UPPER','center','center',black,[],[]);
     elseif mt == meas_trials+1
-        DrawFormattedText(window,'LOWER',500,400,[1 0 0],[],[]);
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'LOWER','center','center',[1 0 0],[],[]);
     else
-        DrawFormattedText(window,'LOWER',500,400,white,[],[]);
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'LOWER','center','center',black,[],[]);
     end
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
@@ -69,7 +72,8 @@ for mt = 1:2*meas_trials
 %            Screen('CopyWindow', leftFixWin, window, [], windowRect);	  
 
            if isequal(bs_eye,'left')
-               Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+               ShowFix()
+%                Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            
@@ -80,7 +84,8 @@ for mt = 1:2*meas_trials
 %            Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);	  
            
            if isequal(bs_eye,'right')
-               Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+               ShowFix()
+%                Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
            
@@ -94,12 +99,14 @@ for mt = 1:2*meas_trials
 
        % Abort demo if any key is pressed:
        if keyCode(KbName('ESCAPE'))
-          ToggleArd(ard,'AllOff')
-          disp('Check goggles are off')
-%         ShutdownArd(ard,comPort);
-%         disp('Arduino is off')
-%            cls
-            sca
+           if togglegoggle == 1
+               ToggleArd(ard,'AllOff')
+               disp('Check goggles are off')
+               ShutdownArd(ard,comPort);
+               disp('Arduino is off')
+               %            cls
+           end
+           sca
           break;
        end
     end
@@ -109,12 +116,12 @@ for mt = 1:2*meas_trials
 end
 
 %%
-upper_v = meas_positions_v(1:meas_trials);
-lower_v = meas_positions_v(meas_trials+1:end);
+upper_v = meas_positions_v(1:meas_trials)
+lower_v = meas_positions_v(meas_trials+1:end)
 figure;
 plot(1:meas_trials, upper_v, 1:meas_trials, lower_v);
 BS_center_v = mean(meas_positions_v)
-in_deg_v = pix2deg_YR(BS_center_v-mean(fix_cord1))
+% in_deg_v = pix2deg_YR(BS_center_v-mean(fix_cord1))
 BS_diameter_v = abs(mean(upper_v) - mean(lower_v))
 in_deg_v = pix2deg_YR(BS_diameter_v)
 title('vertical');

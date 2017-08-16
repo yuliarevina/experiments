@@ -1,12 +1,12 @@
 meas_trials = 3;
-meas_positions_h = zeros(1,2*meas_trials);
+meas_positions_h2 = zeros(1,2*meas_trials);
 
-meas_stimRect = [0 0 10 10]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
+% meas_stimRect = [0 0 10 10]; %was originally 10 but might be too big... changed it back to 10 for distance of 70cm on station1
 
-SetMouse(xCenter,yCenter, window);
+% SetMouse(xCenter,yCenter, window);
 
-flickFreq = 4;
-flickCol = [0 255]; %b&w
+% flickFreq = 4;
+% flickCol = [0 255]; %b&w
 % flickCol = [0.1 0.1 0.1; 0.3 0.3 0.3]; %B&grey
 %% instruct
 flickInd = 0;
@@ -56,10 +56,20 @@ for mt = 1:2*meas_trials
            lastFlick = thisFlick;
        end
 
-       % set target Rect to mouse coordinates
-%        targetPoint = [windowRect(3)-mouseX, windowRect(4)/2];
-        targetPoint = [mouseX, windowRect(4)/2];
+       
+        % set target Rect to mouse coordinates
+       if stereoMode == 10
+          targetPoint = [mouseX, BS_center_v];
+       else
+          targetPoint = [mouseX, BS_center_v];
+       end
+
        targetRect = CenterRectOnPoint(meas_stimRect, targetPoint(1), targetPoint(2));
+       
+% %        % set target Rect to mouse coordinates
+% % %        targetPoint = [windowRect(3)-mouseX, windowRect(4)/2];
+% %         targetPoint = [mouseX, windowRect(4)/2];
+% %        targetRect = CenterRectOnPoint(meas_stimRect, targetPoint(1), targetPoint(2));
        
 
        % FLIP 
@@ -113,21 +123,21 @@ for mt = 1:2*meas_trials
       
     end
     vbl = Screen('Flip',window);
-    meas_positions_h(mt) = targetPoint(1);
+    meas_positions_h2(mt) = targetPoint(1);
     raw_coords_h(mt) = mouseX;
 end;
 
 %%
-inner_h = meas_positions_h(1:meas_trials)
-outer_h = meas_positions_h(meas_trials+1:end)
+inner_h2 = meas_positions_h2(1:meas_trials)
+outer_h2 = meas_positions_h2(meas_trials+1:end)
 figure;
-plot(1:meas_trials, inner_h, 1:meas_trials, outer_h);
-BS_center_h = mean(meas_positions_h)
+plot(1:meas_trials, inner_h2, 1:meas_trials, outer_h2);
+BS_center_h2 = mean(meas_positions_h2)
 %mean(fix_cord1) is probably a BUG because it has both x and y coordinates
 % in_deg_h = pix2deg_YR(BS_center_h-mean(fix_cord1))
-BS_diameter_h = abs(mean(inner_h) - mean(outer_h))
-in_deg_h = pix2deg_YR(BS_diameter_h)
-title('horizontal');
+BS_diameter_h2 = abs(mean(inner_h2) - mean(outer_h2))
+in_deg_h2 = pix2deg_YR(BS_diameter_h2)
+title('horizontal 2');
 
 
 
