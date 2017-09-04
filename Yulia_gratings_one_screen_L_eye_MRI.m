@@ -51,7 +51,7 @@ togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-bs_eye = 'left';   %% Left eye has the blind spot. Left fixation spot
+bs_eye = 'right';   %% Left eye has the blind spot. Left fixation spot
 
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
@@ -177,7 +177,7 @@ WaitSecs(.1);
 %% Fix frame
 
 % Fixation point on the RIGHT
-fp_offset = 200;
+fp_offset = 400;
 % frame
 frameSize = 900;
 
@@ -261,8 +261,12 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     Screen('Flip', window);
     KbStrokeWait; 
     goggles(bs_eye, 'BS',togglegoggle) %(BS eye, viewing eye)
-    HideCursor(1,0)
-    measure_BS_h_YR_1screen    %horizontal
+    if ~IsWin
+        HideCursor(1,0)
+    else
+        HideCursor()
+    end
+    measure_BS_h_YR_1screen_MRI    %horizontal
     measure_BS_v_YR_1screen    %vertical
     measure_BS_h2_YR_1screen   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
     goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)
@@ -344,6 +348,10 @@ KbStrokeWait;
 
 % subjectdata = nan(size(allcondscombos,1), 6);
 % curr_response = 0; %store current response on trial n
+
+
+responses = {};
+resp = 1; %counter for responses
 
 
 
@@ -688,6 +696,7 @@ end %demo
 timestart = secs; %time elapsed since trigger press
 vbl= secs; %get trigger press for timing of block 1
 KbQueueCreate();
+KbQueueStart();
 for block = 1:nSeqs
     
     disp(sprintf('Block %d', block));
@@ -701,41 +710,109 @@ for block = 1:nSeqs
     
     for stim = 1:nStimsInSeq
         
-        KbQueueStart();
+%         KbQueueStart();
         %show stims interleaved by 6s fix
         
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
-        goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)       
  
-        Screen('FillRect', window, grey) % make the whole screen grey_bkg
-        ShowFix()
-        DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
-        time_zero = vbl;
-        if stim == 1
-            startblock = vbl; %if the start of a block, record first flip of stim onset
-        end
-        %        then do another flip to clear this half a sec later
-%         KbQueueStop();
-        %check for ESC key
-      
-        vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
-        [pressed, firstPress]=KbQueueCheck();
-        pressedKeys = KbName(firstPress);
-        if max(strcmp(pressedKeys,'ESCAPE'))
-            goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
-            if togglegoggle == 1
-                ShutdownArd(ard,comPort);
+        % ADD TASK on fix pt
+
+        curr_frame = 1;
+        start_time = vbl;
+
+        totalframes = fix_grey/ifi;
+        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+        
+        respmade = 0;
+ 
+ 
+ 
+ 
+        goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)  
+        
+        
+        while vbl - start_time < ((fix_grey/ifi - 0.2)*ifi)%time is under 12 s
+            
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            
+            % --------- flash fix pt ------------------------------------------------
+            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                %show alternative fix
+                if curr_frame == taskframe %if the very first frame
+                    startSecs = GetSecs() %rough onset of alternative fix
+                end
+                AlternativeShowFixRed() %red
+                disp(num2str(curr_frame))
+                %   disp(num2str(taskframe))
+                disp('alternative')
+                
+            else
+                ShowFix() %white
+                disp(num2str(curr_frame))
+                %  disp(num2str(taskframe))
+                disp('normal')
+            end %----------------------------------------------------------
+            
+            DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            curr_frame = curr_frame + 1; %increment frame counter
+            time_zero = vbl;
+            if stim == 1
+                startblock = vbl; %if the start of a block, record first flip of stim onset
             end
-%             close goggles
-%             save any data
-            pressedKeys
-            disp('Escape this madness!!')
-            sca
+            %        then do another flip to clear this half a sec later
+            %         KbQueueStop();
+            %check for ESC key
+            
+%             vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
+                      
+            
+            % record responses
+           [pressed, firstPress]=KbQueueCheck();
+            pressedKeys = KbName(firstPress); %which key
+            timeSecs = firstPress(find(firstPress)); %what time
+            if pressed %report the keypress for the experimenter to see
+                % Again, fprintf will give an error if multiple keys have been pressed
+                fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                RT = timeSecs - startSecs;
+                responses{resp,1}= block;
+                responses{resp,2} = 'Fix';
+                responses{resp,3} = pressedKeys;
+                responses{resp,4} = RT;
+                respmade = 1;
+            else
+               
+            end
+            % end of response recording
+            
+            
+            
+            
+            if max(strcmp(pressedKeys,'ESCAPE'))
+                goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+                if togglegoggle == 1
+                    ShutdownArd(ard,comPort);
+                end
+                %             close goggles
+                %             save any data
+                pressedKeys
+                disp('Escape this madness!!')
+                sca
+            end
+        end %while
+        
+        if ~respmade %if no response whatsoever
+            RT = NaN;
+            responses{resp,1}= block;
+            responses{resp,2} = 'Fix';
+            responses{resp,3} = 'No response';
+            responses{resp,4} = RT;
         end
+        resp = resp + 1; %update resp counter
+        
         time_elapsed = vbl - time_zero;
         time_elapsed2 = vbl - startblock;
         time_elapsed3 = vbl - timestart;
@@ -792,21 +869,20 @@ for block = 1:nSeqs
 %         vbl = Screen('Flip', window);
         start_time = vbl;
         incrementframe = 0;
+        
+        
+        curr_frame = 1;
+        start_time = vbl;
+        
+        totalframes = 12/ifi;
+        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand);
+        
+        respmade = 0;
+        
+        
         while (vbl - start_time) < ((stim_dur/ifi - 0.2)*ifi) 
-             %check for ESC key
-            [pressed, firstPress]=KbQueueCheck();
-            pressedKeys = KbName(firstPress);
-            if  max(strcmp(pressedKeys,'ESCAPE'))
-                goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
-                if togglegoggle == 1
-                   ShutdownArd(ard,comPort);
-                end
-%               close goggles
-%               save any data
-                pressedKeys
-                disp('Escape this madness!!')
-                sca
-            end
+           
+            
             % Motion
             shiftperframe = cyclespersecond * periods(2) * waitduration;
             
@@ -822,7 +898,24 @@ for block = 1:nSeqs
             
             
             Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
-            ShowFix()
+            
+            
+            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                %show alternative fix
+                if curr_frame == taskframe %if the very first frame
+                    startSecs = GetSecs() %rough onset of alternative fix
+                end
+                AlternativeShowFixRed() %red
+                disp(num2str(curr_frame))
+                %                                 disp(num2str(taskframe))
+                disp('alternative')
+                
+            else
+                ShowFix() %white
+                disp(num2str(curr_frame))
+                %                                 disp(num2str(taskframe))
+                disp('normal')
+            end
             
             
 %             Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
@@ -874,15 +967,62 @@ for block = 1:nSeqs
             
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
             
-            incrementframe = incrementframe + 1;
+            curr_frame = curr_frame + 1; %increment frame counter for task
+            incrementframe = incrementframe + 1; %increment frame counter for motion
+            
+            % record responses
+            [pressed, firstPress]=KbQueueCheck();
+            pressedKeys = KbName(firstPress); %which key
+            timeSecs = firstPress(find(firstPress)); %what time
+            if pressed %report the keypress for the experimenter to see
+                % Again, fprintf will give an error if multiple keys have been pressed
+                fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                RT = timeSecs - startSecs;
+                responses{resp,1}= block;
+                responses{resp,2} = stim;
+                responses{resp,3} = pressedKeys;
+                responses{resp,4} = RT;
+                respmade = 1;
+                
+                if firstPress(escapeKey)
+                    break;
+                end
+            end
+            % end of response recording
+            
+            if  max(strcmp(pressedKeys,'ESCAPE'))
+                goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+                if togglegoggle == 1
+                   ShutdownArd(ard,comPort);
+                end
+%               close goggles
+%               save any data
+                pressedKeys
+                disp('Escape this madness!!')
+                sca
+            end
+            
+            
+            
             
         end %while
+        
+        if ~respmade %if no response was made at all
+            RT = NaN;
+            responses{resp,1}= block;
+            responses{resp,2} = stim;
+            responses{resp,3} = 'No response';
+            responses{resp,4} = RT;
+        end
+        resp = resp + 1; %update resp counter
+        
+        
         time_elapsed = vbl - start_time;
         time_elapsed2 = GetSecs - start_time;
         disp(sprintf('    Time elapsed for stimulus:  %.5f seconds using VBL - start',time_elapsed));
         disp(sprintf('    Time elapsed for stimulus:  %.5f seconds using GetSecs - start',time_elapsed2));
         
-        disp(sprintf('    N frames:  %.5f',incrementframe-1)); 
+        disp(sprintf('    N frames:  %.5f',incrementframe-1));
     end
     
     %for last block add one last 6s fix
