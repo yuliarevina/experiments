@@ -14,6 +14,15 @@
 % Stim 4 - Surr both
 
 
+%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+responses = {};
+resp = 1; %counter for responses
+
+
 % if ~IsWin
     devices = PsychHID('Devices');
 % end
@@ -43,7 +52,8 @@ Demo = 0; %show the debug bars at the start?
 
 bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
 
-nSeq = 6;
+
+nSeq = 8;
 nStim = 4;
 
 
@@ -84,6 +94,22 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 %    % draw fixation dot 
 %    Screen('CopyWindow', rightFixWin, w, [], rightScreenRect);	  
 %    Screen('Flip',w);
+
+
+ard =[]; %dummy variable in case we are not using goggles
+
+
+if togglegoggle == 1;
+    [ard, comPort] = InitArduino;
+    disp('Arduino Initiated')
+    
+    goggles(bs_eye, 'both', togglegoggle,ard)
+%     ToggleArd(ard,'LensOn') % need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
+    
+    % Remember to switch this off if the code stops for any reason. Any
+    % Try/Catch routines should have LensOff integrated there...
+end
+
 
 %% -------------------------------
 % set up screen and psychtoolbox |
@@ -193,6 +219,117 @@ WaitSecs(.1);
 [mouseX, mouseY, buttons] = GetMouse(window);
 
 
+%% flickering checkerboard parameters
+
+hz = 5; %flicker at 5 times per s
+nSecsPerFlicker = 1/hz;
+nFramesPerFlicker = (1/ifi)*nSecsPerFlicker; % n frames per second x seconds eg 60 x 0.2 = 12 frames
+
+targetDegV = in_deg_v - 2; % annulus is 1deg wide so target is the inner circle 2 deg smaller overall in diameter
+targetDegH2 = in_deg_h2 - 2;
+
+targetPxV = deg2pix_YR(targetDegV); %size of small target circle in px
+targetPxH2 = deg2pix_YR(targetDegH2);
+
+%basic rect of target size
+targetRect = [0 0 targetPxH2 targetPxV];
+%centre on BS coords
+targetRectCentre = CenterRectOnPointd(targetRect, BS_center_h2, BS_center_v);
+
+
+%% Stimuli types
+
+% 1. Target Both eyes
+% 2. Target IPSI (BS eye)
+% 3. Target contra (Fellow eye)
+% 4. Surround (both eyes)
+% 5. Fixation (both eyes)
+
+% e.g.
+% Fix | Stim 1 | Fix | Stim 3 | Fix | Stim 2 | Fix | Stim 4
+
+%all possible combinations
+allstimscomboslocalizer = perms(1:4);
+
+% we need to choose 8 out of all poss ones
+to_use = randperm(24,8);
+
+
+%% Stimuli textures
+
+% let's create all the textures we will need
+
+% Define a simple 5 by 5 checker board
+checkerboard = repmat(eye(2), 5, 5);
+
+% Make the checkerboard into a texure (4 x 4 pixels)
+checkerTexture(1) = Screen('MakeTexture', window, checkerboard);
+checkerTexture(2) = Screen('MakeTexture', window, 1 - checkerboard); %inverse texture
+
+texturecue = [1 2]; %switch between the normal and inverse
+
+% We will scale our texure up to 45 times its current size be defining a
+% larger screen destination rectangle
+[s1, s2] = size(checkerboard);
+dstRect = [0 0 s1 s2] .* 45;
+%we need to center on the BS
+dstRect = CenterRectOnPointd(dstRect, BS_center_h2, BS_center_v);
+% ---> basic square checkerboard is complete!
+
+
+% we will redefine the BS oval and centre it on the BS centre. This is the
+% size and position of the target and surr
+occluderRectCentre_Expt = CenterRectOnPointd(occluderRect, BS_center_h2,BS_center_v);
+
+% surroundMiddle = [0 0 surrwidth surrheight]; %make a smaller grey oval to be in the middle of the big one. We need a checkerboard annulus
+% surroundMiddleCentre = CenterRectOnPointd(surroundMiddle, BS_center_h2,BS_center_v); %centre on the BS coords
+
+
+
+
+% TARGET
+% conditions 1, 2 and 3
+
+% OPEN OFF SCREEN WINDOW
+% Build a nice aperture texture: Offscreen windows can be used as
+% textures as well, so we open an Offscreen window of exactly the same
+% size 'objRect' as our noise textures, with a gray default background.
+% This way, we can use the standard Screen drawing commands to 'draw'
+% our aperture:
+% we need three target textures as we have target in 3 conditions
+aperture(1)=Screen('OpenOffscreenwindow', window, grey);
+aperture(2)=Screen('OpenOffscreenwindow', window, grey);
+aperture(3)=Screen('OpenOffscreenwindow', window, grey);
+       
+% Screen('DrawTextures', aperture(1), checkerTexture(texturecue(1)), [],...
+%                                 dstRect, 0, filterMode);
+
+
+% MAKE TRANSPARENT OVAL THE SIZE OF THE TARGET
+% First we clear out the alpha channel of the aperture disk to zero -
+% In this area the noise stimulus will shine through:
+Screen('FillOval', aperture(1), [255 255 255 0], targetRectCentre);
+Screen('FillOval', aperture(2), [255 255 255 0], targetRectCentre);
+Screen('FillOval', aperture(3), [255 255 255 0], targetRectCentre);
+
+
+% SURROUND
+% condition 4
+
+% OPEN OFF SCREEN WINDOW
+aperture(4)=Screen('OpenOffscreenwindow', window, grey);
+
+% MAKE TRANSPARENT OVAL THE SIZE OF THE BS
+% First we clear out the alpha channel of the aperture disk to zero -
+% In this area the noise stimulus will shine through:
+Screen('FillOval', aperture(4), [255 255 255 0], occluderRectCentre_Expt);
+
+
+% MAKE GREY OVAL THE SIZE OF TARGET to make an annulus
+Screen('FillOval', aperture(4), [grey grey grey 1], targetRectCentre);
+
+
+
 %% Fix frame
 
 % Fixation point on the RIGHT
@@ -287,44 +424,115 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     vbl = secs;
     KbQueueCreate();
     
-    
+    KbQueueStart();
     
     for Sequence = 1:nSeq
+        
+        currSequenceOrder = allstimscomboslocalizer(to_use(Sequence), :); % the current sequence e.g. 2 4 1 3
+        
         for Stimulus = 1:nStim
-              KbQueueStart();
+%               KbQueueStart();
+
                 %Show fix
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        % ADD TASK on fix pt
+
+        curr_frame = 1;
+        start_time = vbl;
+
+        totalframes = 12/ifi;
+        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+        
+        
+        respmade = 0;
  
-        goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)       
+        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)       
  
-        Screen('FillRect', window, grey) % make the whole screen grey_bkg
-        ShowFix()
-        DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
-        time_zero = vbl;
-        if Stimulus == 1
-            startblock = vbl; %if the start of a block, record first flip of stim onset
-        end
-        %        then do another flip to clear this half a sec later
-%         KbQueueStop();
-        %check for ESC key
-      
-        vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
-        [pressed, firstPress]=KbQueueCheck();
-        pressedKeys = KbName(firstPress);
-        if max(strcmp(pressedKeys,'ESCAPE'))
-            goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
-            if togglegoggle == 1
-                ShutdownArd(ard,comPort);
+        
+        
+        
+        
+        while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            
+            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                %show alternative fix
+                if curr_frame == taskframe %if the very first frame
+                    startSecs = GetSecs() %rough onset of alternative fix
+                end
+                AlternativeShowFix() %black
+                disp(num2str(curr_frame))
+                %   disp(num2str(taskframe))
+                disp('alternative')
+                
+            else
+                ShowFix() %white
+                disp(num2str(curr_frame))
+                %  disp(num2str(taskframe))
+                disp('normal')
             end
-%             close goggles
-%             save any data
-            pressedKeys
-            disp('Escape this madness!!')
-            sca
+            
+            
+            
+%             ShowFix()
+            DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            curr_frame = curr_frame + 1; %increment frame counter
+            time_zero = vbl;
+            if Stimulus == 1
+                startblock = vbl; %if the start of a block, record first flip of stim onset
+            end
+            %        then do another flip to clear this half a sec later
+            %         KbQueueStop();
+            %check for ESC key
+            
+%             vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
+%             [pressed, firstPress]=KbQueueCheck();
+%             pressedKeys = KbName(firstPress);
+            
+            % record responses
+            [pressed, firstPress]=KbQueueCheck();
+            pressedKeys = KbName(firstPress); %which key
+            timeSecs = firstPress(find(firstPress)); %what time
+            if pressed %report the keypress for the experimenter to see
+                % Again, fprintf will give an error if multiple keys have been pressed
+                fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                RT = timeSecs - startSecs;
+                responses{resp,1}= Sequence;
+                responses{resp,2} = 'Fix';
+                responses{resp,3} = pressedKeys;
+                responses{resp,4} = RT;
+                respmade = 1;
+            else
+               
+            end
+            % end of response recording
+            
+            
+            if max(strcmp(pressedKeys,'ESCAPE'))
+                goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                if togglegoggle == 1
+                    ShutdownArd(ard,comPort);
+                end
+                %             close goggles
+                %             save any data
+                pressedKeys
+                disp('Escape this madness!!')
+                sca
+            end
+        end %while
+        if ~respmade %if no response whatsoever
+            RT = NaN;
+            responses{resp,1}= Sequence;
+            responses{resp,2} = 'Fix';
+            responses{resp,3} = 'No response';
+            responses{resp,4} = RT;
         end
+        resp = resp + 1; %update resp counter
+
         time_elapsed = vbl - time_zero;
         time_elapsed2 = vbl - startblock;
 %         time_elapsed3 = vbl - timestart;
@@ -336,22 +544,112 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 %%%%%%%%%%%%%%%%%%%%%%% Show stimulus %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+
         % Flashing checkerboard at 5 hz
                 
-                % Define a simple 20 by 5 checker board
-                checkerboard = repmat(eye(2), 20, 5);
+                             % ADD TASK on fix pt
                 
-                % Make the checkerboard into a texure (4 x 4 pixels)
-                checkerTexture = Screen('MakeTexture', window, checkerboard);
+                % Draw the checkerboard texture to the screen. By default bilinear
+                % filtering is used. For this example we don't want that, we want nearest
+                % neighbour so we change the filter mode to zero
+                filterMode = 0;
+                curr_frame = 1;
+                start_time = vbl;
                 
-                % We will scale our texure up to 90 times its current size be defining a
-                % larger screen destination rectangle
-                [s1, s2] = size(checkerboard);
-                dstRect = [0 0 s1 s2] .* 90;
-                dstRect = CenterRectOnPointd(dstRect, xCenter, yCenter);
+                totalframes = 12/ifi;
+                taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand);
                 
+                respmade = 0;
                 
+                while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+%                     
+                        %for showtimes = 1:hz
+                        % display this checkerboard for a certain number of frames
+                        % and then flip the contrast... (maybe best to do this based on seconds elapsed rather than frames but can leave this for now as a WIP)
+                        for i = 1:nFramesPerFlicker
+                            % display the basic checker
+                            Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
+                                dstRect, 0, filterMode);
+                            
+                            
+                             % Overdraw the rectangular noise image with our special
+                            % aperture image. The noise image will shine through in areas
+                            % of the aperture image where its alpha value is zero (i.e.
+                            % transparent):                 
+                            Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
+                            
+                            
+                            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                                %show alternative fix
+                                if curr_frame == taskframe %if the very first frame
+                                    startSecs = GetSecs() %rough onset of alternative fix
+                                end
+                                AlternativeShowFix() %black
+                                disp(num2str(curr_frame))
+%                                 disp(num2str(taskframe))
+                                disp('alternative')
+                                
+                            else
+                                ShowFix() %white
+                                disp(num2str(curr_frame))
+%                                 disp(num2str(taskframe))
+                                disp('normal')
+                            end
+                            
+                            
+                            switch currSequenceOrder(Stimulus)
+                                case 1
+                                    goggles(bs_eye, 'both', togglegoggle,ard)
+                                case 2
+                                    goggles(bs_eye, 'BS', togglegoggle,ard)
+                                case 3
+                                    goggles(bs_eye, 'fellow', togglegoggle,ard)
+                                case 4
+                                    goggles(bs_eye, 'both', togglegoggle,ard)
+                            end
+                            
+                            DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
+                            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+                            curr_frame = curr_frame + 1; %increment frame counter
+                        end
+                        texturecue = fliplr(texturecue);
+                        
+                        % record responses
+                        [pressed, firstPress]=KbQueueCheck();
+                        pressedKeys = KbName(firstPress); %which key
+                        timeSecs = firstPress(find(firstPress)); %what time
+                        if pressed %report the keypress for the experimenter to see
+                            % Again, fprintf will give an error if multiple keys have been pressed
+                            fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                            RT = timeSecs - startSecs;
+                            responses{resp,1}= Sequence;
+                            responses{resp,2} = Stimulus;
+                            responses{resp,3} = pressedKeys;
+                            responses{resp,4} = RT;
+                            respmade = 1;
+                            
+                            if firstPress(escapeKey)
+                                break;
+                            end
+                        end
+                        % end of response recording
+                end %while
+                if ~respmade %if no response was made at all
+                    RT = NaN;
+                    responses{resp,1}= Sequence;
+                    responses{resp,2} = Stimulus;
+                    responses{resp,3} = 'No response';
+                    responses{resp,4} = RT;
+                end
                 
+                resp = resp + 1; %update resp counter
+                time_elapsed = vbl - start_time;
+%                 time_elapsed2 = vbl - startblock;
+%               time_elapsed3 = vbl - timestart;
+                disp(sprintf('    Time elapsed for 12s flash:  %.5f seconds from first flip',time_elapsed));
+%                 disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
+
         end
     end
     %show one last fix
@@ -359,7 +657,13 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     
     
     
-    
-    
-    
+
+    if togglegoggle == 1;
+        %Close goggles
+        % Shut down ARDUINO
+        goggles(bs_eye, 'neither', togglegoggle,ard)
+        ShutdownArd(ard,comPort);
+        disp('Arduino is off')
+    end
+  
     sca

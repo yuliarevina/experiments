@@ -36,7 +36,9 @@ makescreenshotsforvideo = 0;
 BS_measurementON = 1;                     
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -240,6 +242,8 @@ frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
 % ________________________________________
 
 
+ard =[]; %dummy variable in case we are not using goggles
+
 
 
 if togglegoggle == 1;
@@ -284,7 +288,13 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v')) && BS_measurementON == 1
 %     if togglegoggle == 1;
 %         ToggleArd(ard,'LeftOff') % close left eye so we can look with our right and measure BS
 %     end
-    HideCursor(1,0)
+
+    if IsLinux 
+        HideCursor(1,0)
+    else
+        HideCursor()
+    end
+
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     measure_BS_h_YR_1screen    %horizontal
     measure_BS_v_YR_1screen    %vertical
@@ -591,10 +601,13 @@ if Demo == 1
         
         % KbStrokeWait; %wait for key press
         try
+
+
             
             ShowFix()
             
-            
+           
+
             for i = 1:5
                 
                 % Motion
