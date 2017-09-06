@@ -33,6 +33,9 @@ thisrun = 1
 load(sprintf('sub%s_MRI_stim_seq.mat', num2str(subnum)))
 
 
+fileID = fopen('exp.txt','w');
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -58,7 +61,7 @@ bs_eye = 'right';   %% Left eye has the blind spot. Left fixation spot
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
 outside_BS = 5; %deg of visual angle
-outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
+outside_BS = round(deg2pix_YR_MRI(outside_BS)); %in pixels for our screen
 
 % brightness = 0.1;
 brightness = 0.7; % for debugging
@@ -259,9 +262,10 @@ KbStrokeWait;
 if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     %show fix
     Screen('TextSize', window, 20);
-    Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
+    ShowFix();
+%     Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
     % instructions
-    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press the [?] button the flickering marker \n \n completely disappears for you \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
+    DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press the A and B buttons to move the flickering marker \n \n until it completely disappears for you \n \n Press C to confirm your response \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
     KbStrokeWait; 
     goggles(bs_eye, 'BS',togglegoggle) %(BS eye, viewing eye)
@@ -272,8 +276,8 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
         HideCursor()
     end
     measure_BS_h_YR_1screen_MRI    %horizontal
-    measure_BS_v_YR_1screen    %vertical
-    measure_BS_h2_YR_1screen   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
+    measure_BS_v_YR_1screen_MRI    %vertical
+    measure_BS_h2_YR_1screen_MRI   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
     goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)
     ShowCursor()
 end
@@ -395,7 +399,7 @@ maxContrast = .75; %original
 % maxContrast = 1;
 
 bar_width = 1.73; %1.73 deg like in gerrit's prev expts
-bar_width = round(deg2pix_YR(bar_width));
+bar_width = round(deg2pix_YR_MRI(bar_width));
 % bar_length = BS_vert_diameter+2*5deg_visual_angle
 bar_length = BS_diameter_v+2*outside_BS; % +50 for testing
 
@@ -407,7 +411,7 @@ isi     = .5;
 % Stimulus preparation  - Grating|
 % --------------------------------
 
-cyclesPerWholeGrating = pix2deg_YR(gratingSize) .* cyclesPerDeg;
+cyclesPerWholeGrating = pix2deg_YR_MRI(gratingSize) .* cyclesPerDeg;
 periods = gratingSize./cyclesPerWholeGrating;
 
 %not using this here
@@ -737,12 +741,17 @@ for block = 1:nSeqs
         taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
         
         respmade = 0;
- 
+        
+        startSecs = 0; %so we have this variable defined in case sub pressed button before the task even starts
  
  
  
         goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)  
         
+        time_zero = vbl;
+        if stim == 1
+            startblock = vbl; %if the start of a block, record first flip of stim onset
+        end
         
         while vbl - start_time < ((fix_grey/ifi - 0.2)*ifi)%time is under 12 s
             
@@ -755,21 +764,21 @@ for block = 1:nSeqs
                     startSecs = GetSecs() %rough onset of alternative fix
                 end
                 AlternativeShowFixRed() %red
-                disp(num2str(curr_frame))
+%                 disp(num2str(curr_frame))
                 %   disp(num2str(taskframe))
-                disp('alternative')
+%                 disp('alternative')
                 
             else
                 ShowFix() %white
-                disp(num2str(curr_frame))
+%                 disp(num2str(curr_frame))
                 %  disp(num2str(taskframe))
-                disp('normal')
+%                 disp('normal')
             end %----------------------------------------------------------
             
             DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             curr_frame = curr_frame + 1; %increment frame counter
-            time_zero = vbl;
+            
             if stim == 1
                 startblock = vbl; %if the start of a block, record first flip of stim onset
             end
@@ -786,7 +795,11 @@ for block = 1:nSeqs
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
                 % Again, fprintf will give an error if multiple keys have been pressed
-                fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                
+                fprintf('"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs, block);
+                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs, block);
+                
+%                 fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
                 RT = timeSecs - startSecs;
                 responses{resp,1}= block;
                 responses{resp,2} = 'Fix';
@@ -811,6 +824,7 @@ for block = 1:nSeqs
                 pressedKeys
                 disp('Escape this madness!!')
                 sca
+                fclose(fileID);
             end
         end %while
         
@@ -918,15 +932,15 @@ for block = 1:nSeqs
                     startSecs = GetSecs() %rough onset of alternative fix
                 end
                 AlternativeShowFixRed() %red
-                disp(num2str(curr_frame))
+%                 disp(num2str(curr_frame))
                 %                                 disp(num2str(taskframe))
-                disp('alternative')
+%                 disp('alternative')
                 
             else
                 ShowFix() %white
-                disp(num2str(curr_frame))
+%                 disp(num2str(curr_frame))
                 %                                 disp(num2str(taskframe))
-                disp('normal')
+%                 disp('normal')
             end
             
             
@@ -989,7 +1003,10 @@ for block = 1:nSeqs
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
                 % Again, fprintf will give an error if multiple keys have been pressed
-                fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                fprintf('"%s" typed at time %.3f seconds %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs,block, stim);
+                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs,block,stim);
+                
+%                 fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
                 RT = timeSecs - startSecs;
                 responses{resp,1}= block;
                 responses{resp,2} = stim;
@@ -1013,6 +1030,7 @@ for block = 1:nSeqs
                 pressedKeys
                 disp('Escape this madness!!')
                 sca
+                fclose(fileID);
             end
             
             
@@ -1059,6 +1077,7 @@ for block = 1:nSeqs
             goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
             if togglegoggle == 1
                 ShutdownArd(ard,comPort);
+                fclose(fileID);
             end
 %             close goggles
 %             save any data
@@ -1087,7 +1106,7 @@ goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
 if togglegoggle == 1
     ShutdownArd(ard,comPort);
 end
-sca
+sca; fclose(fileID);
       
 catch overallerror
     goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
@@ -1097,4 +1116,5 @@ end
     rethrow(overallerror)
     sca
     disp('Something is wrong!')
+    fclose(fileID);
 end
