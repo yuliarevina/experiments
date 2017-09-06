@@ -22,6 +22,8 @@ togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 responses = {};
 resp = 1; %counter for responses
 
+fileID = fopen('localizer.txt','w');
+
 
 % if ~IsWin
     devices = PsychHID('Devices');
@@ -62,7 +64,7 @@ nStim = 4;
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
 outside_BS = 5; %deg of visual angle
-outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
+outside_BS = round(deg2pix_YR_MRI(outside_BS)); %in pixels for our screen
 
 brightness = 0.1;
 % brightness = 0.7; % for debugging
@@ -228,8 +230,8 @@ nFramesPerFlicker = (1/ifi)*nSecsPerFlicker; % n frames per second x seconds eg 
 targetDegV = in_deg_v - 2; % annulus is 1deg wide so target is the inner circle 2 deg smaller overall in diameter
 targetDegH2 = in_deg_h2 - 2;
 
-targetPxV = deg2pix_YR(targetDegV); %size of small target circle in px
-targetPxH2 = deg2pix_YR(targetDegH2);
+targetPxV = deg2pix_YR_MRI(targetDegV); %size of small target circle in px
+targetPxH2 = deg2pix_YR_MRI(targetDegH2);
 
 %basic rect of target size
 targetRect = [0 0 targetPxH2 targetPxV];
@@ -259,8 +261,8 @@ to_use = randperm(24,8);
 
 % let's create all the textures we will need
 
-% Define a simple 5 by 5 checker board
-checkerboard = repmat(eye(2), 5, 5);
+% Define a simple 10 by 10 checker board
+checkerboard = repmat(eye(2), 10, 10);
 
 % Make the checkerboard into a texure (4 x 4 pixels)
 checkerTexture(1) = Screen('MakeTexture', window, checkerboard);
@@ -268,17 +270,17 @@ checkerTexture(2) = Screen('MakeTexture', window, 1 - checkerboard); %inverse te
 
 texturecue = [1 2]; %switch between the normal and inverse
 
-% We will scale our texure up to 45 times its current size be defining a
+% We will scale our texure up to 70 times its current size be defining a
 % larger screen destination rectangle
 [s1, s2] = size(checkerboard);
-dstRect = [0 0 s1 s2] .* 45;
+dstRect = [0 0 s1 s2] .* 70;
 %we need to center on the BS
 dstRect = CenterRectOnPointd(dstRect, BS_center_h2, BS_center_v);
 % ---> basic square checkerboard is complete!
 
 
 % we will redefine the BS oval and centre it on the BS centre. This is the
-% size and position of the target and surr
+% size and position of the BS and surr
 occluderRectCentre_Expt = CenterRectOnPointd(occluderRect, BS_center_h2,BS_center_v);
 
 % surroundMiddle = [0 0 surrwidth surrheight]; %make a smaller grey oval to be in the middle of the big one. We need a checkerboard annulus
@@ -308,9 +310,14 @@ aperture(3)=Screen('OpenOffscreenwindow', window, grey);
 % MAKE TRANSPARENT OVAL THE SIZE OF THE TARGET
 % First we clear out the alpha channel of the aperture disk to zero -
 % In this area the noise stimulus will shine through:
-Screen('FillOval', aperture(1), [255 255 255 0], targetRectCentre);
-Screen('FillOval', aperture(2), [255 255 255 0], targetRectCentre);
-Screen('FillOval', aperture(3), [255 255 255 0], targetRectCentre);
+Screen('FillOval', aperture(1), [1 1 1 0], targetRectCentre);
+Screen('FillOval', aperture(2), [1 1 1 0], targetRectCentre);
+Screen('FillOval', aperture(3), [1 1 1 0], targetRectCentre);
+
+
+Screen('FrameOval', aperture(1), [1 0 0 1], occluderRectCentre_Expt);
+Screen('FrameOval', aperture(2), [1 0 0 1], occluderRectCentre_Expt);
+Screen('FrameOval', aperture(3), [1 0 0 1], occluderRectCentre_Expt);
 
 
 % SURROUND
@@ -322,7 +329,9 @@ aperture(4)=Screen('OpenOffscreenwindow', window, grey);
 % MAKE TRANSPARENT OVAL THE SIZE OF THE BS
 % First we clear out the alpha channel of the aperture disk to zero -
 % In this area the noise stimulus will shine through:
-Screen('FillOval', aperture(4), [255 255 255 0], occluderRectCentre_Expt);
+Screen('FillOval', aperture(4), [1 1 1 0], occluderRectCentre_Expt);
+
+Screen('FrameOval', aperture(4), [1 0 0 1], occluderRectCentre_Expt);
 
 
 % MAKE GREY OVAL THE SIZE OF TARGET to make an annulus
@@ -463,28 +472,29 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                 if curr_frame == taskframe %if the very first frame
                     startSecs = GetSecs() %rough onset of alternative fix
                 end
-                AlternativeShowFix() %black
-                disp(num2str(curr_frame))
+                AlternativeShowFixRed() %red
+%                 disp(num2str(curr_frame))
                 %   disp(num2str(taskframe))
-                disp('alternative')
+%                 disp('alternative')
                 
             else
                 ShowFix() %white
-                disp(num2str(curr_frame))
+%                 disp(num2str(curr_frame))
                 %  disp(num2str(taskframe))
-                disp('normal')
+%                 disp('normal')
             end
             
             
             
 %             ShowFix()
             DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
-            curr_frame = curr_frame + 1; %increment frame counter
             time_zero = vbl;
             if Stimulus == 1
                 startblock = vbl; %if the start of a block, record first flip of stim onset
             end
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            curr_frame = curr_frame + 1; %increment frame counter
+            
             %        then do another flip to clear this half a sec later
             %         KbQueueStop();
             %check for ESC key
@@ -499,7 +509,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
                 % Again, fprintf will give an error if multiple keys have been pressed
-                fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                fprintf('"%s" typed at time %.3f seconds, %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
                 RT = timeSecs - startSecs;
                 responses{resp,1}= Sequence;
                 responses{resp,2} = 'Fix';
@@ -521,6 +532,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                 %             save any data
                 pressedKeys
                 disp('Escape this madness!!')
+                fclose(fileID);
                 sca
             end
         end %while
@@ -585,16 +597,16 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                                 if curr_frame == taskframe %if the very first frame
                                     startSecs = GetSecs() %rough onset of alternative fix
                                 end
-                                AlternativeShowFix() %black
-                                disp(num2str(curr_frame))
+                                AlternativeShowFixRed() %red
+%                                 disp(num2str(curr_frame))
 %                                 disp(num2str(taskframe))
-                                disp('alternative')
+%                                 disp('alternative')
                                 
                             else
                                 ShowFix() %white
-                                disp(num2str(curr_frame))
+%                                 disp(num2str(curr_frame))
 %                                 disp(num2str(taskframe))
-                                disp('normal')
+%                                 disp('normal')
                             end
                             
                             
@@ -621,7 +633,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                         timeSecs = firstPress(find(firstPress)); %what time
                         if pressed %report the keypress for the experimenter to see
                             % Again, fprintf will give an error if multiple keys have been pressed
-                            fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                            fprintf('"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs, Sequence, Stimulus);
+                            fprintf(fileID,'"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs, Sequence, Stimulus);
                             RT = timeSecs - startSecs;
                             responses{resp,1}= Sequence;
                             responses{resp,2} = Stimulus;
@@ -664,6 +677,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         goggles(bs_eye, 'neither', togglegoggle,ard)
         ShutdownArd(ard,comPort);
         disp('Arduino is off')
+        fclose(fileID);
     end
   
     sca
+    fclose(fileID);
