@@ -16,13 +16,13 @@ for mt = 1:2*meas_trials
 %     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     if mt <= meas_trials
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'INNER','center','center',black,[],[]);
+        DrawFormattedText(window,'INNER',nx,'center',black,[],[]);
     elseif mt == meas_trials+1
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'OUTER','center','center',[1 0 0],[],[]); % red
+        DrawFormattedText(window,'OUTER',nx,'center',[1 0 0],[],[]); % red
     elseif mt < meas_trials*2+1;
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'OUTER','center','center',black,[],[]); 
+        DrawFormattedText(window,'OUTER',nx,'center',black,[],[]); 
     end
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
