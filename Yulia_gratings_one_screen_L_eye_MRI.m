@@ -10,6 +10,13 @@ devices = PsychHID('Devices');
 keyboardind = GetKeyboardIndices();
 mouseind = GetMouseIndices();
 
+% define keyboards used by subject and experimenter
+% run KbQueueDemo(deviceindex) to test various indices
+deviceindexSubject = []; %possibly MRI keypad
+%can only listen to one device though...
+% deviceindexExperimenter = 11; %possibly your laptop keyboard
+
+
 KbName('UnifyKeyNames')
 
 
@@ -23,17 +30,21 @@ space = KbName('space');
 scannertrigger = KbName('s');
 
 
+DisableKeysForKbCheck([]) % listen for all keys at the start
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subnum = 0 %enter subject number
+thisrun = 2 %change run
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 block = 1;
 stim = 1;
-thisrun = 1
-% load sequence of stims
-load(sprintf('sub%s_MRI_stim_seq.mat', num2str(subnum)))
 
 
-fileID = fopen('exp.txt','w');
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,7 +57,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -58,13 +69,27 @@ Demo = 0; %show the debug bars at the start?
 bs_eye = 'right';   %% Left eye has the blind spot. Left fixation spot
 
 
+% ASK FOR SUBJECT DETAILS
+
+subCode = input('Enter Subject Code:   ');
+subAge = input('Enter Subject Age in yrs:   ');
+subGender = input('Enter Subject Gender:   ');
+
+%%%%%%%%%%%%%%%% load sequence of stims % creat files
+load(sprintf('sub%s_MRI_stim_seq.mat', num2str(subnum)))
+filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), subGender);
+filenametxt = sprintf('Data_%s_%s_%s_%s.txt', todaydate, subCode, num2str(subAge), subGender);
+fileID = fopen(filenametxt,'w');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR_MRI(outside_BS)); %in pixels for our screen
 
-% brightness = 0.1;
-brightness = 0.7; % for debugging
+brightness = 0.1;
+% brightness = 0.7; % for debugging
 textcolor = [0 0 0];
 
 % timing
@@ -75,17 +100,10 @@ stim_dur = 12; %seconds
 
 
 % GAMMA CORRECTION
-load CLUT_Station1_1152x864_100Hz_25_Apr_2016.mat
+load('CLUT_StationMRI_rgb_1920x1080_27_Jul_2017.mat', 'clut')
 
 
-% ASK FOR SUBJECT DETAILS
 
-subCode = input('Enter Subject Code:   ');
-subAge = input('Enter Subject Age in yrs:   ');
-subGender = input('Enter Subject Gender:   ');
-
-
-filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), subGender);
 % _______________________________________________________________________
 %  This is how to select each screen for stereo
 
@@ -151,9 +169,10 @@ end
 % Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
-
+if ~IsWin
 % % correct non-linearity from CLUT
-% oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
+oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
+end
 
 % Get the size of the on screen window in pixels
 % For help see: Screen WindowSize?
@@ -236,7 +255,7 @@ if togglegoggle == 1;
     [ard, comPort] = InitArduino;
     disp('Arduino Initiated')
     
-    goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye) need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
+    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye) need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
         
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
@@ -253,7 +272,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 %flip to screen
 Screen('Flip', window);
-KbStrokeWait;
+KbStrokeWait([-1]);
 
 %% -----------------
 % Measure blind spot if we dont have the measurements already
@@ -267,8 +286,8 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     % instructions
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press the A and B buttons to move the flickering marker \n \n until it completely disappears for you \n \n Press C to confirm your response \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
-    KbStrokeWait; 
-    goggles(bs_eye, 'BS',togglegoggle) %(BS eye, viewing eye)
+    KbStrokeWait([-1]); 
+    goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
 
     if ~IsWin
         HideCursor(1,0)
@@ -278,7 +297,7 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     measure_BS_h_YR_1screen_MRI    %horizontal
     measure_BS_v_YR_1screen_MRI    %vertical
     measure_BS_h2_YR_1screen_MRI   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
-    goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)
+    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
     ShowCursor()
 end
 
@@ -290,11 +309,11 @@ oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2, BS_center_v);
 ShowFix()
 
 % show blind spot
-Screen('FillOval', window, textcolor, oval_rect_centred);
+Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
 DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
 
 Screen('Flip', window);
-KbStrokeWait;
+KbStrokeWait([-1]);
 
 %% --------------------
 % Recording responses |
@@ -599,7 +618,7 @@ exitDemo = false; %demo = stims presented side by side just for checking
 if Demo == 1
 while exitDemo == false
     % Check the keyboard to see if a button has been pressed
-    [keyIsDown,secs, keyCode] = KbCheck;
+    [keyIsDown,secs, keyCode] = KbCheck([-1]);
     
     % KbStrokeWait; %wait for key press
     try
@@ -688,26 +707,31 @@ end %demo
 
 %% BLOCK
     
-    goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)    
+    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)    
         
     %get timestamp
     Screen('TextSize', window, 20);
-    DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', white,[],[]);
+    DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', textcolor,[],[]);
     Screen('Flip', window);
     disp('Waiting for scanner trigger...')
     
-    [secs, keyCode, deltaSecs]=    KbStrokeWait;
+    [secs, keyCode, deltaSecs]=    KbStrokeWait([-1]);
     
     while ~keyCode(scannertrigger)
-        [keyIsDown, secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+        [keyIsDown, secs, keyCode] = KbCheck([-1]);% Check the keyboard to see if a button has been pressed
     end
+    
+     disp('Trigger detected')
+    DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
     
 
 timestart = secs; %time elapsed since trigger press
 vbl= secs; %get trigger press for timing of block 1
-KbQueueCreate();
+KbQueueCreate(deviceindexSubject);
+% KbQueueCreate(deviceindexExperimenter);
 
-KbQueueStart();
+KbQueueStart(deviceindexSubject);
+% KbQueueStart(deviceindexExperimenter);
 
 for block = 1:nSeqs
     
@@ -746,7 +770,7 @@ for block = 1:nSeqs
  
  
  
-        goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)  
+        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)  
         
         time_zero = vbl;
         if stim == 1
@@ -761,7 +785,8 @@ for block = 1:nSeqs
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                 %show alternative fix
                 if curr_frame == taskframe %if the very first frame
-                    startSecs = GetSecs() %rough onset of alternative fix
+                    startSecs = GetSecs();
+                    disp('Task!')%rough onset of alternative fix
                 end
                 AlternativeShowFixRed() %red
 %                 disp(num2str(curr_frame))
@@ -779,9 +804,6 @@ for block = 1:nSeqs
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             curr_frame = curr_frame + 1; %increment frame counter
             
-            if stim == 1
-                startblock = vbl; %if the start of a block, record first flip of stim onset
-            end
             %        then do another flip to clear this half a sec later
             %         KbQueueStop();
             %check for ESC key
@@ -790,7 +812,9 @@ for block = 1:nSeqs
                       
             
             % record responses
-           [pressed, firstPress]=KbQueueCheck();
+           [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+%            [pressed, firstPress]=KbQueueCheck(deviceindexExperimenter);
+            [keyIsDown, secs, keyCode] = KbCheck([-1]);
             pressedKeys = KbName(firstPress); %which key
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
@@ -811,11 +835,13 @@ for block = 1:nSeqs
             end
             % end of response recording
             
+             % Check the keyboard to see if a button has been pressed
+            [keyIsDown,secs, keyCode] = KbCheck([-1]);
             
             
-            
-            if max(strcmp(pressedKeys,'ESCAPE'))
-                goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+            if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+                save(filename)
+                goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
                 if togglegoggle == 1
                     ShutdownArd(ard,comPort);
                 end
@@ -825,6 +851,7 @@ for block = 1:nSeqs
                 disp('Escape this madness!!')
                 sca
                 fclose(fileID);
+                save(filename)
             end
         end %while
         
@@ -883,11 +910,11 @@ for block = 1:nSeqs
         
         %goggles
        if strcmp(whicheye, 'fellow'); %compare strings
-            goggles(bs_eye, 'fellow',togglegoggle) %(BS eye, viewing eye)
+            goggles(bs_eye, 'fellow',togglegoggle,ard) %(BS eye, viewing eye)
        elseif strcmp(whicheye, 'BS')
-            goggles(bs_eye, 'BS',togglegoggle) %(BS eye, viewing eye)
+            goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
        else
-            goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)
+            goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
        end
 %         Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
 %         ShowFix()
@@ -929,7 +956,8 @@ for block = 1:nSeqs
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                 %show alternative fix
                 if curr_frame == taskframe %if the very first frame
-                    startSecs = GetSecs() %rough onset of alternative fix
+                    startSecs = GetSecs(); %rough onset of alternative fix
+                    disp('Task!')
                 end
                 AlternativeShowFixRed() %red
 %                 disp(num2str(curr_frame))
@@ -998,7 +1026,9 @@ for block = 1:nSeqs
             incrementframe = incrementframe + 1; %increment frame counter for motion
             
             % record responses
-            [pressed, firstPress]=KbQueueCheck();
+            [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+%             [pressed, firstPress]=KbQueueCheck(deviceindexExperimenter);
+            [keyIsDown, secs, keyCode] = KbCheck([-1]);
             pressedKeys = KbName(firstPress); %which key
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
@@ -1014,14 +1044,16 @@ for block = 1:nSeqs
                 responses{resp,4} = RT;
                 respmade = 1;
                 
-                if firstPress(escapeKey)
-                    break;
-                end
             end
             % end of response recording
             
-            if  max(strcmp(pressedKeys,'ESCAPE'))
-                goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+              % Check the keyboard to see if a button has been pressed
+            [keyIsDown,secs, keyCode] = KbCheck([-1]);
+            
+            
+            if  max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+                save(filename)
+                goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
                 if togglegoggle == 1
                    ShutdownArd(ard,comPort);
                 end
@@ -1031,6 +1063,7 @@ for block = 1:nSeqs
                 disp('Escape this madness!!')
                 sca
                 fclose(fileID);
+                save(filename)
             end
             
             
@@ -1059,7 +1092,7 @@ for block = 1:nSeqs
     
     %for last block add one last 6s fix
     if block == 5
-        goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)       
+        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)       
  
         Screen('FillRect', window, grey) % make the whole screen grey_bkg
         ShowFix()
@@ -1071,19 +1104,29 @@ for block = 1:nSeqs
         %check for ESC key
       
         vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
-        [pressed, firstPress]=KbQueueCheck();
+        [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+%         [pressed, firstPress]=KbQueueCheck(deviceindexExperimenter);
+       
+        
         pressedKeys = KbName(firstPress);
-        if max(strcmp(pressedKeys,'ESCAPE'))
-            goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+        
+        
+         % Check the keyboard to see if a button has been pressed
+            [keyIsDown,secs, keyCode] = KbCheck([-1]);
+        
+        if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+            save(filename)
+            goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
             if togglegoggle == 1
                 ShutdownArd(ard,comPort);
-                fclose(fileID);
             end
 %             close goggles
 %             save any data
             pressedKeys
             disp('Escape this madness!!')
             sca
+            save(filename);
+            fclose(fileID);
         end
         time_elapsed = vbl - time_zero;
         disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds',time_elapsed));
@@ -1093,7 +1136,8 @@ for block = 1:nSeqs
     totalblocktime(block) = vbl - startblock;
     disp(sprintf('    Time elapsed for block:  %.5f seconds \n \n',totalblocktime));       
 end
-KbQueueStop();
+KbQueueStop(deviceindexSubject);
+% KbQueueStop(deviceindexExperimenter);
 totalexpttime = sum(totalblocktime);
 disp(sprintf('    Time elapsed for experiment:  %.5f seconds',totalexpttime));  
 timeend = GetSecs;
@@ -1102,19 +1146,25 @@ disp(sprintf('    Time elapsed for experiment:  %.5f seconds (Using GetSecs)',to
      
 %     disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
 % close goggles
-goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
 if togglegoggle == 1
     ShutdownArd(ard,comPort);
 end
+save(filename)
 sca; fclose(fileID);
       
 catch overallerror
-    goggles(bs_eye, 'neither',togglegoggle) %(BS eye, viewing eye)
+    goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+    save(filename)
 if togglegoggle == 1
     ShutdownArd(ard,comPort);
 end
+    save(filename)
     rethrow(overallerror)
     sca
     disp('Something is wrong!')
     fclose(fileID);
 end
+
+sca; save(filename)
+fclose(fileID);
