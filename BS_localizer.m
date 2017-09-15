@@ -14,15 +14,8 @@
 % Stim 4 - Surr both
 
 
-%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 responses = {};
 resp = 1; %counter for responses
-
-fileID = fopen('localizer.txt','w');
 
 
 % if ~IsWin
@@ -34,8 +27,38 @@ mouseind = GetMouseIndices();
 
 KbName('UnifyKeyNames')
 
+% define keyboards used by subject and experimenter
+% run KbQueueDemo(deviceindex) to test various indices
+deviceindexSubject = []; %possibly MRI keypad
+%can only listen to one device though...
+% deviceindexExperimenter = 11; %possibly your laptop keyboard
+
+% The avaliable keys to press
+escapeKey = KbName('ESCAPE');
+upKey = KbName('UpArrow');
+downKey = KbName('DownArrow');
+leftKey = KbName('LeftArrow');
+rightKey = KbName('RightArrow');
+space = KbName('space');
+scannertrigger = KbName('s');
+
+DisableKeysForKbCheck([]); % listen for all keys at the start
+
+
+
 
 todaydate  = date;
+
+% ASK FOR SUBJECT DETAILS
+
+subCode = input('Enter Subject Code:   ');
+subAge = input('Enter Subject Age in yrs:   ');
+subGender = input('Enter Subject Gender:   ');
+
+filename = sprintf('Localizer_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), subGender);
+filenametxt = sprintf('Localizer_%s_%s_%s_%s.txt', todaydate, subCode, num2str(subAge), subGender);
+fileID = fopen(filenametxt,'w');
+
 
 stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
 stereoMode = 4;        % 4 for split screen, 10 for two screens
@@ -74,16 +97,8 @@ textcolor = [0 0 0];
 goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
 
 % GAMMA CORRECTION
-load CLUT_Station1_1152x864_100Hz_25_Apr_2016.mat
+load('CLUT_StationMRI_rgb_1920x1080_27_Jul_2017.mat', 'clut')
 
-% ASK FOR SUBJECT DETAILS
-
-subCode = input('Enter Subject Code:   ');
-subAge = input('Enter Subject Age in yrs:   ');
-subGender = input('Enter Subject Gender:   ');
-
-
-filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), subGender);
 % _______________________________________________________________________
 %  This is how to select each screen for stereo
 
@@ -96,21 +111,6 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 %    % draw fixation dot 
 %    Screen('CopyWindow', rightFixWin, w, [], rightScreenRect);	  
 %    Screen('Flip',w);
-
-
-ard =[]; %dummy variable in case we are not using goggles
-
-
-if togglegoggle == 1;
-    [ard, comPort] = InitArduino;
-    disp('Arduino Initiated')
-    
-    goggles(bs_eye, 'both', togglegoggle,ard)
-%     ToggleArd(ard,'LensOn') % need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
-    
-    % Remember to switch this off if the code stops for any reason. Any
-    % Try/Catch routines should have LensOff integrated there...
-end
 
 
 %% -------------------------------
@@ -395,6 +395,8 @@ if togglegoggle == 1;
     
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
+else
+    ard =[]; %dummy variable in case we are not using goggles
 end
 
 
@@ -416,7 +418,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 
 
-    goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)    
+    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)    
         
     %get timestamp
    
@@ -424,16 +426,19 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 %     Screen('Flip', window);
     disp('Waiting for scanner trigger...')
     
-    [secs, keyCode, deltaSecs]=    KbStrokeWait;
+    [secs, keyCode, deltaSecs]=    KbStrokeWait(-1);
     
     while ~keyCode(scannertrigger)
-        [keyIsDown, secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+        [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
     end
+    disp('Trigger detected')
+    DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
     
     vbl = secs;
-    KbQueueCreate();
+    expt_start = secs;
+    KbQueueCreate(deviceindexSubject);
     
-    KbQueueStart();
+    KbQueueStart(deviceindexSubject);
     
     for Sequence = 1:nSeq
         disp(sprintf('Sequence %d', Sequence))
@@ -461,7 +466,10 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
  
         goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)       
  
-        
+        time_zero = vbl;
+        if Stimulus == 1
+            startblock = vbl; %if the start of a block, record first flip of stim onset
+        end
         
         
         
@@ -471,7 +479,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                 %show alternative fix
                 if curr_frame == taskframe %if the very first frame
-                    startSecs = GetSecs() %rough onset of alternative fix
+                    startSecs = GetSecs(); %rough onset of alternative fix
+                    disp('Task!')
                 end
                 AlternativeShowFixRed() %red
 %                 disp(num2str(curr_frame))
@@ -489,10 +498,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             
 %             ShowFix()
             DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-            time_zero = vbl;
-            if Stimulus == 1
-                startblock = vbl; %if the start of a block, record first flip of stim onset
-            end
+            
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             curr_frame = curr_frame + 1; %increment frame counter
             
@@ -505,7 +511,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 %             pressedKeys = KbName(firstPress);
             
             % record responses
-            [pressed, firstPress]=KbQueueCheck();
+            [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+            [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
             pressedKeys = KbName(firstPress); %which key
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
@@ -524,7 +531,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             % end of response recording
             
             
-            if max(strcmp(pressedKeys,'ESCAPE'))
+            if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
                 if togglegoggle == 1
                     ShutdownArd(ard,comPort);
@@ -535,6 +542,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                 disp('Escape this madness!!')
                 fclose(fileID);
                 sca
+                save(filename)
             end
         end %while
         if ~respmade %if no response whatsoever
@@ -581,6 +589,14 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                         % display this checkerboard for a certain number of frames
                         % and then flip the contrast... (maybe best to do this based on seconds elapsed rather than frames but can leave this for now as a WIP)
                         for i = 1:nFramesPerFlicker
+                            
+                            %check we are not over time
+                            if vbl - start_time >= (12)
+                                disp(sprintf('Oops, over time! Time now is: %d, i = %d, curr_frame = %d', vbl - start_time,i, curr_frame))
+                                break;
+                            end
+                            
+                            
                             % display the basic checker
                             Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
                                 dstRect, 0, filterMode);
@@ -596,7 +612,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                                 %show alternative fix
                                 if curr_frame == taskframe %if the very first frame
-                                    startSecs = GetSecs() %rough onset of alternative fix
+                                    startSecs = GetSecs(); %rough onset of alternative fix
+                                    disp('Task!')
                                 end
                                 AlternativeShowFixRed() %red
 %                                 disp(num2str(curr_frame))
@@ -629,7 +646,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                         texturecue = fliplr(texturecue);
                         
                         % record responses
-                        [pressed, firstPress]=KbQueueCheck();
+                        [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+                        [keyIsDown,secs, keyCode] = KbCheck(-1);
                         pressedKeys = KbName(firstPress); %which key
                         timeSecs = firstPress(find(firstPress)); %what time
                         if pressed %report the keypress for the experimenter to see
@@ -643,11 +661,23 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                             responses{resp,4} = RT;
                             respmade = 1;
                             
-                            if firstPress(escapeKey)
-                                break;
-                            end
+                            
                         end
                         % end of response recording
+                        
+                          if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+                            goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                            if togglegoggle == 1
+                                ShutdownArd(ard,comPort);
+                            end
+                            %             close goggles
+                            %             save any data
+                            pressedKeys
+                            disp('Escape this madness!!')
+                            fclose(fileID);
+                            sca
+                            save(filename)
+                        end
                 end %while
                 if ~respmade %if no response was made at all
                     RT = NaN;
@@ -668,8 +698,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     end
     %show one last fix
     
-    
-    
+    expt_end = vbl;
+       disp(sprintf('Total run time: %d', expt_end-expt_start))
     
 
     if togglegoggle == 1;
@@ -678,8 +708,8 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         goggles(bs_eye, 'neither', togglegoggle,ard)
         ShutdownArd(ard,comPort);
         disp('Arduino is off')
-        fclose(fileID);
+       
     end
-  
+   save(filename)
     sca
     fclose(fileID);
