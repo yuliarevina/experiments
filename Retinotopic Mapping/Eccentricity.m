@@ -167,8 +167,8 @@ WaitSecs(.1);
 
 %% stim parameters
 
-% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
-dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+% dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 
 
 stimDur = 125; %ms
@@ -374,7 +374,7 @@ try
         % end of response recording
         
         
-        if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+        if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
             goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
             if togglegoggle == 1
                 ShutdownArd(ard,comPort);
@@ -498,7 +498,7 @@ try
                 % end of response recording
                 
                 
-                if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+                if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                     goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
                     if togglegoggle == 1
                         ShutdownArd(ard,comPort);
@@ -701,7 +701,7 @@ try
             end
             % end of response recording
             
-            if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+            if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
                 if togglegoggle == 1
                     ShutdownArd(ard,comPort);

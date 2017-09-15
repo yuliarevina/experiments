@@ -359,7 +359,7 @@ while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
         
     end
     % end of response recording
-    if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+    if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
         goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
         if togglegoggle == 1
             ShutdownArd(ard,comPort);
@@ -476,7 +476,7 @@ for i = 1:12 %12 repetitions of the cycle
         end
         % end of response recording
         
-         if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+         if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
             goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
             if togglegoggle == 1
                 ShutdownArd(ard,comPort);
@@ -582,7 +582,7 @@ while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
     end
     % end of response recording
     
-    if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+    if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
         goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
         if togglegoggle == 1
             ShutdownArd(ard,comPort);
