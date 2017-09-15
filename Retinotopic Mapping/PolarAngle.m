@@ -27,16 +27,16 @@ subAge = input('Enter Subject Age in yrs:   ');
 subGender = input('Enter Subject Gender:   ');
 
 
-filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), subGender);
-
+filenametxt = sprintf('PolAng_%s_%s_%s_%s.txt', todaydate, subCode, num2str(subAge), subGender);
+filename = sprintf('PolAng_%s_%s_%s_%s.txt', todaydate, subCode, num2str(subAge), subGender);
 
 responses = {};
 resp = 1; %counter for responses
 
-fileID = fopen('polarresp.txt','w');
+fileID = fopen(filenametxt,'w');
 
 
-ard =[]; %dummy variable in case we are not using goggles
+
 
 
 if togglegoggle == 1;
@@ -48,20 +48,10 @@ if togglegoggle == 1;
     
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
+else
+    ard =[]; %dummy variable in case we are not using goggles
 end
 
-%% stim parameters
-
-dir = [];
-
-stimDur = 125; %ms
-
-nStims = 512;
-
-imWidth = 768;
-imHeight = 768;
-
-textcolor = [0 0 0];
 
 
 
@@ -107,7 +97,7 @@ grey_bkg = black
 
 % % % correct non-linearity from CLUT
 if ~IsWin
-    oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
+%     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 end
 
 
@@ -154,6 +144,13 @@ rightKey = KbName('RightArrow');
 space = KbName('space');
 scannertrigger = KbName('s');
 
+% define keyboards used by subject and experimenter
+% run KbQueueDemo(deviceindex) to test various indices
+deviceindexSubject = []; %possibly MRI keypad
+%can only listen to one device though...
+% deviceindexExperimenter = 11; %possibly your laptop keyboard
+
+DisableKeysForKbCheck([]) % listen for all keys at the start
 
 
 % Need mouse control for blind spot measurements
@@ -163,6 +160,32 @@ lastKeyTime = GetSecs;
 SetMouse(xCenter,yCenter,window);
 WaitSecs(.1);
 [mouseX, mouseY, buttons] = GetMouse(window);
+
+
+
+%% stim parameters
+
+% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/PA_Images/';
+dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+
+stimDur = 125; %ms
+
+nStims = 512;
+
+imWidth = 768;
+imHeight = 768;
+
+sizemultiplier = 2; %we will increase our texture by 2.
+
+baseRect = [0 0 imWidth imHeight];
+texturerectangle = CenterRectOnPointd(baseRect * sizemultiplier,...
+        xCenter, yCenter);
+
+
+
+textcolor = [0 0 0];
+
+
 
 % % %% stimuli
 % % 
@@ -195,6 +218,7 @@ try
 Screen('FillRect', window, grey) % make the whole screen grey_bkg
 DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
 vbl = Screen('Flip', window);
+disp('Loading...')
 WaitSecs(1);
 
 
@@ -204,7 +228,7 @@ for imnumber = 1:nStims
     
 %     theImageLocation = sprintf('C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/PA_Images/3x3-geocaching-logo-sticker_500_1.jpg');
 %     3x3-geocaching-logo-sticker_500_1.jpg
-    theImageLocation = sprintf('C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/PA_Images/PolAngImage_%d.png', imnumber);
+    theImageLocation = sprintf('%sPA_Images/PolAngImage_%d.png', dir,imnumber);
     % load the image from location
     [img, ~, alpha] = imread(theImageLocation);
 %     theImage(:,:,:,imnumber) = double(imread(theImageLocation));
@@ -213,19 +237,36 @@ for imnumber = 1:nStims
     texture1(imnumber) = Screen('MakeTexture', window, img);
     img(:, :, 4) = alpha;
     texture2(imnumber) = Screen('MakeTexture', window, img);
+ 
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
 %   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
     DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
+    disp(sprintf('Loading... %d',imnumber))
     vbl = Screen('Flip', window);
 end
 
 
 % load spider web
-theImageLocation = sprintf('C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/SpiderWebBackground.png');
+theImageLocation = sprintf('%sSpiderWebBackground.png',dir);
 [SpiderWeb, ~, alphaspider] = imread(theImageLocation);
 SpiderTex(1) = Screen('MakeTexture', window, SpiderWeb);
 SpiderWeb(:,:,4) = alphaspider;
 SpiderTex(2) = Screen('MakeTexture', window, SpiderWeb);
+
+%load the fixation images
+theImageLocation = sprintf('%s/fixA.png',dir);
+[fixA, ~, alphafixA] = imread(theImageLocation);
+fixATex(1) = Screen('MakeTexture', window, fixA);
+fixA(:,:,4) = alphafixA;
+fixATex(2) = Screen('MakeTexture', window, fixA);
+
+theImageLocation = sprintf('%s/fixB.png',dir);
+[fixB, ~, alphafixB] = imread(theImageLocation);
+fixBTex(1) = Screen('MakeTexture', window, fixB);
+fixB(:,:,4) = alphafixB;
+fixBTex(2) = Screen('MakeTexture', window, fixB);
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
 vbl = Screen('Flip', window); 
@@ -248,24 +289,99 @@ goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)
 
 disp('Waiting for scanner trigger...')
 
-[secs, keyCode, deltaSecs]=    KbStrokeWait;
+[secs, keyCode, deltaSecs]=    KbStrokeWait([-1]);
 
 while ~keyCode(scannertrigger) %while not trigger
-    [keyIsDown, secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+    [keyIsDown, secs, keyCode] = KbCheck([-1]);% Check the keyboard to see if a button has been pressed
 end
-
+disp('Trigger detected')
+DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
 vbl = secs; %get timestamp
-KbQueueCreate(); %start listening for key presses
-KbQueueStart();
+KbQueueCreate(deviceindexSubject); %start listening for key presses
+KbQueueStart(deviceindexSubject);
 start_time = secs;
-
+expt_start = secs;
 %% %%%%% FIX 12 s %%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Task
+curr_frame = 1;
+start_time = vbl;
+
+totalframes = 12/ifi;
+taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+
+respmade = 0;
+
+goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
 
 while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+    
+    if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+        %show alternative fix
+        if curr_frame == taskframe %if the very first frame
+            startSecs = GetSecs(); %rough onset of alternative fix
+            disp('Task!')
+        end
+        Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+        %                 disp(num2str(curr_frame))
+        %   disp(num2str(taskframe))
+        %                 disp('alternative')
+        
+    else
+        Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+        %                 disp(num2str(curr_frame))
+        %  disp(num2str(taskframe))
+        %                 disp('normal')
+    end
+    
     vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+    
+    curr_frame = curr_frame + 1;
+    
+      % record responses
+    [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+    [keyIsDown, secs, keyCode] = KbCheck([-1]);
+    pressedKeys = KbName(firstPress); %which key
+    timeSecs = firstPress(find(firstPress)); %what time
+    if pressed %report the keypress for the experimenter to see
+        % Again, fprintf will give an error if multiple keys have been pressed
+        fprintf('"%s" typed at time %.3f seconds, []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+        fprintf(fileID,'"%s" typed at time %.3f seconds []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+        RT = timeSecs - startSecs;
+        responses{resp,1}= [];
+        responses{resp,2} = 'Fix';
+        responses{resp,3} = pressedKeys;
+        responses{resp,4} = RT;
+        respmade = 1;
+    else
+        
+    end
+    % end of response recording
+    if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+        goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+        if togglegoggle == 1
+            ShutdownArd(ard,comPort);
+        end
+        %             close goggles
+        %             save any data
+        pressedKeys
+        disp('Escape this madness!!')
+        fclose(fileID);
+        sca
+        save(filename)
+    end
+end %while
+
+if ~respmade %if no response whatsoever
+    RT = NaN;
+    responses{resp,1}= [];
+    responses{resp,2} = 'Fix';
+    responses{resp,3} = 'No response';
+    responses{resp,4} = RT;
 end
+resp = resp + 1; %update resp counter
 
 %% %%%%%%% Images %%%%%%%%%%%%%%%%%%%%%%%
 
@@ -276,8 +392,27 @@ end
 % % img(:, :, 4) = alpha;
 % % texture2 = Screen('MakeTexture', w, img);
 % % 
+
+
+% --- TASK ----
+% Let's show the fix change once every 12s or so (to keep in line with
+% the fix condition task, the localizer and the main expt)
+
+% 
+curr_frame = 1;
+start_time = vbl;
+
+totalframes = 12/0.125; %96
+taskframe = round(1/0.125 + ((totalframes-(1/0.125))-1/0.125).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+TaskNo = 1;
+
+respmade = 0;
+
 for i = 1:12 %12 repetitions of the cycle
+    disp(sprintf('Cycle Number %d', i))
+    cycle_start = vbl;
     for imnumber = 1:nStims
+        stimstart = vbl;
         Screen('FillRect', window, grey) % make the whole screen grey_bkg
         Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
         
@@ -285,22 +420,194 @@ for i = 1:12 %12 repetitions of the cycle
         %         Screen('DrawTexture', window, texture1(imnumber), [], []);
         
         %         Then, the RGBA texture.
-        Screen('DrawTexture', window, texture2(imnumber), [], []);
+        Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
         
         %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
         DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
+        
+        if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
+            %show alternative fix
+            if curr_frame == taskframe %if the very first frame
+                startSecs = GetSecs();
+                disp('Task!')%rough onset of alternative fix
+            end
+            Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+            %                 disp(num2str(curr_frame))
+            %   disp(num2str(taskframe))
+            %                 disp('alternative')
+            
+        else
+            Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+            %                 disp(num2str(curr_frame))
+            %  disp(num2str(taskframe))
+            %                 disp('normal')
+        end
+        
         %     Flip to the screen
-        vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 0.2) * ifi); %flip every 125 ms
+        if mod(imnumber,2) == 0 % every 2 stims... show the stim for 1 extra frame. On average we get once every 7.5 frames
+            vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames
+        else %every 7 frames
+            vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+            % on frame 7. This is 0.116666 ms. So we underrun by 0.00833 on
+            % each frame. Every 14 frames, there is a 1 frame deficit so we
+            % show the frame again.if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
+        end
+        curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
+         stimend = vbl;
+                disp(sprintf('Time for stim: %d', stimend - stimstart));
+         
+        % record responses
+        [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+        [keyIsDown, secs, keyCode] = KbCheck([-1]);
+        pressedKeys = KbName(firstPress); %which key
+        timeSecs = firstPress(find(firstPress)); %what time
+        if pressed %report the keypress for the experimenter to see
+            % Again, fprintf will give an error if multiple keys have been pressed
+            fprintf('"%s" typed at time %.3f seconds, []  Stim  \r\n', KbName(firstPress), timeSecs - startSecs);
+            fprintf(fileID,'"%s" typed at time %.3f seconds []  Task No %d  \r\n', KbName(firstPress), timeSecs - startSecs, TaskNo);
+            RT = timeSecs - startSecs;
+            responses{resp,1}= TaskNo;
+            responses{resp,2} = 'Stim';
+            responses{resp,3} = pressedKeys;
+            responses{resp,4} = RT;
+            respmade = 1;
+        else
+            
+        end
+        % end of response recording
+        
+         if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+            goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+            if togglegoggle == 1
+                ShutdownArd(ard,comPort);
+            end
+            %             close goggles
+            %             save any data
+            pressedKeys
+            disp('Escape this madness!!')
+            fclose(fileID);
+            sca
+            save(filename)
+         end
+        
+         
+          if mod(curr_frame,96) == 0 %every 96 frames...
+            
+            if ~respmade %if no response whatsoever
+                RT = NaN;
+                responses{resp,1}= TaskNo;
+                responses{resp,2} = 'Stim';
+                responses{resp,3} = 'No response';
+                responses{resp,4} = RT;
+            end
+            resp = resp + 1; %update resp counter (do we even need this?)
+            
+            %reset curr_frame
+            curr_frame = 1;
+            %new task frame
+            taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+            %reset response
+            respmade = 0;
+            %increment task number
+            TaskNo = TaskNo+1;
+        end
+        
+        
     end %stim
+     cycle_end = vbl;
+            disp(sprintf('Time for cycle: %d', cycle_end - cycle_start));
+            
 end %cycle
 % 
 start_time = vbl;
+
+        fix_start = vbl
 %% %%% 12s fix %%%%%%%%%%%%%%%%%%
+
+% Task
+curr_frame = 1;
+start_time = vbl;
+
+totalframes = 12/ifi;
+taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+
+respmade = 0;
+
+goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+
+
 while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+    
+     if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+        %show alternative fix
+        if curr_frame == taskframe %if the very first frame
+            startSecs = GetSecs(); %rough onset of alternative fix
+            disp('Task!')
+        end
+        Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+        %                 disp(num2str(curr_frame))
+        %   disp(num2str(taskframe))
+        %                 disp('alternative')
+        
+    else
+        Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+        %                 disp(num2str(curr_frame))
+        %  disp(num2str(taskframe))
+        %                 disp('normal')
+    end
+    
     vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+    curr_frame = curr_frame +1;
+      fix_end = vbl;
+    
+    % record responses
+    [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+    [keyIsDown, secs, keyCode] = KbCheck([-1]);
+    pressedKeys = KbName(firstPress); %which key
+    timeSecs = firstPress(find(firstPress)); %what time
+    if pressed %report the keypress for the experimenter to see
+        % Again, fprintf will give an error if multiple keys have been pressed
+        fprintf('"%s" typed at time %.3f seconds, []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+        fprintf(fileID,'"%s" typed at time %.3f seconds []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+        RT = timeSecs - startSecs;
+        responses{resp,1}= [];
+        responses{resp,2} = 'Fix';
+        responses{resp,3} = pressedKeys;
+        responses{resp,4} = RT;
+        respmade = 1;
+    else
+        
+    end
+    % end of response recording
+    
+    if max(strcmp(pressedKeys,'ESCAPE')) || keycode(escapeKey)
+        goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+        if togglegoggle == 1
+            ShutdownArd(ard,comPort);
+        end
+        %             close goggles
+        %             save any data
+        pressedKeys
+        disp('Escape this madness!!')
+        fclose(fileID);
+        sca
+    end
+end %while
+
+if ~respmade %if no response whatsoever
+    RT = NaN;
+    responses{resp,1}= [];
+    responses{resp,2} = 'Fix';
+    responses{resp,3} = 'No response';
+    responses{resp,4} = RT;
 end
+resp = resp + 1; %update resp counter (do we even need this?)
+
+ disp(sprintf('Time for first fix: %d', fix_end- fix_start));
+        expt_end = vbl;
+
 
 %% the end
 DrawFormattedText(window, sprintf('The End!'), 'center', 'center', [1 0 0], [], []);
@@ -309,8 +616,20 @@ WaitSecs(2);
 
 catch ERR
     rethrow(ERR)
+    if togglegoggle == 1;
+        %Close goggles
+        % Shut down ARDUINO
+        goggles(bs_eye, 'neither', togglegoggle,ard)
+        ShutdownArd(ard,comPort);
+        disp('Arduino is off')
+    end
+    fclose(fileID);
+    save(filename)
     sca
 end
+save(filename)
+fclose(fileID);
 
+disp(sprintf('Total run time: %d', expt_end-expt_start))
 
 sca
