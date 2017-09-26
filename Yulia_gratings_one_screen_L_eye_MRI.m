@@ -1150,8 +1150,6 @@ goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
 if togglegoggle == 1
     ShutdownArd(ard,comPort);
 end
-save(filename)
-sca; fclose(fileID);
       
 catch overallerror
     goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
