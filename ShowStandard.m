@@ -26,7 +26,12 @@
             
             %show fix
             Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
-            ShowFix();
+            
+            if task
+                AlternativeShowFixRed;
+            else
+                ShowFix();
+            end
             
             % display intact at SF of 0.3 ir gratingtex(2)
             Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
