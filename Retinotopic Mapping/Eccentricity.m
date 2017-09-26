@@ -63,7 +63,7 @@ end
 PsychDefaultSetup(2);
 
 if IsWin
-    Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+%     Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
 end
 % 
 % This script calls Psychtoolbox commands available only in OpenGL-based 
@@ -167,8 +167,9 @@ WaitSecs(.1);
 
 %% stim parameters
 
-dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+dir ='D:/MRI scripts/Retinotopic Mapping/';
 
 
 stimDur = 125; %ms
@@ -294,7 +295,7 @@ try
     vbl = Screen('Flip', window);
     
     
-    goggles(bs_eye, 'both',togglegoggle) %(BS eye, viewing eye)
+    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
     
     disp('Waiting for scanner trigger...')
     
@@ -466,9 +467,13 @@ try
             
             %     Flip to the screen
             if mod(imnumber,2) == 0 % every 2 stims... show the stim for 1 extra frame
-                vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames. On ave we need 7.5 frames
+%                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames. On ave we need 7.5 frames
+%                 vbl = Screen('Flip', window, vbl + (0.13333333333/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
+                vbl = Screen('Flip', window, vbl + ((8 - 0.2)*ifi)); 
             else %every 7 frames
-                vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+%                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+%                 vbl = Screen('Flip', window, vbl + (0.116666666/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+                vbl = Screen('Flip', window, vbl + ((7 - 0.2)*ifi)); 
                 % on frame 7. This is 0.116666 ms. So we underrun by 0.00833 on
                 % each frame. Every 14 frames, there is a 1 frame deficit so we
                 % show the frame again.if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
@@ -746,7 +751,14 @@ catch ERR
     end
     sca
 end
-
+if togglegoggle == 1;
+        %Close goggles
+        % Shut down ARDUINO
+        goggles(bs_eye, 'neither', togglegoggle,ard)
+        ShutdownArd(ard,comPort);
+        disp('Arduino is off')
+       
+    end
     save(filename)
     fclose(fileID);
     
