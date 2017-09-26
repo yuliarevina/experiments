@@ -698,6 +698,122 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     end
     %show one last fix
     
+                %Show fix
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        % ADD TASK on fix pt
+
+        curr_frame = 1;
+        start_time = vbl;
+
+        totalframes = 12/ifi;
+        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+        
+        
+        respmade = 0;
+ 
+        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)       
+ 
+        time_zero = vbl;
+        if Stimulus == 1
+            startblock = vbl; %if the start of a block, record first flip of stim onset
+        end
+        
+        
+        
+        while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            
+            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                %show alternative fix
+                if curr_frame == taskframe %if the very first frame
+                    startSecs = GetSecs(); %rough onset of alternative fix
+                    disp('Task!')
+                end
+                AlternativeShowFixRed() %red
+%                 disp(num2str(curr_frame))
+                %   disp(num2str(taskframe))
+%                 disp('alternative')
+                
+            else
+                ShowFix() %white
+%                 disp(num2str(curr_frame))
+                %  disp(num2str(taskframe))
+%                 disp('normal')
+            end
+            
+            
+            
+%             ShowFix()
+            DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+            
+            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            curr_frame = curr_frame + 1; %increment frame counter
+            
+            %        then do another flip to clear this half a sec later
+            %         KbQueueStop();
+            %check for ESC key
+            
+%             vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
+%             [pressed, firstPress]=KbQueueCheck();
+%             pressedKeys = KbName(firstPress);
+            
+            % record responses
+            [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+            [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+            pressedKeys = KbName(firstPress); %which key
+            timeSecs = firstPress(find(firstPress)); %what time
+            if pressed %report the keypress for the experimenter to see
+                % Again, fprintf will give an error if multiple keys have been pressed
+                fprintf('"%s" typed at time %.3f seconds, %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                RT = timeSecs - startSecs;
+                responses{resp,1}= Sequence;
+                responses{resp,2} = 'Fix';
+                responses{resp,3} = pressedKeys;
+                responses{resp,4} = RT;
+                respmade = 1;
+            else
+               
+            end
+            % end of response recording
+            
+            
+            if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+                goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                if togglegoggle == 1
+                    ShutdownArd(ard,comPort);
+                end
+                %             close goggles
+                %             save any data
+                pressedKeys
+                disp('Escape this madness!!')
+                fclose(fileID);
+                sca
+                save(filename)
+            end
+        end %while
+        if ~respmade %if no response whatsoever
+            RT = NaN;
+            responses{resp,1}= Sequence;
+            responses{resp,2} = 'Fix';
+            responses{resp,3} = 'No response';
+            responses{resp,4} = RT;
+        end
+        resp = resp + 1; %update resp counter
+
+        time_elapsed = vbl - time_zero;
+        time_elapsed2 = vbl - startblock;
+%         time_elapsed3 = vbl - timestart;
+        disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from first flip',time_elapsed));
+        disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
+%         disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds from scannertrigg',time_elapsed3));
+       
+    
+    
+    
     expt_end = vbl;
        disp(sprintf('Total run time: %d', expt_end-expt_start))
     
