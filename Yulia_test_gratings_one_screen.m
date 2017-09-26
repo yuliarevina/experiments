@@ -242,10 +242,6 @@ frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
 % ________________________________________
 
 
-ard =[]; %dummy variable in case we are not using goggles
-
-
-
 if togglegoggle == 1;
     [ard, comPort] = InitArduino;
     disp('Arduino Initiated')
@@ -255,6 +251,8 @@ if togglegoggle == 1;
     
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
+else
+    ard =[]; %dummy variable in case we are not using goggles
 end
 
 try
@@ -328,7 +326,8 @@ KbStrokeWait;
 % Recording responses |
 % ---------------------
 
-numberofreps = 10; %how many repetitions of each type of trial?
+numberofreps = 1; %how many repetitions of each type of trial?
+nTaskTrials = 5; %number of task trials with the red fixation
 
 allcondscombos = CombVec(1:5,1:5)'; %generate all combinations of conditions and SFs, eg 1 1, 1 2, 1 3, ... 3 3, 3 4 etc
 allcondscombos(:,[1,2]) = allcondscombos(:,[2,1]); %swap columns because it's easier for me to look at that way haha
@@ -336,8 +335,21 @@ allcondscombos = repmat(allcondscombos,numberofreps,1); % multiply the combinati
 % This will be the full matrix for the whole expt for this subject (for one
 % run possibly. Depending on how we wannna split it up).
 
+%create a third column for the counterbalancing
+allcondscombos(1:size(allcondscombos,1)/2,3) = 1; %standard is first
+allcondscombos(size(allcondscombos,1)/2 + 1:end,3) = 2; %standard is second
+
 %shuffle rows
 condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditions for each subject
+
+%choose trials to show the red fix on
+taskTrials = randperm(size(allcondscombos,1),nTaskTrials); %generate 5 numbers
+taskTrials = sort(taskTrials) %sort into ascending order
+taskNo = 1;
+task = false;
+RedFix = NaN(size(allcondscombos,1), 2);
+RedFix(taskTrials,1) = 1;
+
 
 %make a subject data matrix
 % ntrials rows
@@ -346,15 +358,20 @@ condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditi
 %   2. SF (1-5)
 %   3. Response (which one was denser) 1st or 2nd
 %   4. Which eye had the control stim. Ie which eye was the FELLOW EYE (1 or 2 for L or R)
-%   5. RT using number of frames elapsed
-%   6. RT using GetSecs; %should be similar to above, just for debugging
+%   5. Standard appearance
+%   6. RT using number of frames elapsed
+%   7. RT using GetSecs; %should be similar to above, just for debugging
 %   mostly
-subjectdata = nan(size(allcondscombos,1), 6);
+subjectdata = nan(size(allcondscombos,1), 7);
 curr_response = 0; %store current response on trial n
 
 % Right eye blindspot, Left Fellow eye, Fix on the LEFT, Grating on the
     % RIGHT
-    subjectdata(:,4) = 1; % LEFT eye was the fellow eye
+    if strcmp(bs_eye, 'right')
+        subjectdata(:,4) = 1; % LEFT eye was the fellow eye
+    else
+        subjectdata(:,4) = 2; % LEFT eye was the fellow eye
+    end
     % 1 = R blindspot
     % 2 = L blindspot
     
@@ -781,6 +798,21 @@ try
     
     for ntrials = 1:length(condsorder)
                 
+        %check if this trial is a task trial
+        try
+            if (ntrials) == taskTrials(taskNo)
+                %we have a task
+                taskNo = taskNo+1; %increment task number
+                task = true;
+                disp('Red fix coming up!')
+            else
+                task = false;
+            end
+        catch %taskTrials index out of range or something
+            task = false;
+            disp('no more task')
+        end
+        
         ourtime = 0;
         incrementframe = 0;
         
@@ -789,50 +821,70 @@ try
         
         start_time = vbl;
         
+        
+        incrementframe = 0;
+        
+        thistrial = allcondscombos(condsorder(ntrials),:); %determine the trial. Conds order has the trial order. Go through it one by one until ntrials
+         
+               
+        start_time = vbl;
+        stimdurframes = round(0.8/ifi); % 48 frames on 60 hz
+        
+ %% Present STIMULUS        
+        %check the counterbalancing
+        if nexttrial(3) == 1
+            %show control first
+            ShowStandard()
+        else
+            %show comparison first
+            ShowComparison()
+        end
+        
 % _________________________________________________
-% SHOW THE CONTROL
-        goggles(bs_eye, 'fellow', togglegoggle,ard)      
-
-%         if togglegoggle == 1;
-%             ToggleArd(ard,'RightOff') % turn right lens off
-%         end
+% % % SHOW THE CONTROL
+% %         goggles(bs_eye, 'fellow', togglegoggle,ard)      
+% % 
+% % %         if togglegoggle == 1;
+% % %             ToggleArd(ard,'RightOff') % turn right lens off
+% % %         end
+% %         
+% %         while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
+% %             % Motion
+% %             shiftperframe = cyclespersecond * periods(2) * waitduration;
+% %             
+% %             % Shift the grating by "shiftperframe" pixels per frame:
+% %             % the mod'ulo operation makes sure that our "aperture" will snap
+% %             % back to the beginning of the grating, once the border is reached.
+% %             xoffset = mod(incrementframe*shiftperframe,periods(2));
+% %             %incrementframe=incrementframe+1;
+% %             
+% %             % Define shifted srcRect that cuts out the properly shifted rectangular
+% %             % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
+% %             srcRect=[0, xoffset, bar_width, xoffset + bar_length];
+% %             
+% %             
+% %             %show fix
+% %             Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
+% %             ShowFix();
+% %             
+% %             % display intact at SF of 0.3 ir gratingtex(2)
+% %             Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+% %            
+% %             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
+% % %            
+% %             incrementframe = incrementframe + 1;
+% %                     if makescreenshotsforvideo
+% %                           imageArray = Screen('GetImage', window);
+% %                           filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
+% %                           imwrite(imageArray, filenameimage);
+% %                           framenumber = framenumber+1;
+% %                     end
+% %         end    %while
+% %         time_elapsed_control = vbl - start_time;
+% %         disp(sprintf('    Time elapsed for control:  %.5f seconds using VBL - start',time_elapsed_control));
         
-        while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
-            % Motion
-            shiftperframe = cyclespersecond * periods(2) * waitduration;
-            
-            % Shift the grating by "shiftperframe" pixels per frame:
-            % the mod'ulo operation makes sure that our "aperture" will snap
-            % back to the beginning of the grating, once the border is reached.
-            xoffset = mod(incrementframe*shiftperframe,periods(2));
-            %incrementframe=incrementframe+1;
-            
-            % Define shifted srcRect that cuts out the properly shifted rectangular
-            % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-            srcRect=[0, xoffset, bar_width, xoffset + bar_length];
-            
-            
-            %show fix
-            Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
-            ShowFix();
-            
-            % display intact at SF of 0.3 ir gratingtex(2)
-            Screen('DrawTexture', window, gratingtex(2,1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
-           
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
-%            
-            incrementframe = incrementframe + 1;
-                    if makescreenshotsforvideo
-                          imageArray = Screen('GetImage', window);
-                          filenameimage = sprintf('screenshots\\myscreenshot%d.jpg', framenumber);
-                          imwrite(imageArray, filenameimage);
-                          framenumber = framenumber+1;
-                    end
-        end    %while
-        time_elapsed_control = vbl - start_time;
-        disp(sprintf('    Time elapsed for control:  %.5f seconds using VBL - start',time_elapsed_control));
-        
- % _________________________________________________
+ 
+ %% ________________________________________________
  % SHOW BLANK SCREEN FOR 500 ms
        
         % blank ISI
@@ -875,87 +927,100 @@ try
                
         start_time = vbl;
         stimdurframes = round(0.8/ifi); % 48 frames on 60 hz
+
+        
+        
+        
+ %% Present STIMULUS       
+         %check the counterbalancing
+        if nexttrial(3) == 1
+            %show Comparison
+            ShowComparison()
+        else
+            %show control
+            ShowStandard()
+        end
         
  % ___________________________________________________________________________________
- % SHOW THE COMPARISON STIM
-%         if strcmp(whicheye, 'right'); %compare strings
-%             if togglegoggle == 1;
-%                 %BS trial so open right lens
-%                 ToggleArd(ard,'LeftOff') %close left
-%             end
-%         else
-%             if togglegoggle == 1;
-%                 ToggleArd(ard,'RightOff') %close right
-%             end
-%         end
-        
-        goggles(bs_eye, whicheye, togglegoggle,ard)
-        
-        while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
-            % Motion
-            shiftperframe = cyclespersecond * periods(thistrial(2)) * waitduration;
-            
-            % Shift the grating by "shiftperframe" pixels per frame:
-            % the mod'ulo operation makes sure that our "aperture" will snap
-            % back to the beginning of the grating, once the border is reached.
-            xoffset = mod(incrementframe*shiftperframe,periods(thistrial(2)));
-            %incrementframe=incrementframe+1;
-            
-            % Define shifted srcRect that cuts out the properly shifted rectangular
-            % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
-            srcRect=[0, xoffset, bar_width, xoffset + bar_length];
-            
-                        
-            
-            ShowFix()
-            
-            
-            Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
-            
-            
-            switch thistrial(1)
-                case 1 %intact
-                    %present the grating of the SF stored in thistrial(2) to
-                    %the LEFT EYE
-                    %
-                    %we don't need to do anything else
-                case 2 %Blindspot - special case, we need to present to the other eye!
-                    %present the grating of the SF stored in thistrial(2) to
-                    %the RIGHT EYE
-                    %
-                    %we don't need to do anything else
-                case 3 %Occluded
-                    %present the grating of the SF stored in thistrial(2) to
-                    %the LEFT EYE
-                    %
-                    %pop on the occluder
-                    Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
-                    Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Expt, 3);
-                case 4 %Deleted sharp
-                    %present the grating of the SF stored in thistrial(2) to
-                    %the LEFT EYE
-                    %
-                    %grey mask
-                    Screen('FillOval', window, grey_bkg, occluderRectCentre_Expt, maxDiameter); %grey occluder
-                case 5 %Deleted fuzzy
-                    %present the grating of the SF stored in thistrial(2) to
-                    %the LEFT EYE
-%                     Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
-                    %fuzzy mask
-                    Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Expt);
-            end %switch
-            
-            Screen('DrawingFinished', window);
-            
-            % fix point
-            
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
-           
-            incrementframe = incrementframe + 1;
-            
-        end %while 
-        time_elapsed_comp = vbl - start_time;
-        disp(sprintf('    Time elapsed for comparison:  %.5f seconds using VBL - start',time_elapsed_comp));
+% %  % SHOW THE COMPARISON STIM
+% % %         if strcmp(whicheye, 'right'); %compare strings
+% % %             if togglegoggle == 1;
+% % %                 %BS trial so open right lens
+% % %                 ToggleArd(ard,'LeftOff') %close left
+% % %             end
+% % %         else
+% % %             if togglegoggle == 1;
+% % %                 ToggleArd(ard,'RightOff') %close right
+% % %             end
+% % %         end
+% %         
+% %         goggles(bs_eye, whicheye, togglegoggle,ard)
+% %         
+% %         while vbl - start_time < ((0.8/ifi - 0.2)*ifi)
+% %             % Motion
+% %             shiftperframe = cyclespersecond * periods(thistrial(2)) * waitduration;
+% %             
+% %             % Shift the grating by "shiftperframe" pixels per frame:
+% %             % the mod'ulo operation makes sure that our "aperture" will snap
+% %             % back to the beginning of the grating, once the border is reached.
+% %             xoffset = mod(incrementframe*shiftperframe,periods(thistrial(2)));
+% %             %incrementframe=incrementframe+1;
+% %             
+% %             % Define shifted srcRect that cuts out the properly shifted rectangular
+% %             % area from the texture: Essentially make a different srcRect every frame which is shifted by some amount
+% %             srcRect=[0, xoffset, bar_width, xoffset + bar_length];
+% %             
+% %                         
+% %             
+% %             ShowFix()
+% %             
+% %             
+% %             Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+% %             
+% %             
+% %             switch thistrial(1)
+% %                 case 1 %intact
+% %                     %present the grating of the SF stored in thistrial(2) to
+% %                     %the LEFT EYE
+% %                     %
+% %                     %we don't need to do anything else
+% %                 case 2 %Blindspot - special case, we need to present to the other eye!
+% %                     %present the grating of the SF stored in thistrial(2) to
+% %                     %the RIGHT EYE
+% %                     %
+% %                     %we don't need to do anything else
+% %                 case 3 %Occluded
+% %                     %present the grating of the SF stored in thistrial(2) to
+% %                     %the LEFT EYE
+% %                     %
+% %                     %pop on the occluder
+% %                     Screen('FillOval', window, white*0.5*brightness, occluderRectCentre_Expt, maxDiameter); %'white' occluder of 0.7 greyness
+% %                     Screen('FrameOval', window, [(white*0.5*brightness)/2], occluderRectCentre_Expt, 3);
+% %                 case 4 %Deleted sharp
+% %                     %present the grating of the SF stored in thistrial(2) to
+% %                     %the LEFT EYE
+% %                     %
+% %                     %grey mask
+% %                     Screen('FillOval', window, grey_bkg, occluderRectCentre_Expt, maxDiameter); %grey occluder
+% %                 case 5 %Deleted fuzzy
+% %                     %present the grating of the SF stored in thistrial(2) to
+% %                     %the LEFT EYE
+% % %                     Screen('DrawTexture', window, gratingtex(thistrial(2),1), srcRect, dstRectStim_BS_r); %gratingtex(i,1) high amplitude ie high contrast
+% %                     %fuzzy mask
+% %                     Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Expt);
+% %             end %switch
+% %             
+% %             Screen('DrawingFinished', window);
+% %             
+% %             % fix point
+% %             
+% %             vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+% %            
+% %             incrementframe = incrementframe + 1;
+% %             
+% %         end %while 
+% %         time_elapsed_comp = vbl - start_time;
+% %         disp(sprintf('    Time elapsed for comparison:  %.5f seconds using VBL - start',time_elapsed_comp));
   %_________________________________________________________
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
         try
@@ -1019,8 +1084,9 @@ try
                     subjectdata(ntrials,2) = thistrial(2); %record SF of this trial
 %                     subjectdata(ntrials,5) = numFrames*ifi; % Record RT
 %                     in secs using num of frames elapsed
-                    subjectdata(ntrials,5) = secs - starttime;
-                    subjectdata(ntrials,6) = endtime - starttime; % Record RT in secs
+                    subjectdata(ntrials,5) = nexttrial(3); %standard 1st or 2nd
+                    subjectdata(ntrials,6) = secs - starttime;
+                    subjectdata(ntrials,7) = endtime - starttime; % Record RT in secs
                     
                 end
                 
@@ -1104,6 +1170,15 @@ try
             
             [secs, keyCode, deltaSecs] = KbStrokeWait; %wait for space
             
+            if keyCode(downKey)
+                %record red fix thing
+                RedFix(ntrials,2) = 1;
+                disp('Down Key')
+            end
+            if keyIsDown
+                find(keyCode,1)
+            end
+            
             while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
                 
                 [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
@@ -1118,6 +1193,15 @@ try
                     end
                     break;
                 end
+                if keyCode(downKey)
+                    %record red fix thing
+                    RedFix(ntrials,2) = 1;
+                    disp('Down Key')
+                end
+                if keyIsDown
+                    find(keyCode,1)
+                end
+                
             end %end while. Move onto next trial
         catch whileerr
             save (filename)
