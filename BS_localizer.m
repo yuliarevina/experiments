@@ -29,7 +29,7 @@ KbName('UnifyKeyNames')
 
 % define keyboards used by subject and experimenter
 % run KbQueueDemo(deviceindex) to test various indices
-deviceindexSubject = []; %possibly MRI keypad
+deviceindexSubject = [0]; %possibly MRI keypad
 %can only listen to one device though...
 % deviceindexExperimenter = 11; %possibly your laptop keyboard
 
@@ -72,6 +72,10 @@ togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+debugmode = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -154,7 +158,7 @@ grey_bkg = black
 % Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 % % % correct non-linearity from CLUT
-if ~IsWin
+if ~IsWin || debugmode == 0
     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 end
 
@@ -222,6 +226,9 @@ WaitSecs(.1);
 
 
 %% flickering checkerboard parameters
+%for debug
+BS_center_h2 = xCenter;
+BS_center_v = yCenter;
 
 hz = 5; %flicker at 5 times per s
 nSecsPerFlicker = 1/hz;
@@ -237,6 +244,7 @@ targetPxH2 = deg2pix_YR_MRI(targetDegH2);
 targetRect = [0 0 targetPxH2 targetPxV];
 %centre on BS coords
 targetRectCentre = CenterRectOnPointd(targetRect, BS_center_h2, BS_center_v);
+% targetRectCentre = CenterRectOnPointd(targetRect, xCenter, yCenter);
 
 
 %% Stimuli types
@@ -342,7 +350,7 @@ Screen('FillOval', aperture(4), [grey grey grey 1], targetRectCentre);
 %% Fix frame
 
 % Fixation point on the RIGHT
-fp_offset = 400;
+fp_offset = 800;
 % frame
 frameSize = 900;
 
@@ -497,8 +505,9 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             
             
 %             ShowFix()
-            DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-            
+            if debugmode
+                     DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+            end
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             curr_frame = curr_frame + 1; %increment frame counter
             
@@ -638,8 +647,9 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                                 case 4
                                     goggles(bs_eye, 'both', togglegoggle,ard)
                             end
-                            
-                            DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
+                            if debugmode
+                                DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
+                            end
                             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
                             curr_frame = curr_frame + 1; %increment frame counter
                         end
@@ -747,8 +757,9 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             
             
 %             ShowFix()
-            DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-            
+            if debugmode
+                 DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+            end
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             curr_frame = curr_frame + 1; %increment frame counter
             
@@ -815,7 +826,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     
     
     expt_end = vbl;
-       disp(sprintf('Total run time: %d', expt_end-expt_start))
+    disp(sprintf('Total run time: %d', expt_end-expt_start))
     
 
     if togglegoggle == 1;
@@ -826,6 +837,6 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         disp('Arduino is off')
        
     end
-   save(filename)
+    save(filename)
     sca
     fclose(fileID);
