@@ -47,22 +47,24 @@ stim = 1;
 
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 todaydate = date;
 
-stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
-stereoMode = 4;        % 4 for split screen, 10 for two screens
+stereoModeOn = 1; %don't need this for goggles, only for the 2 screen setup
+stereoMode = 4;        % 4 for split screen and windows, 10 for two screens on linux, but can also use 4
 makescreenshotsforvideo = 0;
-
-%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+debugmode = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -155,11 +157,13 @@ grey_bkg = black
 % Open an on screen window and color it grey
 
 if stereoModeOn
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
+%     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
+    [window, windowRect] = PsychImaging('OpenWindow', 0, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
-        Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
+%         Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
+        Screen('OpenWindow', 0, 128, [], [], [], stereoMode);
     end
 else %just open one window
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey);
@@ -169,9 +173,9 @@ end
 % Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
-if ~IsWin
+if ~IsWin || debugmode == 0
 % % correct non-linearity from CLUT
-oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
+    oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
 end
 
 % Get the size of the on screen window in pixels
@@ -202,7 +206,7 @@ WaitSecs(.1);
 
 % Fixation point on the RIGHT
 
-fp_offset = 400;
+fp_offset = 800;
 
 % frame
 frameSize = 900;
@@ -259,6 +263,8 @@ if togglegoggle == 1;
         
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
+else
+    ard =[];
 end
 
 try
@@ -287,17 +293,21 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press the A and B buttons to move the flickering marker \n \n until it completely disappears for you \n \n Press C to confirm your response \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
     Screen('Flip', window);
     KbStrokeWait([-1]); 
+    if togglegoggle
     goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
+    end
 
     if ~IsWin
-        HideCursor(1,0)
+%         HideCursor(1,0)
     else
         HideCursor()
     end
     measure_BS_h_YR_1screen_MRI    %horizontal
     measure_BS_v_YR_1screen_MRI    %vertical
     measure_BS_h2_YR_1screen_MRI   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
+    if togglegoggle
     goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+    end
     ShowCursor()
 end
 
@@ -305,6 +315,7 @@ end
 %draw a blindspot oval to test its location
 oval_rect = [0 0 BS_diameter_h2 BS_diameter_v];
 oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2, BS_center_v);
+% oval_rect_centred = CenterRectOnPoint(oval_rect, xCenter, yCenter);
 
 ShowFix()
 
@@ -800,7 +811,9 @@ for block = 1:nSeqs
 %                 disp('normal')
             end %----------------------------------------------------------
             
-            DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+            if debugmode
+                DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+            end
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             curr_frame = curr_frame + 1; %increment frame counter
             
@@ -1096,7 +1109,9 @@ for block = 1:nSeqs
  
         Screen('FillRect', window, grey) % make the whole screen grey_bkg
         ShowFix()
-        DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+        if debugmode
+            DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+        end
         vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
         time_zero = vbl;
         %        then do another flip to clear this half a sec later
@@ -1152,7 +1167,9 @@ if togglegoggle == 1
 end
       
 catch overallerror
+    if togglegoggle
     goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+    end
     save(filename)
 if togglegoggle == 1
     ShutdownArd(ard,comPort);
