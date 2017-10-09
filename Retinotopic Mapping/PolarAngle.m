@@ -4,8 +4,15 @@
 % 2017 Yulia Revina, NTU, SG
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+debugmode = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+stereoModeOn = 1;
+stereoMode = 4;
 
 bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
 
@@ -63,7 +70,7 @@ end
 PsychDefaultSetup(2);
 
 if IsWin
-%     Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+    Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
 end
 % 
 % This script calls Psychtoolbox commands available only in OpenGL-based 
@@ -82,6 +89,7 @@ end
 
 screens = Screen('Screens');  % Gives (0 1) if there is an external monitor attached or just (0) for no external
 screenNumber = max(screens);  % puts stimulus on external screen
+% screenNumber = max(2);  % puts stimulus on external screen
 
 white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
 black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
@@ -96,14 +104,27 @@ grey_bkg = black
 % Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 % % % correct non-linearity from CLUT
-if ~IsWin
+if ~IsWin || debugmode == 0
 %     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 end
 
+if stereoModeOn
+%     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
+    [window, windowRect] = PsychImaging('OpenWindow', 0, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
+    leftScreenRect = windowRect;
+    rightScreenRect = windowRect;
+    if stereoMode == 10
+%         Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
+        Screen('OpenWindow', 0, 128, [], [], [], stereoMode);
+    end
+else %just open one window
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
+end
 
+% oldResolution=Screen('Resolution', 0, 3200, 900)
 
-%open screen
-[window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
+% %open screen
+% [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
  
  % % Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
@@ -165,9 +186,11 @@ WaitSecs(.1);
 
 %% stim parameters
 
-% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/PA_Images/';
+% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
-dir ='D:/MRI scripts/Retinotopic Mapping/';
+% dir ='D:/MRI scripts/Retinotopic Mapping/';
+dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
+% dir= '/media/laptop1/ACF676E0F676A9EA/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/'
 
 stimDur = 125; %ms
 
@@ -176,7 +199,7 @@ nStims = 512;
 imWidth = 768;
 imHeight = 768;
 
-sizemultiplier = 2; %we will increase our texture by 2.
+sizemultiplier = 2.5; %we will increase our texture by 2.
 
 baseRect = [0 0 imWidth imHeight];
 texturerectangle = CenterRectOnPointd(baseRect * sizemultiplier,...
@@ -217,6 +240,11 @@ try
 % theImage = ones(1,1,3,nStims); %images are in format H x W x 3 uint8
 % img = ones(1,1,3,nStims); %images are in format H x W x 3 uint8
 Screen('FillRect', window, grey) % make the whole screen grey_bkg
+Screen('FillRect', window, grey) % make the whole screen grey_bkg
+% Screen('FillRect',window, [1 0 0], [0 0 1920 1080]);
+% frameRect = CenterRect([0 0 1920 1080],windowRect);
+testrect = CenterRectOnPointd([0 0 1920 1080], xCenter, yCenter);
+Screen('FillRect',window, [1 0 0], testrect);
 DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
 vbl = Screen('Flip', window);
 disp('Loading...')
@@ -240,6 +268,7 @@ for imnumber = 1:nStims
     texture2(imnumber) = Screen('MakeTexture', window, img);
  
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    Screen('FillRect',window, [1 0 0], testrect);
 %   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
     DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
     disp(sprintf('Loading... %d',imnumber))
@@ -307,6 +336,7 @@ expt_start = secs;
 % Task
 curr_frame = 1;
 start_time = vbl;
+startSecs = GetSecs;
 
 totalframes = 12/ifi;
 taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
@@ -408,58 +438,194 @@ taskframe = round(1/0.125 + ((totalframes-(1/0.125))-1/0.125).*rand); % task can
 TaskNo = 1;
 
 respmade = 0;
+curr_time = vbl - expt_start; %last time stamp - start of expt
+requested_time = 12; %12s fix so we should be on timepoint 12.0s
 
 for i = 1:12 %12 repetitions of the cycle
     disp(sprintf('Cycle Number %d', i))
     cycle_start = vbl;
+    
     for imnumber = 1:nStims
         stimstart = vbl;
+        nflip = 0;
+        
         Screen('FillRect', window, grey) % make the whole screen grey_bkg
-        Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+                Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+                
+                %         First, the image without the alpha channel.
+                %         Screen('DrawTexture', window, texture1(imnumber), [], []);
+                
+                %         Then, the RGBA texture.
+                Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
+                
+                %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
+                if debugmode
+                    DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
+                end
+                
+                if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
+                    %show alternative fix
+                    if curr_frame == taskframe %if the very first frame
+                        startSecs = GetSecs();
+                        disp('Task!')%rough onset of alternative fix
+                    end
+                    Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+                    %                 disp(num2str(curr_frame))
+                    %   disp(num2str(taskframe))
+                    %                 disp('alternative')
+                    
+                else
+                    Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+                    %                 disp(num2str(curr_frame))
+                    %  disp(num2str(taskframe))
+                    %                 disp('normal')
+                end
         
-        %         First, the image without the alpha channel.
-        %         Screen('DrawTexture', window, texture1(imnumber), [], []);
         
-        %         Then, the RGBA texture.
-        Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
         
-        %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
-        DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
         
-        if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
-            %show alternative fix
-            if curr_frame == taskframe %if the very first frame
-                startSecs = GetSecs();
-                disp('Task!')%rough onset of alternative fix
-            end
-            Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
-            %                 disp(num2str(curr_frame))
-            %   disp(num2str(taskframe))
-            %                 disp('alternative')
-            
-        else
-            Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
-            %                 disp(num2str(curr_frame))
-            %  disp(num2str(taskframe))
-            %                 disp('normal')
-        end
+        
+        
+% % %         if mod(imnumber,2) == 0 % every 2 stims... show the stim for 1 extra frame. On average we get once every 7.5 frames
+% % %             %             vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames
+% % %             %             vbl = Screen('Flip', window, vbl + (0.1335/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
+% % %             while vbl - stimstart < (8 - 0.2)*ifi
+% % %                 
+% % %                 %show image
+% % %                 Screen('FillRect', window, grey) % make the whole screen grey_bkg
+% % %                 Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+% % %                 
+% % %                 %         First, the image without the alpha channel.
+% % %                 %         Screen('DrawTexture', window, texture1(imnumber), [], []);
+% % %                 
+% % %                 %         Then, the RGBA texture.
+% % %                 Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
+% % %                 
+% % %                 %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
+% % %                 if debugmode
+% % %                     DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
+% % %                 end
+% % %                 
+% % %                 if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
+% % %                     %show alternative fix
+% % %                     if curr_frame == taskframe %if the very first frame
+% % %                         startSecs = GetSecs();
+% % %                         disp('Task!')%rough onset of alternative fix
+% % %                     end
+% % %                     Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+% % %                     %                 disp(num2str(curr_frame))
+% % %                     %   disp(num2str(taskframe))
+% % %                     %                 disp('alternative')
+% % %                     
+% % %                 else
+% % %                     Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+% % %                     %                 disp(num2str(curr_frame))
+% % %                     %  disp(num2str(taskframe))
+% % %                     %                 disp('normal')
+% % %                 end
+% % %                 
+% % %                vbl = Screen('Flip', window, vbl + ((1 - 0.2)*ifi)); %every 8 frames. On ave we need 7.5 frames
+% % %                nflip = nflip + 1;
+% % %                
+% % %            end
+% % % 
+% % % 
+% % % 
+% % % 
+% % % 
+% % % 
+% % %         else %every 7 frames
+% % % %             vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+% % % %             vbl = Screen('Flip', window, vbl + (0.1168/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+% % %              
+% % %             while vbl - stimstart < (7 - 0.2)*ifi
+% % %                 %show image
+% % %                 Screen('FillRect', window, grey) % make the whole screen grey_bkg
+% % %                 Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+% % %                 
+% % %                 %         First, the image without the alpha channel.
+% % %                 %         Screen('DrawTexture', window, texture1(imnumber), [], []);
+% % %                 
+% % %                 %         Then, the RGBA texture.
+% % %                 Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
+% % %                 
+% % %                 %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
+% % %                 if debugmode
+% % %                     DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
+% % %                 end
+% % %                 
+% % %                 if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
+% % %                     %show alternative fix
+% % %                     if curr_frame == taskframe %if the very first frame
+% % %                         startSecs = GetSecs();
+% % %                         disp('Task!')%rough onset of alternative fix
+% % %                     end
+% % %                     Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+% % %                     %                 disp(num2str(curr_frame))
+% % %                     %   disp(num2str(taskframe))
+% % %                     %                 disp('alternative')
+% % %                     
+% % %                 else
+% % %                     Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+% % %                     %                 disp(num2str(curr_frame))
+% % %                     %  disp(num2str(taskframe))
+% % %                     %                 disp('normal')
+% % %                 end
+% % %                 vbl = Screen('Flip', window, vbl + ((1 - 0.2)*ifi));
+% % %                 nflip = nflip + 1;
+% % %             end
+% % % 
+% % % 
+% % % 
+% % % % vbl = Screen('Flip', window, vbl + ((7 - 0.2)*ifi));
+% % %             % on frame 7. This is 0.116666 ms. So we underrun by 0.00833 on
+% % %             % each frame. Every 14 frames, there is a 1 frame deficit so we
+% % %             % show the frame again.if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
+% % %         end
+% % %         
+        
+        
+       
         
         %     Flip to the screen
         if mod(imnumber,2) == 0 % every 2 stims... show the stim for 1 extra frame. On average we get once every 7.5 frames
 %             vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames
 %             vbl = Screen('Flip', window, vbl + (0.1335/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
-            vbl = Screen('Flip', window, vbl + ((8 - 0.2)*ifi)); %every 8 frames. On ave we need 7.5 frames
+            %check timing
+            curr_time = GetSecs - expt_start;
+            requested_time = requested_time + 0.125; %increment by 125 ms
+            if curr_time - requested_time > ifi %if one frame over
+                nflip = 7;
+            elseif curr_time - requested_time < -ifi %if one frame under
+                nflip = 9;
+            else
+                nflip = 8;
+            end
+
+            vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi)); %every 8 frames. On ave we need 7.5 frames
         else %every 7 frames
 %             vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
 %             vbl = Screen('Flip', window, vbl + (0.1168/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
-             vbl = Screen('Flip', window, vbl + ((7 - 0.2)*ifi));
+
+            %check timing
+            curr_time = GetSecs - expt_start;
+            requested_time = requested_time + 0.125; %increment by 125 ms
+            if curr_time - requested_time > ifi %if one frame over
+                nflip = 6;
+            elseif curr_time - requested_time < -ifi %if one frame under
+                nflip = 8;
+            else
+                nflip = 7;
+            end
+             vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi));
             % on frame 7. This is 0.116666 ms. So we underrun by 0.00833 on
             % each frame. Every 14 frames, there is a 1 frame deficit so we
             % show the frame again.if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
         end
         curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
          stimend = vbl;
-                disp(sprintf('Time for stim: %d', stimend - stimstart));
+                disp(sprintf('Time for stim: %d     N flips %d', stimend - stimstart,nflip));
+               
          
         % record responses
         [pressed, firstPress]=KbQueueCheck(deviceindexSubject);

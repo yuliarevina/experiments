@@ -7,6 +7,10 @@
 togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+debugmode = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
 
 % if ~IsWin
@@ -63,7 +67,7 @@ end
 PsychDefaultSetup(2);
 
 if IsWin
-%     Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+    Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
 end
 % 
 % This script calls Psychtoolbox commands available only in OpenGL-based 
@@ -97,7 +101,7 @@ grey_bkg = black
 
 load('CLUT_StationMRI_rgb_1920x1080_27_Jul_2017.mat', 'clut')
 % % % correct non-linearity from CLUT
-if ~IsWin
+if ~IsWin || debugmode == 0
     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 end
 
@@ -169,7 +173,8 @@ WaitSecs(.1);
 
 % dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
-dir ='D:/MRI scripts/Retinotopic Mapping/';
+% dir ='D:/MRI scripts/Retinotopic Mapping/';
+dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
 
 
 stimDur = 125; %ms
@@ -179,7 +184,7 @@ nStims = 512;
 imWidth = 768;
 imHeight = 768;
 
-sizemultiplier = 2; %we will increase our texture by 2.
+sizemultiplier = 2.5; %we will increase our texture by 2.
 
 baseRect = [0 0 imWidth imHeight];
 texturerectangle = CenterRectOnPointd(baseRect * sizemultiplier,...
@@ -426,12 +431,14 @@ try
     
     respmade = 0;
     
-    
+    curr_time = vbl - expt_start; %last time stamp - start of expt
+requested_time = 12; %12s fix so we should be on timepoint 12.0s
     
     for i = 1:8 %8 repetitions of the cycle
         disp(sprintf('Cycle Number %d', i))
         cycle_start = vbl;
         for imnumber = 1:nStims
+            nflip = 0;
             stimstart = vbl;
             Screen('FillRect', window, grey) % make the whole screen grey_bkg
             Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
@@ -443,8 +450,9 @@ try
             Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
             
             %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
-            DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
-            
+            if debugmode
+                DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
+            end
             
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
                 %show alternative fix
@@ -469,18 +477,40 @@ try
             if mod(imnumber,2) == 0 % every 2 stims... show the stim for 1 extra frame
 %                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames. On ave we need 7.5 frames
 %                 vbl = Screen('Flip', window, vbl + (0.13333333333/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
-                vbl = Screen('Flip', window, vbl + ((8 - 0.2)*ifi)); 
+                %check timing
+            curr_time = GetSecs - expt_start;
+            requested_time = requested_time + 0.125; %increment by 125 ms
+            if curr_time - requested_time > ifi %if one frame over
+                nflip = 7;
+            elseif curr_time - requested_time < -ifi %if one frame under
+                nflip = 9;
+            else
+                nflip = 8;
+            end
+
+            vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi)); %every 8 frames. On ave we need 7.5 frames 
             else %every 7 frames
 %                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
 %                 vbl = Screen('Flip', window, vbl + (0.116666666/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
-                vbl = Screen('Flip', window, vbl + ((7 - 0.2)*ifi)); 
+                %check timing
+            curr_time = GetSecs - expt_start;
+            requested_time = requested_time + 0.125; %increment by 125 ms
+            if curr_time - requested_time > ifi %if one frame over
+                nflip = 6;
+            elseif curr_time - requested_time < -ifi %if one frame under
+                nflip = 8;
+            else
+                nflip = 7;
+            end
+             vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi));
                 % on frame 7. This is 0.116666 ms. So we underrun by 0.00833 on
                 % each frame. Every 14 frames, there is a 1 frame deficit so we
                 % show the frame again.if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
             end
             curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
                 stimend = vbl;
-                disp(sprintf('Time for stim: %d', stimend - stimstart));
+                  disp(sprintf('Time for stim: %d     N flips %d', stimend - stimstart,nflip));
+               
                 
                 % record responses
                 [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
