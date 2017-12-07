@@ -83,8 +83,8 @@ for mt = 1:2*meas_trials
        end
 
        % set target Rect to mouse coordinates
-%        targetPoint = [windowRect(3)-mouseX, windowRect(4)/2];
-        targetPoint = [mouseX, windowRect(4)/2];
+       targetPoint = [windowRect(3)-mouseX, windowRect(4)/2];
+%         targetPoint = [mouseX, windowRect(4)/2];
        targetRect = CenterRectOnPoint(meas_stimRect, targetPoint(1), targetPoint(2));
        
 

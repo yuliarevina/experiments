@@ -86,15 +86,15 @@ for mt = 1:2*meas_trials
         % set target Rect to mouse coordinates
        if stereoMode == 10
            if isequal(bs_eye,'right')
-               targetPoint = [mouseX, BS_center_v_r];
+               targetPoint = [windowRect(3) - mouseX, BS_center_v_r];
            else
-               targetPoint = [mouseX, BS_center_v_l];
+               targetPoint = [windowRect(3) - mouseX, BS_center_v_l];
            end
        else % not stereo 10
            if isequal(bs_eye,'right')
-               targetPoint = [mouseX, BS_center_v_r];
+               targetPoint = [windowRect(3) - mouseX, BS_center_v_r];
            else
-               targetPoint = [mouseX, BS_center_v_l];
+               targetPoint = [windowRect(3) - mouseX, BS_center_v_l];
            end
        end
 
