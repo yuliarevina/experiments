@@ -60,7 +60,7 @@ filenametxt = sprintf('Localizer_%s_%s_%s_%s.txt', todaydate, subCode, num2str(s
 fileID = fopen(filenametxt,'w');
 
 
-stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
+stereoModeOn = 1; %don't need this for goggles, only for the 2 screen setup
 stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
 
@@ -166,11 +166,11 @@ end
 % Open an on screen window and color it grey
 
 if stereoModeOn
-    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
+    [window, windowRect] = PsychImaging('OpenWindow', 0, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
-        Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
+        Screen('OpenWindow', 0, 128, [], [], [], stereoMode);
     end
 else %just open one window
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
@@ -264,6 +264,13 @@ allstimscomboslocalizer = perms(1:4);
 % we need to choose 8 out of all poss ones
 to_use = randperm(24,8);
 
+%save sequences for future use
+seqsforfile = allstimscomboslocalizer(to_use(1:nSeq), :);
+fileIDseqname = 'sequences.txt';
+fileIDseq = fopen(fileIDseqname,'w')
+fprintf(fileIDseq,'%d', seqsforfile);
+fclose(fileIDseq);
+
 
 %% Stimuli textures
 
@@ -323,9 +330,9 @@ Screen('FillOval', aperture(2), [1 1 1 0], targetRectCentre);
 Screen('FillOval', aperture(3), [1 1 1 0], targetRectCentre);
 
 
-Screen('FrameOval', aperture(1), [1 0 0 1], occluderRectCentre_Expt);
-Screen('FrameOval', aperture(2), [1 0 0 1], occluderRectCentre_Expt);
-Screen('FrameOval', aperture(3), [1 0 0 1], occluderRectCentre_Expt);
+% Screen('FrameOval', aperture(1), [1 0 0 1], occluderRectCentre_Expt);
+% Screen('FrameOval', aperture(2), [1 0 0 1], occluderRectCentre_Expt);
+% Screen('FrameOval', aperture(3), [1 0 0 1], occluderRectCentre_Expt);
 
 
 % SURROUND
@@ -339,7 +346,7 @@ aperture(4)=Screen('OpenOffscreenwindow', window, grey);
 % In this area the noise stimulus will shine through:
 Screen('FillOval', aperture(4), [1 1 1 0], occluderRectCentre_Expt);
 
-Screen('FrameOval', aperture(4), [1 0 0 1], occluderRectCentre_Expt);
+% Screen('FrameOval', aperture(4), [1 0 0 1], occluderRectCentre_Expt);
 
 
 % MAKE GREY OVAL THE SIZE OF TARGET to make an annulus
@@ -412,7 +419,14 @@ end
 %  Intro screen  |
 %-----------------
 %show fix
+Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+Screen('FillRect', window, grey) % make the whole screen grey_bkg
+ShowFix()
 
+instructions = 'Blind spot localization \n \n Please fixate on the cross at all times \n \n Standby for Scanner Trigger';
+DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+
+Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
 Screen('FillRect', window, grey) % make the whole screen grey_bkg
 ShowFix()
 
@@ -450,7 +464,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     
     for Sequence = 1:nSeq
         disp(sprintf('Sequence %d', Sequence))
-        
+       
         currSequenceOrder = allstimscomboslocalizer(to_use(Sequence), :); % the current sequence e.g. 2 4 1 3
         
         for Stimulus = 1:nStim
@@ -482,7 +496,12 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         
         
         while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
             Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+             Screen('FillRect', window, grey) % make the whole screen grey_bkg
+             DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+              DrawFormattedText(window, sprintf('Sequence %d', Sequence), center(1), center(2) - 400, black, [],[])
             
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                 %show alternative fix
@@ -490,12 +509,18 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                     startSecs = GetSecs(); %rough onset of alternative fix
                     disp('Task!')
                 end
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                 AlternativeShowFixRed() %red
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                 AlternativeShowFixRed() %red
 %                 disp(num2str(curr_frame))
                 %   disp(num2str(taskframe))
 %                 disp('alternative')
                 
             else
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                ShowFix() %white
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
                 ShowFix() %white
 %                 disp(num2str(curr_frame))
                 %  disp(num2str(taskframe))
@@ -506,6 +531,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             
 %             ShowFix()
             if debugmode
+                     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                      DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
             end
             vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
@@ -605,7 +631,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                                 break;
                             end
                             
-                            
+                            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                             % display the basic checker
                             Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
                                 dstRect, 0, filterMode);
@@ -618,18 +644,32 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                             Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
                             
                             
+                            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                             Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
+                                dstRect, 0, filterMode);
+                             Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
+                             Screen('FrameOval', window, [1 0 0 1], occluderRectCentre_Expt);
+
                             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                                 %show alternative fix
                                 if curr_frame == taskframe %if the very first frame
                                     startSecs = GetSecs(); %rough onset of alternative fix
                                     disp('Task!')
                                 end
+                                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                                 AlternativeShowFixRed() %red
+                                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                                AlternativeShowFixRed() %red
+                                
+                                
 %                                 disp(num2str(curr_frame))
 %                                 disp(num2str(taskframe))
 %                                 disp('alternative')
                                 
                             else
+                                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                                ShowFix() %white
+                                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
                                 ShowFix() %white
 %                                 disp(num2str(curr_frame))
 %                                 disp(num2str(taskframe))
@@ -648,9 +688,12 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                                     goggles(bs_eye, 'both', togglegoggle,ard)
                             end
                             if debugmode
+                                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                                 DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
                             end
-                            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+                            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                            DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
+                          vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
                             curr_frame = curr_frame + 1; %increment frame counter
                         end
                         texturecue = fliplr(texturecue);
@@ -734,6 +777,9 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         
         
         while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
             Screen('FillRect', window, grey) % make the whole screen grey_bkg
             
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
@@ -742,13 +788,21 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                     startSecs = GetSecs(); %rough onset of alternative fix
                     disp('Task!')
                 end
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                 AlternativeShowFixRed() %red
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                AlternativeShowFixRed() %red
+                
+                
 %                 disp(num2str(curr_frame))
                 %   disp(num2str(taskframe))
 %                 disp('alternative')
                 
             else
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                 ShowFix() %white
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                AlternativeShowFixRed() %red
 %                 disp(num2str(curr_frame))
                 %  disp(num2str(taskframe))
 %                 disp('normal')
@@ -837,6 +891,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         disp('Arduino is off')
        
     end
+   
     save(filename)
     sca
     fclose(fileID);
