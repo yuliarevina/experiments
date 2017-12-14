@@ -3,7 +3,7 @@
 
 % For every condition [subjectdata(1)] we need to find when comparison was
 % rated as denser [subjetdata(3) == 2], for each SF (subjectdata(2))
-% 
+
 % for sub = 1:9
 %     addpath(sprintf('C:/Users/HSS/Documents/GitHub/experiments/Data/SUB %d', sub))
 % end
@@ -13,21 +13,27 @@ ntrialseachcond = 40;
 
 %% extract data
 conditions = nan(5,ntrialseachcond,5);
-tmp = [];
+tmp1 = [];
+tmp2 = [];
 results = nan(5,1,5);
 for i = 1:5; %conditions
-%     conditions(:,i) = find(subjectdata(:,1) == i); %find all intact trials, all BS trials...
-%     tmp(:,i) = find(subjectdata(:,1) == i);
+    %     conditions(:,i) = find(subjectdata(:,1) == i); %find all intact trials, all BS trials...
+    %     tmp(:,i) = find(subjectdata(:,1) == i);
     for j = 1:5 %SF
-%       SFs(:,j) = find(subjectdata(:,2) == j);
-%         conditions(j,:,i) = find(subjectdata(tmp(:,i),2) == j);
-%         conditions(j,:,i) = find(subjectdata(tmp(:,i),2) == j);
-%         tmp2(:,j) = find(subjectdata(:,2) == j);
-%         subjectdata(tmp,tmp2)
-        tmp = find((subjectdata(:,2) == j) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2)';
-%         conditions(j,:,i) = tmp;
-        results(j,1,i) = size(tmp,2);
-
+        %       SFs(:,j) = find(subjectdata(:,2) == j);
+        %         conditions(j,:,i) = find(subjectdata(tmp(:,i),2) == j);
+        %         conditions(j,:,i) = find(subjectdata(tmp(:,i),2) == j);
+        %         tmp2(:,j) = find(subjectdata(:,2) == j);
+        %         subjectdata(tmp,tmp2)
+        
+            tmp1 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2 & subjectdata(:,5) == 1)'; %standard first; check for trials where they answer 2nd
+            tmp2 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == i) & subjectdata(:,3) == 1 & subjectdata(:,5) == 2)'; %standard second; check for trials where they answer 1st
+        %for the mistake in counterbalancing
+%             tmp2 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == i) & subjectdata(:,3) == 1)'; %standard second; check for trials where they answer 1st
+        %         conditions(j,:,i) = tmp;
+        results(j,1,i) = size(tmp1,2)+size(tmp2,2);
+        %for the mistake in counterbalancing
+%          results(j,1,i) = size(tmp2,2);
     end
 end
 
@@ -43,6 +49,7 @@ axis([0.5 5.5 -0.5 ntrialseachcond+0.5])
 ax = findobj(gcf,'type','axes'); %Retrieve the axes to be copied
 hold off;
 
+
 colorpoints(1) = 'r';
 colorpoints(2) = 'b';
 colorpoints(3) = 'g';
@@ -54,7 +61,6 @@ markershape(2) = 's';
 markershape(3) = 'o';
 markershape(4) = 'x';
 markershape(5) = 'x';
-
 
 %% psignifit stuff
 psignifitdata = zeros(5,3,5);
@@ -74,6 +80,7 @@ psignifitdata(:,3,:) = ntrialseachcond;
 figure;
 psychometricfig = gcf;
 % ax = findobj(gcf,'type','axes'); %Retrieve the axes to be copied
+
 
 % legh = legend(ax);
 % copyobj([legh,ax],psychometricfig);
@@ -114,7 +121,7 @@ for condition = 1:5
     % plotpf(shape, h2.params.est)
     % Plot the fit to the original data
     
-    [s, t] = findslope(shape, pa.est)
+    [s, t] = findslope(shape, pa.est);
 end
 
 plot([0 5],[0.5 0.5])
@@ -151,6 +158,19 @@ figure('name','Maximum Likelihood Psychometric Function Fitting');
     hold on
 
 for condition = 1:5 %conditions
+    
+    switch condition
+        case 1
+            disp('Intact')
+        case 2
+            disp('Blindspot')
+        case 3
+            disp('Occluded')
+        case 4
+            disp('Deleted Sharp')
+        case 5
+            disp('Deleted Fuzzy')
+    end
     
     %Number of positive responses (e.g., 'yes' or 'correct' at each of the
     %   entries of 'StimLevels'
@@ -192,8 +212,19 @@ for condition = 1:5 %conditions
     %Create simple plot
     ProportionCorrectObserved=NumPos./OutOfNum;
     StimLevelsFineGrain=[min(StimLevels-0.05):max(StimLevels+0.05)./1000:max(StimLevels+0.05)];
-    ProportionCorrectModel = PF(paramsValues,StimLevelsFineGrain);
+    ProportionCorrectModel(condition,:) = PF(paramsValues,StimLevelsFineGrain);
     
+    
+    plot(StimLevels,ProportionCorrectObserved,'LineStyle', 'None','Color', colorpoints(condition),'Marker',markershape(condition),'MarkerFaceColor', 'None','markersize',10);  
+    
+    
+    
+%     searchGrid.alpha = [-1:.1:1];    %structure defining grid to
+% %   searchGrid.beta = 10.^[-1:.1:2]; %search for initial values
+% %   searchGrid.gamma = .5;
+% %   searchGrid.lambda = [0:.005:.03];
+% %   paramsFree = [1 1 0 1];
+%     
     
     disp('Goodness of Fit')
     B = 1000;
@@ -203,19 +234,20 @@ for condition = 1:5 %conditions
     disp(sprintf('pDev: %6.4f',pDev))
     disp(sprintf('N converged: %6.4f',sum(converged==1)))
     disp('--') %empty line
-    
-    
-    plot(StimLevelsFineGrain,ProportionCorrectModel,'-','color',colorpoints(condition),'linewidth',2);
-    plot(StimLevels,ProportionCorrectObserved,'LineStyle', 'None','Color', colorpoints(condition),'Marker',markershape(condition),'MarkerFaceColor', 'None','markersize',10);
-    set(gca, 'fontsize',16);
-    set(gca, 'Xtick',StimLevels);
-    axis([min(StimLevels) max(StimLevels) 0 1]);
-    xlabel('Stimulus Intensity');
-    ylabel('P(Comparison More Stripes)');
 end
+
+legend('Intact', 'BS', 'Occl', 'Del Sharp', 'Del Fuzz', 'Location', 'Southeast');
+
+for condition = 1:5
+     plot(StimLevelsFineGrain,ProportionCorrectModel(condition,:),'-','color',colorpoints(condition),'linewidth',2);
+end
+
+
 
 set(gca, 'fontsize',14);
 set(gca, 'Xtick',StimLevels);
 axis([min(StimLevels-0.05) max(StimLevels+0.05) 0 1]);
+xlabel('Stimulus Intensity - cycles per deg SF');
+ylabel('Proportion "Comparison More Stripes"');
 plot([0 5],[0.5 0.5])
 plot([0.3 0.3], [0 1], 'LineStyle', '--')
