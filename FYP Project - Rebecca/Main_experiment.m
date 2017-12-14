@@ -204,7 +204,12 @@ WaitSecs(.1);
 % fp_offset = 400;
 fp_offset = 0; %no offset, center of screen
 % frame
-frameSize = 900;
+frameSizeH = 1140;
+frameSizeV = 850;
+
+% %debug on smaller screens
+% frameSizeH = 500;
+% frameSizeV = 500;
 
 rightFixWin = Screen('OpenOffScreenWindow',window, grey, windowRect); 
 leftFixWin = Screen('OpenOffScreenWindow',window, grey, windowRect); 
@@ -224,12 +229,12 @@ ShowFix()
 
 % Two crosses in and lower
 Screen('DrawText',leftFixWin, '+', center(1), 200,white);
-Screen('DrawText',leftFixWin, '+', center(1), 1050-200,white);
+Screen('DrawText',leftFixWin, '+', center(1), 864-200,white);
 Screen('DrawText',rightFixWin, '+', center(1), 200,white);
-Screen('DrawText',rightFixWin, '+', center(1), 1050-200,white);
+Screen('DrawText',rightFixWin, '+', center(1), 864-200,white);
 
 % Frame
-frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
+frameRect = CenterRect([0 0 frameSizeH frameSizeV],windowRect);
 Screen('FrameRect',leftFixWin, [0 256 0], frameRect, 4);
 Screen('FrameRect',rightFixWin, [256 0 0], frameRect, 4);
 %DEBUG
@@ -243,10 +248,10 @@ ShowFix()
 % 
 % Two crosses in and lower
 Screen('DrawText',leftFixWin, '+', center(1), 200,white);
-Screen('DrawText',leftFixWin, '+', center(1), 1050-200,white);
+Screen('DrawText',leftFixWin, '+', center(1), 864-200,white);
 
 % Frame
-frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
+% frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
 
 
 
@@ -258,34 +263,32 @@ frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
 try
     
     
-     % Select left-eye image buffer for drawing:
-   Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-%    draw fixation dot 
-   Screen('CopyWindow', leftFixWin, window, [], leftScreenRect);	
-   
-% Screen('FillRect', leftFixWin, grey) % make the whole screen grey_bkg
-ShowFix()
-
-instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
-DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], 1);
-
-
-   % Select left-eye image buffer for drawing:
-   Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-%    draw fixation dot 
-   Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);	
-   
-ShowFix()
-
-instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
-DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], 1);
-
-
+    % Select left-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    %    draw fixation dot
+    Screen('CopyWindow', leftFixWin, window, [], leftScreenRect);
+    
+    % Screen('FillRect', leftFixWin, grey) % make the whole screen grey_bkg
+    ShowFix()
+    
+    instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
+    DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], 1);
+    
+    
+    % Select left-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    %    draw fixation dot
+    Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+    
+    ShowFix()
+    
+    instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
+    DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], 1);
 
 
-%flip to screen
-Screen('Flip', window);
-KbStrokeWait(-1);
+    %flip to screen
+    Screen('Flip', window);
+    KbStrokeWait(-1);
 
 
 
@@ -480,7 +483,7 @@ KbStrokeWait(-1);
 %make a square grating texture
 cyclesPerDeg = 0.89; 
 orientations_real = [35 40 45 50 55];
-orientations_real = [25 35 45 55 65]; %for debug
+% orientations_real = [25 35 45 55 65]; %for debug
 orientations = 360 - orientations_real; %because the image will be mirrored in our set up
 condition = [0 1]; %0 = both BS; 1 = both fellow
 maxsize= 1000; %px, for example
@@ -558,11 +561,12 @@ Stim_oval_LEFT = CenterRectOnPointd(Stim_oval_LEFT, BS_center_h2_l, BS_center_v_
 BS_oval_RIGHT = CenterRectOnPointd(BS_oval_RIGHT, BS_center_h2_r, BS_center_v_r);
 BS_oval_LEFT = CenterRectOnPointd(BS_oval_LEFT, BS_center_h2_l, BS_center_v_l);
 
-aperture(1)=Screen('OpenOffscreenwindow', window, grey);
-aperture(2)=Screen('OpenOffscreenwindow', window, grey);
+aperture(1)=Screen('OpenOffscreenwindow', window, grey); %right
+aperture(2)=Screen('OpenOffscreenwindow', window, grey); %left
 
-Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_RIGHT);
-Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT);
+% Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+%    draw fixation dot
+
 
 
 % ---------------
@@ -701,15 +705,18 @@ for trialN = 1:size(experimentalconditions,1)
     % ------------------------------
      Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
      Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-    
+     ShowFix()
      Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
      Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
-     
+     ShowFix()
      vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+     
      Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
      Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+     ShowFix()
      Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
      Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+     ShowFix()
      vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2  ) * ifi);
      
      
@@ -738,10 +745,7 @@ for trialN = 1:size(experimentalconditions,1)
     while vbl - start_time < durationGrating
         % DISPLAY STIMULUS
         
-        
-        
-       
-        
+      
         
         % RIGHT SCREEN
         
@@ -749,38 +753,51 @@ for trialN = 1:size(experimentalconditions,1)
         %    draw fixation dot
         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
         
-        if currcondition == 0 %draw BS at BS location, RIGHT BS coords on RIGHT screen
-            Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, orientation(2)) %Right screen right BS position
-            Screen('DrawTexture', window, aperture(1), [], [], 0)
-        else %fellow eye; draw BS location but on opposite screen
-            Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, orientation(2)) %Right screen left BS position
+        if currcondition == 0 %draw right BS at right BS location, RIGHT BS coords on RIGHT side of the screen
+            Screen('CopyWindow', rightFixWin, aperture(1), [], rightScreenRect); %Always Right fix frame because this is right screen
+            Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_RIGHT); %right BS aperture
+            Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, orientation(2)) % FULL GRATING %Right screen -> RIGHT BS position
+            Screen('DrawTexture', window, aperture(1), [], [], 0) %right aperture mask
+            ShowFix()
+        else %fellow eye; draw left BS at left side (but still on right screen)
+            Screen('CopyWindow', rightFixWin, aperture(2), [], rightScreenRect); %Always Right fix frame because this is right screen
+            Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT); %Left BS location
+            Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, orientation(2)) % FULL GRATING %Right screen -> LEFT side for BS position
             Screen('DrawTexture', window, aperture(2), [], [], 0)
+            ShowFix()
         end
         
-%         Screen('FillOval', window, [1 0 0], BS_oval_RIGHT);
-        ShowFix()
-        Screen('TextSize', window, 18);
-        Screen('DrawText',window, '+', center(1), 200,white);
-        Screen('DrawText',window, '+', center(1), 1050-200,white);
+%       Screen('FillOval', window, [1 0 0], BS_oval_RIGHT);
+%         ShowFix()
+%         Screen('TextSize', window, 18);
+%         Screen('DrawText',window, '+', center(1), 200,white);
+%         Screen('DrawText',window, '+', center(1), 1050-200,white);
         
         %LEFT SCREEN
         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         % Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);%    draw stereo fusion helper lines
         
-        if currcondition == 0 %BS condition, LEFT BS on LEFT SCREEEN
+        if currcondition == 0 %BS condition, LEFT BS on LEFT side and screen
+            Screen('CopyWindow', leftFixWin, aperture(2), [], rightScreenRect); %always left fix frame
+            
+            Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT);   %left BS aperture         
             Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, orientation(1)) %left screen left BS position
-            Screen('DrawTexture', window, aperture(2), [], [], 0)
-        else %Fellow eye condition; LEFT BS on RIGHT screen
-            Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, orientation(1)) %left screen right BS position
-            Screen('DrawTexture', window, aperture(1), [], [], 0)
+            Screen('DrawTexture', window, aperture(2), [], [], 0) %show aperture
+            ShowFix()
+        else %Fellow eye condition; RIGHT BS on Right side but still left screen
+            Screen('CopyWindow', leftFixWin, aperture(1), [], rightScreenRect); %always left fix frame
+            Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_RIGHT); %right BS aperture
+            Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, orientation(1)) %left screen RIGHT BS position
+            Screen('DrawTexture', window, aperture(1), [], [], 0) %show aperture
+            ShowFix()
         end
         
 %         Screen('FillOval', window, [1 0 0], BS_oval_LEFT);
-        ShowFix()
-        % Two crosses in and lower
-        Screen('TextSize', window, 18);
-        Screen('DrawText',window, '+', center(1), 200,white);
-        Screen('DrawText',window, '+', center(1), 1050-200,white);
+%         ShowFix()
+%         % Two crosses in and lower
+%         Screen('TextSize', window, 18);
+%         Screen('DrawText',window, '+', center(1), 200,white);
+%         Screen('DrawText',window, '+', center(1), 1050-200,white);
         
         
         vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
@@ -790,7 +807,7 @@ for trialN = 1:size(experimentalconditions,1)
 %     KbStrokeWait(-1);
     
     trial_time = vbl-start_time;
-    disp(sprintf('Stim duration: %f', trial_time))
+%     disp(sprintf('Stim duration: %f', trial_time))
     
     
     start_time = vbl;
@@ -820,9 +837,9 @@ for trialN = 1:size(experimentalconditions,1)
             
 %             Screen('FillOval', window, [1 0 0], BS_oval_RIGHT);
             ShowFix()
-            Screen('TextSize', window, 18);
-            Screen('DrawText',window, '+', center(1), 200,white);
-            Screen('DrawText',window, '+', center(1), 1050-200,white);
+%             Screen('TextSize', window, 18);
+%             Screen('DrawText',window, '+', center(1), 200,white);
+%             Screen('DrawText',window, '+', center(1), 1050-200,white);
             
             
             % LEFT SCREEN
@@ -840,10 +857,10 @@ for trialN = 1:size(experimentalconditions,1)
             
 %             Screen('FrameOval', window, [1 0 0], BS_oval_LEFT, 10); %BS shaped oval, for debugging
             ShowFix()
-            % Two crosses in and lower
-            Screen('TextSize', window, 18);
-            Screen('DrawText',window, '+', center(1), 200,white);
-            Screen('DrawText',window, '+', center(1), 1050-200,white);
+%             % Two crosses in and lower
+%             Screen('TextSize', window, 18);
+%             Screen('DrawText',window, '+', center(1), 200,white);
+%             Screen('DrawText',window, '+', center(1), 1050-200,white);
             
             vbl = Screen('Flip', window, vbl + (durationMask/5/ifi - 0.2  ) * ifi);
             
@@ -858,7 +875,7 @@ for trialN = 1:size(experimentalconditions,1)
     % KbStrokeWait(-1);
     
     mask_time = vbl - start_time;
-    disp(sprintf('Mask duration: %f', mask_time))
+%     disp(sprintf('Mask duration: %f', mask_time))
     
     %------------------------
     % Make response
@@ -920,9 +937,17 @@ for trialN = 1:size(experimentalconditions,1)
      
      
      if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
-         Screen('FillRect', window, grey) % make the whole screen grey
+         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
+%          Screen('FillRect', window, grey) % make the whole screen grey
          messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', trialN, length(condsorder));
-         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],[]);
+         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+         
+         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
+         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', trialN, length(condsorder));
+         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+
          Screen('Flip', window);
          
          while ~keyCode(upKey)

@@ -1,6 +1,6 @@
 % Analysis script
 
-ntrialseachcond = 50;
+ntrialseachcond = 5;
 
 
 %% extract data
@@ -132,7 +132,7 @@ for condswitch = 1:2 %conditions
     %Parameter grid defining parameter space through which to perform a
     %brute-force search for values to be used as initial guesses in iterative
     %parameter search.
-    searchGrid.alpha = 0.25:.001:.45; %PSE
+    searchGrid.alpha = 25:.001:65; %PSE
     searchGrid.beta = logspace(0,1,101); %slope
     searchGrid.gamma = 0.0;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
     searchGrid.lambda = 0.02;  %ditto % lapse rate, finger error, upper asympt
