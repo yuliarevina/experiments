@@ -186,10 +186,10 @@ WaitSecs(.1);
 
 %% stim parameters
 
-% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir ='D:/MRI scripts/Retinotopic Mapping/';
-dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
+% dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
 % dir= '/media/laptop1/ACF676E0F676A9EA/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/'
 
 stimDur = 125; %ms
@@ -236,6 +236,9 @@ nFrames2wait4nextStim = stimDur/1000/ifi;
 try
 %% stimuli
 
+
+Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+
 %load the images
 % theImage = ones(1,1,3,nStims); %images are in format H x W x 3 uint8
 % img = ones(1,1,3,nStims); %images are in format H x W x 3 uint8
@@ -244,8 +247,23 @@ Screen('FillRect', window, grey) % make the whole screen grey_bkg
 % Screen('FillRect',window, [1 0 0], [0 0 1920 1080]);
 % frameRect = CenterRect([0 0 1920 1080],windowRect);
 testrect = CenterRectOnPointd([0 0 1920 1080], xCenter, yCenter);
+% testrect = CenterRectOnPointd([0 0 1600 900], xCenter, yCenter);
 Screen('FillRect',window, [1 0 0], testrect);
+Screen('FrameRect',window, [1 1 0], testrect, 30);
 DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
+
+
+Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+Screen('FillRect', window, grey) % make the whole screen grey_bkg
+Screen('FillRect', window, grey) % make the whole screen grey_bkg
+% Screen('FillRect',window, [1 0 0], [0 0 1920 1080]);
+% frameRect = CenterRect([0 0 1920 1080],windowRect);
+testrect = CenterRectOnPointd([0 0 1920 1080], xCenter, yCenter);
+Screen('FillRect',window, [1 0 0], testrect);
+Screen('FrameRect',window, [1 1 0], testrect, 30);
+DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
+
+
 vbl = Screen('Flip', window);
 disp('Loading...')
 WaitSecs(1);
@@ -267,11 +285,23 @@ for imnumber = 1:nStims
     img(:, :, 4) = alpha;
     texture2(imnumber) = Screen('MakeTexture', window, img);
  
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     Screen('FillRect',window, [1 0 0], testrect);
+    Screen('FrameRect',window, [1 1 0], testrect, 30);
 %   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
     DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
     disp(sprintf('Loading... %d',imnumber))
+    
+    
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    Screen('FillRect',window, [1 0 0], testrect);
+    Screen('FrameRect',window, [1 1 0], testrect, 30);
+%   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
+    DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
+    
+    
     vbl = Screen('Flip', window);
 end
 
@@ -297,7 +327,9 @@ fixB(:,:,4) = alphafixB;
 fixBTex(2) = Screen('MakeTexture', window, fixB);
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
+Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
 DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
 vbl = Screen('Flip', window); 
     
@@ -305,9 +337,14 @@ WaitSecs(2);
     
     
 %% present instructions and wait for trigger
+Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
 Screen('FillRect', window, grey) % make the whole screen grey_bkg
 
 instructions = 'Please fixate at the center at all times \n \n Press with index finger when you see color change \n \n Standby for Scanner Trigger';
+DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+
+Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+Screen('FillRect', window, grey) % make the whole screen grey_bkg
 DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 %flip to screen
@@ -345,9 +382,19 @@ respmade = 0;
 
 goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
 
+stim_dur_for_debug = NaN;
+nflips_for_debug = NaN;
+
 while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+    
+    
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+    
     
     if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
         %show alternative fix
@@ -355,12 +402,18 @@ while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
             startSecs = GetSecs(); %rough onset of alternative fix
             disp('Task!')
         end
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
         %                 disp(num2str(curr_frame))
         %   disp(num2str(taskframe))
         %                 disp('alternative')
         
     else
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
         %                 disp(num2str(curr_frame))
         %  disp(num2str(taskframe))
@@ -449,6 +502,7 @@ for i = 1:12 %12 repetitions of the cycle
         stimstart = vbl;
         nflip = 0;
         
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
         Screen('FillRect', window, grey) % make the whole screen grey_bkg
                 Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
                 
@@ -459,6 +513,14 @@ for i = 1:12 %12 repetitions of the cycle
                 Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
                 
                 %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
+                
+                
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
+                Screen('FillRect', window, grey) % make the whole screen grey_bkg
+                Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+                Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
+                DrawFormattedText(window, sprintf('Time for prev stim: %d     N flips %d /n /n Cycle : %d', stim_dur_for_debug,nflips_for_debug,i), 'center', 'center', [1 0 0], [], []);
+                
                 if debugmode
                     DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
                 end
@@ -469,12 +531,19 @@ for i = 1:12 %12 repetitions of the cycle
                         startSecs = GetSecs();
                         disp('Task!')%rough onset of alternative fix
                     end
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
                     Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
+                    Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+                    
                     %                 disp(num2str(curr_frame))
                     %   disp(num2str(taskframe))
                     %                 disp('alternative')
                     
                 else
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                    Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
                     Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
                     %                 disp(num2str(curr_frame))
                     %  disp(num2str(taskframe))
@@ -624,7 +693,11 @@ for i = 1:12 %12 repetitions of the cycle
         end
         curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
          stimend = vbl;
-                disp(sprintf('Time for stim: %d     N flips %d', stimend - stimstart,nflip));
+%          Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
+         disp(sprintf('Time for stim: %d     N flips %d', stimend - stimstart,nflip));
+         stim_dur_for_debug = stimend - stimstart;
+         nflips_for_debug = nflip;
+         DrawFormattedText(window, sprintf('Time for prev stim: %d     N flips %d', stimend - stimstart,nflip), 'center', 'center', textcolor, [], []);
                
          
         % record responses
@@ -708,6 +781,12 @@ goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
 
 
 while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+    
+    
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     Screen('FillRect', window, grey) % make the whole screen grey_bkg
     Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
     
@@ -717,12 +796,18 @@ while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
             startSecs = GetSecs(); %rough onset of alternative fix
             disp('Task!')
         end
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
         %                 disp(num2str(curr_frame))
         %   disp(num2str(taskframe))
         %                 disp('alternative')
         
-    else
+     else
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
         %                 disp(num2str(curr_frame))
         %  disp(num2str(taskframe))
