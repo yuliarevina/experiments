@@ -42,7 +42,7 @@ togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 0; %show the debug bars at the start?
+Demo = 1; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -53,8 +53,8 @@ distance2screen = 42; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 
-brightness = 0.1;
-% brightness = 0.7; % for debugging
+% brightness = 0.1;
+brightness = 0.7; % for debugging
 textcolor = [0 0 0];
 
 % timing
@@ -269,7 +269,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
 %flip to screen
 Screen('Flip', window);
-KbStrokeWait;
+KbStrokeWait(-1);
 
 %% -----------------
 % Measure blind spot if we dont have the measurements already
@@ -320,7 +320,7 @@ else
 end
 
 Screen('Flip', window);
-KbStrokeWait;
+KbStrokeWait(-1);
 
 %% --------------------
 % Recording responses |
@@ -628,14 +628,14 @@ if Demo == 1
             for i = 1:5
                 
                 % Motion
-                shiftperframe = cyclespersecond * periods(i) * waitduration;
+                shiftperframe = cyclespersecond * periods(5) * waitduration;
                 
                 
                 % Shift the grating by "shiftperframe" pixels per frame:
                 % the mod'ulo operation makes sure that our "aperture" will snap
                 % back to the beginning of the grating, once the border is reached.
                 %             xoffset = mod(incrementframe*shiftperframe,periods(i));
-                xoffset = mod(1*shiftperframe,periods(i));
+                xoffset = mod(1*shiftperframe,periods(5));
                 % incrementframe=incrementframe+1;
                 
                 
@@ -645,7 +645,7 @@ if Demo == 1
                 
                 %
                 
-                Screen('DrawTexture', window, gratingtex(i,1), srcRect, dstRect(i, :)); %gratingtex(i,1) high amplitude ie high contrast
+                Screen('DrawTexture', window, gratingtex(5,1), srcRect, dstRect(i, :)); %gratingtex(i,1) high amplitude ie high contrast
                 %put on the occluders
                 if i >= 3 || i <= 5
                     %then put on masks on the last 3 stims (1st is intact, 2nd is BS, 3rd is occluded, 4th & 5th is deleted sharp and fuzzy)
@@ -742,7 +742,7 @@ try
     DrawFormattedText(window, 'Please fixate on the cross at all times... \n \n Press any key when you''re ready... \n \n then SPACE to start the trial', 'center', 'center', black,[],[]);
     Screen('Flip', window);
     
-    KbStrokeWait;
+    KbStrokeWait(-1);
 %     
 %     ShowFix();
 %     vbl = Screen('Flip', window);
@@ -793,7 +793,7 @@ try
     ShowFix()
     Screen('Flip', window);
 %     
-    KbStrokeWait;
+    KbStrokeWait(-1);
     
     
     for ntrials = 1:length(condsorder)
@@ -1057,7 +1057,7 @@ try
                 end
                 %
                 
-                [keyIsDown,secs, keyCode] = KbCheck;%
+                [keyIsDown,secs, keyCode] = KbCheck(-1);%
                 
                 % leftKey = KbName('LeftArrow');
                 % rightKey = KbName('RightArrow');
@@ -1168,7 +1168,7 @@ try
             % executed
 %             save (filename)
             
-            [secs, keyCode, deltaSecs] = KbStrokeWait; %wait for space
+            [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
             
             if keyCode(downKey)
                 %record red fix thing
@@ -1181,7 +1181,7 @@ try
             
             while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
                 
-                [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+                [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
                 %
                 if keyCode(escapeKey)
                     save (filename)
