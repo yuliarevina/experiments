@@ -3,8 +3,12 @@
 
 % For every condition [subjectdata(1)] we need to find when comparison was
 % rated as denser [subjetdata(3) == 2], for each SF (subjectdata(2))
+% 
+% for sub = 1:9
+%     addpath(sprintf('C:/Users/HSS/Documents/GitHub/experiments/Data/SUB %d', sub))
+% end
 
-ntrialseachcond = 120;
+ntrialseachcond = 40;
 
 
 %% extract data
@@ -39,6 +43,19 @@ axis([0.5 5.5 -0.5 ntrialseachcond+0.5])
 ax = findobj(gcf,'type','axes'); %Retrieve the axes to be copied
 hold off;
 
+colorpoints(1) = 'r';
+colorpoints(2) = 'b';
+colorpoints(3) = 'g';
+colorpoints(4) = 'k';
+colorpoints(5) = 'c';
+
+markershape(1) = 's';
+markershape(2) = 's';
+markershape(3) = 'o';
+markershape(4) = 'x';
+markershape(5) = 'x';
+
+
 %% psignifit stuff
 psignifitdata = zeros(5,3,5);
 psignifitdata(1,1,:) = 0.25;
@@ -57,17 +74,6 @@ psignifitdata(:,3,:) = ntrialseachcond;
 figure;
 psychometricfig = gcf;
 % ax = findobj(gcf,'type','axes'); %Retrieve the axes to be copied
-colorpoints(1) = 'r';
-colorpoints(2) = 'b';
-colorpoints(3) = 'g';
-colorpoints(4) = 'k';
-colorpoints(5) = 'c';
-
-markershape(1) = 's';
-markershape(2) = 's';
-markershape(3) = 'o';
-markershape(4) = 'x';
-markershape(5) = 'x';
 
 % legh = legend(ax);
 % copyobj([legh,ax],psychometricfig);
@@ -94,12 +100,12 @@ for condition = 1:5
     % n intervals corresponds to the space between the choices I think, runs is
     % how many bootstrap fittings you want to do
     
-    outputPrefs = batch('write_pa', 'pa', 'write_th', 'th','write_st','st');
+    outputPrefs = batch('write_pa', 'pa', 'write_th', 'th','write_st','st', 'write_sl', 'sl');
     % outputPrefs = batch('params', 'pa');
     % this just chooses what you want out of it - I wanted thresholds and
     % errors
     
-    h2 = psignifit(psignifitdata(:,:,condition), [prefs outputPrefs]);
+    h2(condition,:) = psignifit(psignifitdata(:,:,condition), [prefs outputPrefs]);
     % h2 = pfit(data, [prefs]);
     % h2 = pfit(data, 'shape', shape, 'n_intervals', 1, 2000)
     % this will output it and work out the curve
@@ -107,6 +113,8 @@ for condition = 1:5
 %     plot1(4) = plotpf(shape, pa.est, 'Color', colorpoints(condition), 'Parent', axes1);
     % plotpf(shape, h2.params.est)
     % Plot the fit to the original data
+    
+    [s, t] = findslope(shape, pa.est)
 end
 
 plot([0 5],[0.5 0.5])
@@ -132,3 +140,82 @@ plot([0.3 0.3], [0 1], 'LineStyle', '--')
 % copyobj([legh,ax],newfig);
 
 hold off;
+
+%% palamedes analysis
+
+disp ('Palamedes...')
+%Stimulus intensities
+StimLevels = [0.25 0.30 0.35 0.40 0.45]; 
+figure('name','Maximum Likelihood Psychometric Function Fitting');
+    axes
+    hold on
+
+for condition = 1:5 %conditions
+    
+    %Number of positive responses (e.g., 'yes' or 'correct' at each of the
+    %   entries of 'StimLevels'
+    NumPos = [results(1,:,condition) results(2,:,condition) results(3,:,condition) results(4,:,condition) results(5,:,condition)];
+    
+    %Number of trials at each entry of 'StimLevels'
+    OutOfNum = [ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond];
+    
+    
+    
+    %Use the Logistic function
+    PF = @PAL_Logistic;
+    %@PAL_Logistic;  %Alternatives: PAL_Gumbel, PAL_Weibull,
+    %PAL_Quick, PAL_logQuick,
+    %PAL_CumulativeNormal, PAL_HyperbolicSecant
+    
+    %Threshold and Slope are free parameters, guess and lapse rate are fixed
+    paramsFree = [1 1 0 0];  %1: free parameter, 0: fixed parameter
+    
+    %Parameter grid defining parameter space through which to perform a
+    %brute-force search for values to be used as initial guesses in iterative
+    %parameter search.
+    searchGrid.alpha = 0.25:.001:.45; %PSE
+    searchGrid.beta = logspace(0,1,101); %slope
+    searchGrid.gamma = 0.0;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
+    searchGrid.lambda = 0.02;  %ditto % lapse rate, finger error, upper asympt
+    
+    %Perform fit
+    disp('Fitting function.....');
+    [paramsValues LL exitflag] = PAL_PFML_Fit(StimLevels,NumPos, ...
+        OutOfNum,searchGrid,paramsFree,PF);
+    
+    disp('done:')
+    message = sprintf('Threshold estimate: %6.4f',paramsValues(1));
+    disp(message);
+    message = sprintf('Slope estimate: %6.4f\r',paramsValues(2));
+    disp(message);
+    
+    %Create simple plot
+    ProportionCorrectObserved=NumPos./OutOfNum;
+    StimLevelsFineGrain=[min(StimLevels-0.05):max(StimLevels+0.05)./1000:max(StimLevels+0.05)];
+    ProportionCorrectModel = PF(paramsValues,StimLevelsFineGrain);
+    
+    
+    disp('Goodness of Fit')
+    B = 1000;
+    [Dev pDev DevSim converged] = PAL_PFML_GoodnessOfFit(StimLevels, NumPos, OutOfNum, paramsValues, paramsFree, B, PF,'searchGrid', searchGrid);
+  
+    disp(sprintf('Dev: %6.4f',Dev))
+    disp(sprintf('pDev: %6.4f',pDev))
+    disp(sprintf('N converged: %6.4f',sum(converged==1)))
+    disp('--') %empty line
+    
+    
+    plot(StimLevelsFineGrain,ProportionCorrectModel,'-','color',colorpoints(condition),'linewidth',2);
+    plot(StimLevels,ProportionCorrectObserved,'LineStyle', 'None','Color', colorpoints(condition),'Marker',markershape(condition),'MarkerFaceColor', 'None','markersize',10);
+    set(gca, 'fontsize',16);
+    set(gca, 'Xtick',StimLevels);
+    axis([min(StimLevels) max(StimLevels) 0 1]);
+    xlabel('Stimulus Intensity');
+    ylabel('P(Comparison More Stripes)');
+end
+
+set(gca, 'fontsize',14);
+set(gca, 'Xtick',StimLevels);
+axis([min(StimLevels-0.05) max(StimLevels+0.05) 0 1]);
+plot([0 5],[0.5 0.5])
+plot([0.3 0.3], [0 1], 'LineStyle', '--')

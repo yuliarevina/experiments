@@ -13,7 +13,9 @@ flickInd = 0;
 Screen('TextSize', window, 30);
 %% 
 for mt = 1:2*meas_trials    
-%     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    % draw fixation dot
+    Screen('CopyWindow', leftFixWin, window, [], windowRect);
     if mt <= meas_trials
         Screen('TextSize', window, 30);
         DrawFormattedText(window,'INNER',nx,'center',black,[],[]);
@@ -24,6 +26,21 @@ for mt = 1:2*meas_trials
         Screen('TextSize', window, 30);
         DrawFormattedText(window,'OUTER',nx,'center',black,[],[]); 
     end
+    
+    Screen('SelectStereoDrawBuffer', window, 1);  %Right
+    % draw fixation dot
+    Screen('CopyWindow', rightFixWin, window, [], windowRect);
+    if mt <= meas_trials
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'INNER',nx,'center',black,[],[]);
+    elseif mt == meas_trials+1
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'OUTER',nx,'center',[1 0 0],[],[]); % red
+    elseif mt < meas_trials*2+1;
+        Screen('TextSize', window, 30);
+        DrawFormattedText(window,'OUTER',nx,'center',black,[],[]); 
+    end
+    
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right
 %     if mt <= meas_trials
 %         DrawFormattedText(window,'INNER',500,400,white,[],1);
@@ -32,6 +49,15 @@ for mt = 1:2*meas_trials
 %     end
     vbl = Screen('Flip',window);
 %     GetChar;
+
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    % draw fixation dot
+    Screen('CopyWindow', leftFixWin, window, [], windowRect);
+
+    Screen('SelectStereoDrawBuffer', window, 1);  %Right
+    % draw fixation dot
+    Screen('CopyWindow', rightFixWin, window, [], windowRect);
+
     vbl = Screen('Flip',window, vbl+2);
     lastFlick = vbl;
     buttons = zeros(size(buttons));
@@ -57,37 +83,38 @@ for mt = 1:2*meas_trials
        end
 
        % set target Rect to mouse coordinates
-%        targetPoint = [windowRect(3)-mouseX, windowRect(4)/2];
-        targetPoint = [mouseX, windowRect(4)/2];
+       targetPoint = [windowRect(3)-mouseX, windowRect(4)/2];
+%         targetPoint = [mouseX, windowRect(4)/2];
        targetRect = CenterRectOnPoint(meas_stimRect, targetPoint(1), targetPoint(2));
        
 
-       % FLIP 
-       vbl = Screen('Flip', window);
+       
 
        % Select left-eye image buffer for drawing:
-%        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+       Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
 
            % draw fixation dot 
-%            Screen('CopyWindow', leftFixWin, window, [], windowRect);	  
+           Screen('CopyWindow', leftFixWin, window, [], leftScreenRect);
+           ShowFix()
 
            if isequal(bs_eye,'left')
                 % draw fixation dot 
-                ShowFix()
+%                 ShowFix()
 %                Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
           
            end
            
 %        % Select right-eye image buffer for drawing:
-%        Screen('SelectStereoDrawBuffer', window, 1);   %RIGHT
+       Screen('SelectStereoDrawBuffer', window, 1);   %RIGHT
 
            % draw fixation dot 
-%            Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);	  
-           
+           Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);	  
+           ShowFix()
+
            if isequal(bs_eye,'right')
                 % draw fixation dot 
-                ShowFix()
+%                 ShowFix()
 %                Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,black);
                Screen('FillRect', window, flickCol(flickInd+1), targetRect);
            end
@@ -110,24 +137,45 @@ for mt = 1:2*meas_trials
            sca
           break;
        end
-      
+     % FLIP 
+       vbl = Screen('Flip', window); 
     end
+     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    % draw fixation dot
+    Screen('CopyWindow', leftFixWin, window, [], windowRect);
+
+    Screen('SelectStereoDrawBuffer', window, 1);  %Right
+    % draw fixation dot
+    Screen('CopyWindow', rightFixWin, window, [], windowRect);
     vbl = Screen('Flip',window);
     meas_positions_h(mt) = targetPoint(1);
     raw_coords_h(mt) = mouseX;
 end;
 
-%%
-inner_h = meas_positions_h(1:meas_trials)
-outer_h = meas_positions_h(meas_trials+1:end)
-figure;
-plot(1:meas_trials, inner_h, 1:meas_trials, outer_h);
-BS_center_h = mean(meas_positions_h)
-%mean(fix_cord1) is probably a BUG because it has both x and y coordinates
-% in_deg_h = pix2deg_YR(BS_center_h-mean(fix_cord1))
-BS_diameter_h = abs(mean(inner_h) - mean(outer_h))
-in_deg_h = pix2deg_YR(BS_diameter_h)
-title('horizontal');
+%% save data
+if isequal(bs_eye,'right')
+    inner_h_r = meas_positions_h(1:meas_trials)
+    outer_h_r = meas_positions_h(meas_trials+1:end)
+    figure;
+    plot(1:meas_trials, inner_h_r, 1:meas_trials, outer_h_r);
+    BS_center_h_r = mean(meas_positions_h)
+    %mean(fix_cord1) is probably a BUG because it has both x and y coordinates
+    % in_deg_h = pix2deg_YR(BS_center_h-mean(fix_cord1))
+    BS_diameter_h_r = abs(mean(inner_h_r) - mean(outer_h_r))
+    in_deg_h_r = pix2deg_YR(BS_diameter_h_r)
+    title('horizontal right');
+else
+    inner_h_l = meas_positions_h(1:meas_trials)
+    outer_h_l = meas_positions_h(meas_trials+1:end)
+    figure;
+    plot(1:meas_trials, inner_h_l, 1:meas_trials, outer_h_l);
+    BS_center_h_l = mean(meas_positions_h)
+    %mean(fix_cord1) is probably a BUG because it has both x and y coordinates
+    % in_deg_h = pix2deg_YR(BS_center_h-mean(fix_cord1))
+    BS_diameter_h_l = abs(mean(inner_h_l) - mean(outer_h_l))
+    in_deg_h_l = pix2deg_YR(BS_diameter_h_l)
+    title('horizontal left');
+end
 
 
 
