@@ -61,7 +61,7 @@ for mt = 1:2*meas_trials
     while exitDemo == false
         
         % Check the keyboard to see if a button has been pressed
-        [keyIsDown,secs, keyCode] = KbCheck(-1);
+        [keyIsDown,secs, keyCode] = KbCheck([-1]);
         
         % Depending on the button press, either move ths position of the square
         % or exit the demo
