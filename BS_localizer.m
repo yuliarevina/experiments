@@ -14,13 +14,30 @@
 % Stim 4 - Surr both
 
 
-responses = {};
-resp = 1; %counter for responses
+%%%% STEREO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
+stereoMode = 4;        % 4 for split screen, 10 for two screens
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+% goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
+goggledelay = 0.000 %seconds
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% if ~IsWin
-    devices = PsychHID('Devices');
-% end
+%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%% DEBUG ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+debugmode = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+devices = PsychHID('Devices');
 keyboardind = GetKeyboardIndices();
 mouseind = GetMouseIndices();
 
@@ -29,7 +46,12 @@ KbName('UnifyKeyNames')
 
 % define keyboards used by subject and experimenter
 % run KbQueueDemo(deviceindex) to test various indices
-deviceindexSubject = [0]; %possibly MRI keypad
+if IsWin
+    deviceindexSubject = [0]; %possibly MRI keypad
+else
+    deviceindexSubject = []; %possibly MRI keypad
+end
+    
 %can only listen to one device though...
 % deviceindexExperimenter = 11; %possibly your laptop keyboard
 
@@ -44,6 +66,8 @@ scannertrigger = KbName('s');
 
 DisableKeysForKbCheck([]); % listen for all keys at the start
 
+responses = {};
+resp = 1; %counter for responses
 
 
 
@@ -59,27 +83,11 @@ filename = sprintf('Localizer_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subA
 filenametxt = sprintf('Localizer_%s_%s_%s_%s.txt', todaydate, subCode, num2str(subAge), subGender);
 fileID = fopen(filenametxt,'w');
 
-
-stereoModeOn = 1; %don't need this for goggles, only for the 2 screen setup
-stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
 
-BS_measurementON = 1;                     
-
-%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 0; %show the debug bars at the start?
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-debugmode = 0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+BS_measurementON = 1;     
 
 
-bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
 
 
 nSeq = 8;
@@ -88,7 +96,7 @@ nStim = 4;
 
 
 
-distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
+distance2screen = 143; % how many centimeters from eye to screen? To make this portable on different machines
 
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR_MRI(outside_BS)); %in pixels for our screen
@@ -150,27 +158,25 @@ black = BlackIndex(screenNumber);  %value of white for display screen screenNumb
 grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
 % grey_bkg = white*0.10
 % grey_bkg = grey*brightness/10
-grey_bkg = black
+grey_bkg = black;
 
-
-
-% % Set the blend function for the screen
-% Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
 % % % correct non-linearity from CLUT
-if ~IsWin || debugmode == 0
+if debugmode == 0
     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
 end
 
 
 % Open an on screen window and color it grey
-
 if stereoModeOn
-    [window, windowRect] = PsychImaging('OpenWindow', 0, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
+    if IsWin
+        screenNumber = 0; %on windows screen 0 is the whole extended screen across two monitors
+    end
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
-        Screen('OpenWindow', 0, 128, [], [], [], stereoMode);
+        Screen('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode);
     end
 else %just open one window
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
@@ -204,18 +210,6 @@ waitframes = 1; % update every frame?
 waitduration = waitframes * ifi; % basically just = ifi if we update on every frame
 
 
-
-% The avaliable keys to press
-escapeKey = KbName('ESCAPE');
-upKey = KbName('UpArrow');
-downKey = KbName('DownArrow');
-leftKey = KbName('LeftArrow');
-rightKey = KbName('RightArrow');
-space = KbName('space');
-scannertrigger = KbName('s');
-
-
-
 % Need mouse control for blind spot measurements
 sinceLastClick = 0;
 mouseOn = 1;
@@ -226,9 +220,11 @@ WaitSecs(.1);
 
 
 %% flickering checkerboard parameters
-%for debug
-BS_center_h2 = xCenter;
-BS_center_v = yCenter;
+
+% % %for debug place BS in the center of the monitor
+% % BS_center_h2 = xCenter;
+% % BS_center_v = yCenter;
+
 
 hz = 5; %flicker at 5 times per s
 nSecsPerFlicker = 1/hz;
@@ -244,7 +240,7 @@ targetPxH2 = deg2pix_YR_MRI(targetDegH2);
 targetRect = [0 0 targetPxH2 targetPxV];
 %centre on BS coords
 targetRectCentre = CenterRectOnPointd(targetRect, BS_center_h2, BS_center_v);
-% targetRectCentre = CenterRectOnPointd(targetRect, xCenter, yCenter);
+
 
 
 %% Stimuli types
@@ -267,7 +263,7 @@ to_use = randperm(24,8);
 %save sequences for future use
 seqsforfile = allstimscomboslocalizer(to_use(1:nSeq), :);
 fileIDseqname = 'sequences.txt';
-fileIDseq = fopen(fileIDseqname,'w')
+fileIDseq = fopen(fileIDseqname,'w');
 fprintf(fileIDseq,'%d', seqsforfile);
 fclose(fileIDseq);
 
@@ -419,89 +415,98 @@ end
 %  Intro screen  |
 %-----------------
 %show fix
-Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-Screen('FillRect', window, grey) % make the whole screen grey_bkg
+if stereoModeOn
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+end
+Screen('FillRect', window, grey); % make the whole screen grey_bkg
 ShowFix()
 
 instructions = 'Blind spot localization \n \n Please fixate on the cross at all times \n \n Standby for Scanner Trigger';
 DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
 
-Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-Screen('FillRect', window, grey) % make the whole screen grey_bkg
-ShowFix()
-
-instructions = 'Blind spot localization \n \n Please fixate on the cross at all times \n \n Standby for Scanner Trigger';
-DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+if stereoModeOn
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    Screen('FillRect', window, grey); % make the whole screen grey_bkg
+    ShowFix()
+    
+    instructions = 'Blind spot localization \n \n Please fixate on the cross at all times \n \n Standby for Scanner Trigger';
+    DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+end
 
 %flip to screen
  Screen('TextSize', window, 20);
  Screen('Flip', window);
-% KbStrokeWait;
 
+goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
 
-
-    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)    
-        
-    %get timestamp
-   
 %     DrawFormattedText(window, 'Waiting for scanner trigger...', 'center', 'center', white,[],[]);
 %     Screen('Flip', window);
-    disp('Waiting for scanner trigger...')
-    
-    [secs, keyCode, deltaSecs]=    KbStrokeWait(-1);
-    
-    while ~keyCode(scannertrigger)
-        [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
-    end
-    disp('Trigger detected')
-    DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
-    
-    vbl = secs;
-    expt_start = secs;
-    KbQueueCreate(deviceindexSubject);
-    
-    KbQueueStart(deviceindexSubject);
-    
-    for Sequence = 1:nSeq
-        disp(sprintf('Sequence %d', Sequence))
-       
-        currSequenceOrder = allstimscomboslocalizer(to_use(Sequence), :); % the current sequence e.g. 2 4 1 3
-        
-        for Stimulus = 1:nStim
-%               KbQueueStart();
+disp('Waiting for scanner trigger...')
 
-                %Show fix
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[secs, keyCode, deltaSecs]=    KbStrokeWait(-1); %get timestamp
+
+while ~keyCode(scannertrigger)
+    [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+end
+disp('Trigger detected')
+% DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger. Comment this out for debugging to keep listening for s
+
+vbl = secs;
+expt_start = secs;
+KbQueueCreate(deviceindexSubject);
+
+KbQueueStart(deviceindexSubject);
+    
+for Sequence = 1:nSeq
+    disp(sprintf('Sequence %d', Sequence));
+    
+    currSequenceOrder = allstimscomboslocalizer(to_use(Sequence), :); % the current sequence e.g. 2 4 1 3
+    
+    
+    for Stimulus = 1:nStim
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % ADD TASK on fix pt
-
+        
         curr_frame = 1;
         start_time = vbl;
-
+        
         totalframes = 12/ifi;
         taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
         
         
         respmade = 0;
- 
-        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)       
- 
+        %moved goggles line further down
+%         goggles(bs_eye, 'both',togglegoggle,ard); %(BS eye, viewing eye)
+        
         time_zero = vbl;
         if Stimulus == 1
             startblock = vbl; %if the start of a block, record first flip of stim onset
         end
         
         
+        recordgoggles = true; %record timestamp of goggles, set to false later on in the script after the first timestamp
+        recordvbl = true; %record timestamp of first vbl
         
         while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
-            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-            Screen('FillRect', window, grey) % make the whole screen grey_bkg
-            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-             Screen('FillRect', window, grey) % make the whole screen grey_bkg
-             DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-              DrawFormattedText(window, sprintf('Sequence %d', Sequence), center(1), center(2) - 400, black, [],[])
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
+            Screen('FillRect', window, grey); % make the whole screen grey_bkg
+            if debugmode
+                DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+                DrawFormattedText(window, sprintf('Sequence %d', Sequence), center(1), center(2) - 400, black, [],[]);
+            end
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                Screen('FillRect', window, grey); % make the whole screen grey_bkg
+                DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+                DrawFormattedText(window, sprintf('Sequence %d', Sequence), center(1), center(2) - 400, black, [],[]);
+            end
+            
             
             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
                 %show alternative fix
@@ -509,41 +514,62 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                     startSecs = GetSecs(); %rough onset of alternative fix
                     disp('Task!')
                 end
-                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                AlternativeShowFixRed() %red
-                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                 AlternativeShowFixRed() %red
-%                 disp(num2str(curr_frame))
-                %   disp(num2str(taskframe))
-%                 disp('alternative')
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
+                AlternativeShowFixRed(); %red
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                    AlternativeShowFixRed(); %red
+                end
+                %                 disp(num2str(curr_frame))
+                %                 disp(num2str(taskframe))
+                %                 disp('alternative')
                 
             else
                 Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                ShowFix() %white
+                ShowFix(); %white
                 Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                ShowFix() %white
-%                 disp(num2str(curr_frame))
+                ShowFix(); %white
+                %  disp(num2str(curr_frame))
                 %  disp(num2str(taskframe))
-%                 disp('normal')
-            end
+                %  disp('normal')
+            end %task
             
             
-            
-%             ShowFix()
             if debugmode
-                     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                     DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                else
+                    DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+                end
             end
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            
+            
+            
+            [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            if recordvbl
+                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix  \r\n', vbl-expt_start,Sequence);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-expt_start,Sequence);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,Sequence);
+                recordvbl = false;
+            end
+            if recordgoggles %only need the very first go thru the loop
+                WaitSecs(goggledelay);
+                goggles(bs_eye, 'both',togglegoggle,ard); %(BS eye, viewing eye)
+                gogglestime = GetSecs - expt_start;
+                fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  Fix \r\n', gogglestime,Sequence);
+                recordgoggles =false;
+            end
             curr_frame = curr_frame + 1; %increment frame counter
             
             %        then do another flip to clear this half a sec later
             %         KbQueueStop();
             %check for ESC key
             
-%             vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
-%             [pressed, firstPress]=KbQueueCheck();
-%             pressedKeys = KbName(firstPress);
+            %           vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
+            %           [pressed, firstPress]=KbQueueCheck();
+            %           pressedKeys = KbName(firstPress);
             
             % record responses
             [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
@@ -552,16 +578,21 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
                 % Again, fprintf will give an error if multiple keys have been pressed
-                fprintf('"%s" typed at time %.3f seconds, %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
-                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                if strcmp(KbName(firstPress),'s')
+                    fprintf('"%s" typed at time %.3f seconds from expt_start, %d  Fix  \r\n', KbName(firstPress), timeSecs - expt_start,Sequence);
+                    fprintf(fileID,'"%s" typed at time %.3f seconds from expt_start  %d  Fix  \r\n', KbName(firstPress), timeSecs - expt_start,Sequence);
+                else
+                    fprintf('"%s" typed at time %.3f seconds, %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                    fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                end
                 RT = timeSecs - startSecs;
-                responses{resp,1}= Sequence;
+                responses{resp,1} = Sequence;
                 responses{resp,2} = 'Fix';
                 responses{resp,3} = pressedKeys;
                 responses{resp,4} = RT;
                 respmade = 1;
             else
-               
+                
             end
             % end of response recording
             
@@ -569,282 +600,246 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
             if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
                 if togglegoggle == 1
-                    ShutdownArd(ard,comPort);
+                    ShutdownArd(ard,comPort);% close goggles
                 end
-                %             close goggles
-                %             save any data
+                
                 pressedKeys
                 disp('Escape this madness!!')
+                % save any data
                 fclose(fileID);
-                sca
                 save(filename)
+                sca %close PTB
             end
         end %while
         if ~respmade %if no response whatsoever
             RT = NaN;
-            responses{resp,1}= Sequence;
+            responses{resp,1} = Sequence;
             responses{resp,2} = 'Fix';
             responses{resp,3} = 'No response';
             responses{resp,4} = RT;
         end
         resp = resp + 1; %update resp counter
-
+        
         time_elapsed = vbl - time_zero;
         time_elapsed2 = vbl - startblock;
-%         time_elapsed3 = vbl - timestart;
+        % time_elapsed3 = vbl - timestart;
         disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from first flip',time_elapsed));
         disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
-%         disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds from scannertrigg',time_elapsed3));
-       
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%% Show stimulus %%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
+        % disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds from scannertrigg',time_elapsed3));
+        
+        
+        
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%% Show stimulus %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
         % Flashing checkerboard at 5 hz
-                
-                             % ADD TASK on fix pt
-                
-                % Draw the checkerboard texture to the screen. By default bilinear
-                % filtering is used. For this example we don't want that, we want nearest
-                % neighbour so we change the filter mode to zero
-                filterMode = 0;
-                curr_frame = 1;
-                start_time = vbl;
-                
-                totalframes = 12/ifi;
-                taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand);
-                
-                respmade = 0;
-                
-                while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
-%                     
-                        %for showtimes = 1:hz
-                        % display this checkerboard for a certain number of frames
-                        % and then flip the contrast... (maybe best to do this based on seconds elapsed rather than frames but can leave this for now as a WIP)
-                        for i = 1:nFramesPerFlicker
-                            
-                            %check we are not over time
-                            if vbl - start_time >= (12)
-                                disp(sprintf('Oops, over time! Time now is: %d, i = %d, curr_frame = %d', vbl - start_time,i, curr_frame))
-                                break;
-                            end
-                            
-                            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                            % display the basic checker
-                            Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
-                                dstRect, 0, filterMode);
-                            
-                            
-                             % Overdraw the rectangular noise image with our special
-                            % aperture image. The noise image will shine through in areas
-                            % of the aperture image where its alpha value is zero (i.e.
-                            % transparent):                 
-                            Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
-                            
-                            
-                            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                             Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
-                                dstRect, 0, filterMode);
-                             Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
-                             Screen('FrameOval', window, [1 0 0 1], occluderRectCentre_Expt);
-
-                            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
-                                %show alternative fix
-                                if curr_frame == taskframe %if the very first frame
-                                    startSecs = GetSecs(); %rough onset of alternative fix
-                                    disp('Task!')
-                                end
-                                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                                AlternativeShowFixRed() %red
-                                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                                AlternativeShowFixRed() %red
-                                
-                                
-%                                 disp(num2str(curr_frame))
-%                                 disp(num2str(taskframe))
-%                                 disp('alternative')
-                                
-                            else
-                                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                                ShowFix() %white
-                                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                                ShowFix() %white
-%                                 disp(num2str(curr_frame))
-%                                 disp(num2str(taskframe))
-%                                 disp('normal')
-                            end
-                            
-                            
-                            switch currSequenceOrder(Stimulus)
-                                case 1
-                                    goggles(bs_eye, 'both', togglegoggle,ard)
-                                case 2
-                                    goggles(bs_eye, 'BS', togglegoggle,ard)
-                                case 3
-                                    goggles(bs_eye, 'fellow', togglegoggle,ard)
-                                case 4
-                                    goggles(bs_eye, 'both', togglegoggle,ard)
-                            end
-                            if debugmode
-                                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                                DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
-                            end
-                            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                            DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
-                          vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
-                            curr_frame = curr_frame + 1; %increment frame counter
-                        end
-                        texturecue = fliplr(texturecue);
-                        
-                        % record responses
-                        [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
-                        [keyIsDown,secs, keyCode] = KbCheck(-1);
-                        pressedKeys = KbName(firstPress); %which key
-                        timeSecs = firstPress(find(firstPress)); %what time
-                        if pressed %report the keypress for the experimenter to see
-                            % Again, fprintf will give an error if multiple keys have been pressed
-                            fprintf('"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs, Sequence, Stimulus);
-                            fprintf(fileID,'"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs, Sequence, Stimulus);
-                            RT = timeSecs - startSecs;
-                            responses{resp,1}= Sequence;
-                            responses{resp,2} = Stimulus;
-                            responses{resp,3} = pressedKeys;
-                            responses{resp,4} = RT;
-                            respmade = 1;
-                            
-                            
-                        end
-                        % end of response recording
-                        
-                          if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
-                            goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
-                            if togglegoggle == 1
-                                ShutdownArd(ard,comPort);
-                            end
-                            %             close goggles
-                            %             save any data
-                            pressedKeys
-                            disp('Escape this madness!!')
-                            fclose(fileID);
-                            sca
-                            save(filename)
-                        end
-                end %while
-                if ~respmade %if no response was made at all
-                    RT = NaN;
-                    responses{resp,1}= Sequence;
-                    responses{resp,2} = Stimulus;
-                    responses{resp,3} = 'No response';
-                    responses{resp,4} = RT;
-                end
-                
-                resp = resp + 1; %update resp counter
-                time_elapsed = vbl - start_time;
-%                 time_elapsed2 = vbl - startblock;
-%               time_elapsed3 = vbl - timestart;
-                disp(sprintf('    Time elapsed for 12s flash:  %.5f seconds from first flip',time_elapsed));
-%                 disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
-
-        end
-    end
-    %show one last fix
-    
-                %Show fix
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        % ADD TASK on fix pt
-
+               
+        % Draw the checkerboard texture to the screen. By default bilinear
+        % filtering is used. For this example we don't want that, we want nearest
+        % neighbour so we change the filter mode to zero
+        filterMode = 0;
         curr_frame = 1;
         start_time = vbl;
-
-        totalframes = 12/ifi;
-        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
         
+        totalframes = 12/ifi;
+        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand);
         
         respmade = 0;
- 
-        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)       
- 
-        time_zero = vbl;
-        if Stimulus == 1
-            startblock = vbl; %if the start of a block, record first flip of stim onset
-        end
-        
-        
+        recordgoggles = true; %record timestamp of goggles
+        recordvbl = true; %record timestamp of first vbl
         
         while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
-            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-            Screen('FillRect', window, grey) % make the whole screen grey_bkg
-            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-            Screen('FillRect', window, grey) % make the whole screen grey_bkg
-            
-            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
-                %show alternative fix
-                if curr_frame == taskframe %if the very first frame
-                    startSecs = GetSecs(); %rough onset of alternative fix
-                    disp('Task!')
+            %
+            %for showtimes = 1:hz
+            % display this checkerboard for a certain number of frames
+            % and then flip the contrast... (maybe best to do this based on seconds elapsed rather than frames but can leave this for now as a WIP)
+            %                         for i = 1:nFramesPerFlicker
+            startflicker = vbl;
+            i = 0;
+            while vbl - startflicker < ((nSecsPerFlicker/ifi - 0.2)*ifi) %while not gone over 1/5th of a second
+                
+                %check we are not over time
+                if vbl - start_time >= (12)
+                    disp(sprintf('Oops, over time! Time now is: %d, i = %d, curr_frame = %d', vbl - start_time,i, curr_frame))
+                    break;
                 end
-                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                AlternativeShowFixRed() %red
-                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                AlternativeShowFixRed() %red
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
+                % display the basic checker
+                Screen('DrawTextures', window, checkerTexture(texturecue(1)), [], dstRect, 0, filterMode);
                 
                 
-%                 disp(num2str(curr_frame))
-                %   disp(num2str(taskframe))
-%                 disp('alternative')
+                % Overdraw the rectangular noise image with our special
+                % aperture image. The noise image will shine through in areas
+                % of the aperture image where its alpha value is zero (i.e.
+                % transparent):
+                Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
                 
-            else
-                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                ShowFix() %white
-                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-                AlternativeShowFixRed() %red
-%                 disp(num2str(curr_frame))
-                %  disp(num2str(taskframe))
-%                 disp('normal')
-            end
-            
-            
-            
-%             ShowFix()
-            if debugmode
-                 DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
-            end
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
-            curr_frame = curr_frame + 1; %increment frame counter
-            
-            %        then do another flip to clear this half a sec later
-            %         KbQueueStop();
-            %check for ESC key
-            
-%             vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
-%             [pressed, firstPress]=KbQueueCheck();
-%             pressedKeys = KbName(firstPress);
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                    Screen('DrawTextures', window, checkerTexture(texturecue(1)), [],...
+                        dstRect, 0, filterMode);
+                    Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
+                    Screen('FrameOval', window, [1 0 0 1], occluderRectCentre_Expt);
+                end
+                
+                if debugmode
+                    Screen('FrameOval', window, [1 0 0 1], occluderRectCentre_Expt);
+                end
+                
+                if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                    %show alternative fix
+                    if curr_frame == taskframe %if the very first frame
+                        startSecs = GetSecs(); %rough onset of alternative fix
+                        disp('Task!')
+                    end
+                    if stereoModeOn
+                        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                    end
+                    AlternativeShowFixRed(); %red
+                    if stereoModeOn
+                        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                        AlternativeShowFixRed(); %red
+                    end
+                    
+                    
+                    % disp(num2str(curr_frame))
+                    % disp(num2str(taskframe))
+                    % disp('alternative')
+                    
+                else
+                    if stereoModeOn
+                        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                    end
+                    ShowFix(); %white
+                    if stereoModeOn
+                        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                        ShowFix(); %white
+                    end
+                    % disp(num2str(curr_frame))
+                    % disp(num2str(taskframe))
+                    % disp('normal')
+                end
+                
+                %moved further down
+%                 switch currSequenceOrder(Stimulus)
+%                     case 1
+%                         goggles(bs_eye, 'both', togglegoggle,ard)
+%                     case 2
+%                         goggles(bs_eye, 'BS', togglegoggle,ard)
+%                     case 3
+%                         goggles(bs_eye, 'fellow', togglegoggle,ard)
+%                     case 4
+%                         goggles(bs_eye, 'both', togglegoggle,ard)
+%                 end
+                if debugmode
+                    if stereoModeOn
+                        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                    end
+                    DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
+                end
+                
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                    DrawFormattedText(window, num2str(currSequenceOrder(Stimulus)), 'center', 'center', textcolor, [],[]);
+                end
+                
+             
+                %[VBLTimestamp StimulusOnsetTime FlipTimestamp Missed Beampos]
+                %{ 
+                    Flip (optionally) returns a high-precision
+                estimate of the system time (in seconds) when the actual flip has happened in
+                the return argument 'VBLTimestamp'. 
+                    An estimate of Stimulus-onset time is returned in 'StimulusOnsetTime'.
+                    Beampos is the position of the monitor scanning beam when the time measurement was taken (useful for correctness tests).
+                    FlipTimestamp is a timestamp taken at the end of Flip's execution. Use the
+                difference between FlipTimestamp and VBLTimestamp to get an estimate of how long
+                Flips execution takes. This is useful to get a feeling for the timing error if
+                you try to sync script execution to the retrace, e.g., for triggering
+                acquisition devices like EEG, fMRI, or for starting playback of a sound.
+                "Missed" indicates if the requested presentation deadline for your stimulus has
+                been missed. A negative value means that dead- lines have been satisfied.
+                Positive values indicate a deadline-miss.
+                %}
+                [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+                if recordvbl
+                   fprintf(fileID,'VBL at time %.3f seconds  %d  %d  \r\n', vbl-expt_start,Sequence,Stimulus);
+                   fprintf(fileID,'StimOnset at time %.3f seconds  %d  %d  \r\n', StimOnset-expt_start,Sequence,Stimulus);
+                   fprintf(fileID,'Time taken to flip %.3f seconds  %d  %d  \r\n', FlipTime-vbl,Sequence,Stimulus);
+                   recordvbl = false;
+                end
+                switch currSequenceOrder(Stimulus)
+                    case 1
+                        
+                        if recordgoggles %only need the very first go thru the loop
+                            WaitSecs(goggledelay);
+                            goggles(bs_eye, 'both', togglegoggle,ard)
+                            gogglestime = GetSecs - expt_start;
+                            fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                            recordgoggles = false;
+                        end
+                    case 2
+                       
+                        if recordgoggles %only need the very first go thru the loop
+                            WaitSecs(goggledelay);
+                            goggles(bs_eye, 'BS', togglegoggle,ard)
+                            gogglestime = GetSecs - expt_start;
+                            fprintf(fileID,'Goggles (BS) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                            recordgoggles = false;
+                        end
+                    case 3
+                        
+                        if recordgoggles %only need the very first go thru the loop
+                            WaitSecs(goggledelay);
+                            goggles(bs_eye, 'fellow', togglegoggle,ard)
+                            gogglestime = GetSecs - expt_start;
+                            fprintf(fileID,'Goggles (fellow) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                            recordgoggles = false;
+                        end
+                    case 4
+                        
+                        if recordgoggles %only need the very first go thru the loop
+                            WaitSecs(goggledelay);
+                            goggles(bs_eye, 'both', togglegoggle,ard)
+                            gogglestime = GetSecs - expt_start;
+                            fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                            recordgoggles = false;
+                        end
+                end
+                curr_frame = curr_frame + 1; %increment frame counter
+                i = i + 1;
+            end %while less than 1/5th of a second
+            texturecue = fliplr(texturecue);
             
             % record responses
             [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
-            [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+            [keyIsDown,secs, keyCode] = KbCheck(-1);
             pressedKeys = KbName(firstPress); %which key
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
                 % Again, fprintf will give an error if multiple keys have been pressed
-                fprintf('"%s" typed at time %.3f seconds, %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
-                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+                if strcmp(KbName(firstPress),'s')
+                    fprintf('"%s" typed at time %.3f seconds from expt_start %d  %d   \r\n', KbName(firstPress), timeSecs - expt_start, Sequence, Stimulus);
+                    fprintf(fileID,'"%s" typed at time %.3f seconds from expt_start %d  %d  \r\n', KbName(firstPress), timeSecs - expt_start, Sequence, Stimulus);
+                else
+                    fprintf('"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs, Sequence, Stimulus);
+                    fprintf(fileID,'"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs, Sequence, Stimulus);
+                end
                 RT = timeSecs - startSecs;
                 responses{resp,1}= Sequence;
-                responses{resp,2} = 'Fix';
+                responses{resp,2} = Stimulus;
                 responses{resp,3} = pressedKeys;
                 responses{resp,4} = RT;
                 respmade = 1;
-            else
-               
+                
+                
             end
             % end of response recording
-            
             
             if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
@@ -860,38 +855,195 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                 save(filename)
             end
         end %while
-        if ~respmade %if no response whatsoever
+        if ~respmade %if no response was made at all
             RT = NaN;
             responses{resp,1}= Sequence;
-            responses{resp,2} = 'Fix';
+            responses{resp,2} = Stimulus;
             responses{resp,3} = 'No response';
             responses{resp,4} = RT;
         end
+        
         resp = resp + 1; %update resp counter
+        time_elapsed = vbl - start_time;
+        % time_elapsed2 = vbl - startblock;
+        % time_elapsed3 = vbl - timestart;
+        disp(sprintf('    Time elapsed for 12s flash:  %.5f seconds from first flip',time_elapsed));
+        % disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
+        
+    end %stimulus
+end %sequence
 
-        time_elapsed = vbl - time_zero;
-        time_elapsed2 = vbl - startblock;
-%         time_elapsed3 = vbl - timestart;
-        disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from first flip',time_elapsed));
-        disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
-%         disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds from scannertrigg',time_elapsed3));
-       
-    
-    
-    
-    expt_end = vbl;
-    disp(sprintf('Total run time: %d', expt_end-expt_start))
-    
+%show one last fix
 
-    if togglegoggle == 1;
-        %Close goggles
-        % Shut down ARDUINO
-        goggles(bs_eye, 'neither', togglegoggle,ard)
-        ShutdownArd(ard,comPort);
-        disp('Arduino is off')
-       
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% FIX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ADD TASK on fix pt
+
+curr_frame = 1;
+start_time = vbl;
+
+totalframes = 12/ifi;
+taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+
+
+respmade = 0;
+
+% goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+
+time_zero = vbl;
+if Stimulus == 1
+    startblock = vbl; %if the start of a block, record first flip of stim onset
+end
+
+recordgoggles = true;
+recordvbl = true; %record timestamp of first vbl
+
+while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    end
+    Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    end
+    
+    if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+        %show alternative fix
+        if curr_frame == taskframe %if the very first frame
+            startSecs = GetSecs(); %rough onset of alternative fix
+            disp('Task!')
+        end
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        end
+        AlternativeShowFixRed(); %red
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+            AlternativeShowFixRed(); %red
+        end
+        
+        
+        %                 disp(num2str(curr_frame))
+        %   disp(num2str(taskframe))
+        %                 disp('alternative')
+        
+    else
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        end
+        ShowFix(); %white
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+            ShowFix(); %white
+        end
+        %                 disp(num2str(curr_frame))
+        %  disp(num2str(taskframe))
+        %                 disp('normal')
+    end
+    
+    
+    
+    %             ShowFix()
+    if debugmode
+        DrawFormattedText(window, '12s fixation...', 'center', 'center', black,[],[]);
+    end
+    [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+    if recordvbl
+        fprintf(fileID,'VBL at time %.3f seconds  %d  Fix  \r\n', vbl-expt_start,Sequence);
+        fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-expt_start,Sequence);
+        fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,Sequence);
+        recordvbl = false;
     end
    
-    save(filename)
-    sca
-    fclose(fileID);
+    if recordgoggles %only need the very first go thru the loop
+        WaitSecs(goggledelay);
+        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+        gogglestime = GetSecs - expt_start;
+        fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  Fix  \r\n', gogglestime,Sequence);
+        recordgoggles = false;
+    end
+    curr_frame = curr_frame + 1; %increment frame counter
+    
+    %        then do another flip to clear this half a sec later
+    %         KbQueueStop();
+    %check for ESC key
+    
+    %             vbl = Screen('Flip', window, vbl + (12/ifi - 0.2) * ifi);
+    %             [pressed, firstPress]=KbQueueCheck();
+    %             pressedKeys = KbName(firstPress);
+    
+    % record responses
+    [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+    [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+    pressedKeys = KbName(firstPress); %which key
+    timeSecs = firstPress(find(firstPress)); %what time
+    if pressed %report the keypress for the experimenter to see
+        % Again, fprintf will give an error if multiple keys have been pressed
+         if strcmp(KbName(firstPress),'s')
+             fprintf('"%s" typed at time %.3f seconds, from expt start %d  Fix  \r\n', KbName(firstPress), timeSecs - expt_start,Sequence);
+        fprintf(fileID,'"%s" typed at time %.3f seconds expt start %d  Fix  \r\n', KbName(firstPress), timeSecs - expt_start,Sequence);
+         else
+        fprintf('"%s" typed at time %.3f seconds, %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+        fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,Sequence);
+         end
+        RT = timeSecs - startSecs;
+        responses{resp,1}= Sequence;
+        responses{resp,2} = 'Fix';
+        responses{resp,3} = pressedKeys;
+        responses{resp,4} = RT;
+        respmade = 1;
+    else
+        
+    end
+    % end of response recording
+    
+    
+    if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+        goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+        if togglegoggle == 1
+            ShutdownArd(ard,comPort);
+        end
+        % close goggles
+        % save any data
+        pressedKeys
+        disp('Escape this madness!!')
+        fclose(fileID);
+        sca
+        save(filename)
+    end
+end %while
+if ~respmade %if no response whatsoever
+    RT = NaN;
+    responses{resp,1}= Sequence;
+    responses{resp,2} = 'Fix';
+    responses{resp,3} = 'No response';
+    responses{resp,4} = RT;
+end
+resp = resp + 1; %update resp counter
+
+time_elapsed = vbl - time_zero;
+time_elapsed2 = vbl - startblock;
+%time_elapsed3 = vbl - timestart;
+disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from first flip',time_elapsed));
+disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_elapsed2));
+%disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds from scannertrigg',time_elapsed3));
+
+%check session timing
+expt_end = vbl;
+disp(sprintf('Total run time: %d', expt_end-expt_start))
+
+
+if togglegoggle == 1;
+    % Close goggles
+    % Shut down ARDUINO
+    goggles(bs_eye, 'neither', togglegoggle,ard)
+    ShutdownArd(ard,comPort);
+    disp('Arduino is off')
+end
+
+save(filename)
+fclose(fileID);
+sca

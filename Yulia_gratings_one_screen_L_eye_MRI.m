@@ -5,12 +5,14 @@
 
 
 %%%% STEREO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
+stereoModeOn = 0; %don't need this for ss, only for the 2 screen setup
 stereoMode = 4;        % 4 for split screen, 10 for two screens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+% goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
+goggledelay = 0.000 %seconds
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -18,15 +20,15 @@ Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%% DEBUG ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-debugmode = 0;
+debugmode = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+bs_eye = 'left'   %% Right eye has the blind spot. Left fixation spot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-subnum = 0 %enter subject number
+subnum = 1 %enter subject number
 thisrun = 2 %change run
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -36,15 +38,15 @@ thisrun = 2 %change run
 %%% Get some hardware info %%%%%%%%%%%%%%%%%%%%%%%
 
 devices = PsychHID('Devices');
-keyboardind = GetKeyboardIndices();
-mouseind = GetMouseIndices();
+[keyboardIndices, productNamesKey, allInfoKey] = GetKeyboardIndices();
+[mouseIndices, productNamesMouse, allInfoMouse] = GetMouseIndices();
 
 % define keyboards used by subject and experimenter
 % run KbQueueDemo(deviceindex) to test various indices
 if IsWin
     deviceindexSubject = [0]; %possibly MRI keypad
 else
-    deviceindexSubject = [9]; %possibly MRI keypad
+    deviceindexSubject = [8]; %possibly MRI keypad
 end
 %can only listen to one device though...
 % deviceindexExperimenter = 11; %possibly your laptop keyboard
@@ -92,7 +94,8 @@ distance2screen = 143; % how many centimeters from eye to screen? To make this p
 outside_BS = 5; %deg of visual angle
 outside_BS = round(deg2pix_YR_MRI(outside_BS)); %in pixels for our screen
 
-brightness = 0.1;
+brightness = 0.1; %behavioural Station1
+% brightness = 0.3; %MRI (maybe, but could be too bright after piloting)
 % brightness = 0.7; % for debugging
 textcolor = [0 0 0];
 
@@ -180,7 +183,7 @@ end
 % Set the blend function for the screen
 Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
-if ~IsWin || debugmode == 0
+if ~IsWin || debugmode == 1
 % % correct non-linearity from CLUT
     oldCLUT = Screen('LoadNormalizedGammaTable', screenNumber, clut);
     disp('CLUT loaded')
@@ -267,8 +270,11 @@ if togglegoggle == 1;
     [ard, comPort] = InitArduino;
     disp('Arduino Initiated')
     
-    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye) need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
-        
+    try
+         goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye) need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
+    catch
+        disp('goggles error')
+    end
     % Remember to switch this off if the code stops for any reason. Any
     % Try/Catch routines should have LensOff integrated there...
 else
@@ -288,6 +294,7 @@ ShowFix()
 
 instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
 DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+disp('Hello and welcome')
 
 if stereoModeOn
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
@@ -317,6 +324,7 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
 %     Screen('DrawText',window, '+', l_fix_cord1(1), l_fix_cord1(2)-8,white);
     % instructions
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Press the A and B buttons to move the flickering marker \n \n until it completely disappears for you \n \n Press C to confirm your response \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], []);
+    disp('Measuring the Blind spot...')
     
     if stereoModeOn
         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
@@ -327,13 +335,17 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     end
     
     Screen('Flip', window);
-    KbStrokeWait([-1]); 
+%     KbStrokeWait([-1]); 
     if togglegoggle
-    goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
+        try
+            goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
+        catch
+            disp('goggles err')
+        end
     end
 
     if ~IsWin
-%         HideCursor(1,0)
+        HideCursor(1,0)
     else
         HideCursor()
     end
@@ -344,7 +356,11 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v'))
     measure_BS_v_YR_1screen_MRI    %vertical
     measure_BS_h2_YR_1screen_MRI   %measure horizontal again based on the midline of vertical (bcos BS is not exactly centered on horiz merid)
     if togglegoggle
-        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+        try
+            goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+        catch
+            disp('goggles error')
+        end
     end
     ShowCursor()
 end
@@ -364,6 +380,7 @@ if stereoModeOn
 end
 Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
 DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the + \n \n Waiting for Experimenter Key press...', 'center', 'center', textcolor, [],[]);
+disp('BS location. Check values and press space')
 
 if stereoModeOn
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
@@ -607,8 +624,8 @@ gauss(gauss>1.0) = 1; % "flatten" the peak. Change anything bigger than 1 to 1. 
 % gauss(gauss<0.9) = gauss(gauss<.9)-0.1;
 [valuestorescale] = find(gauss<0.86 & gauss>0.75);
 % gauss(valuestorescaleX,valuestorescaleY) = rescale(gauss(valuestorescaleX, valuestorescaleY), 0,0.9);
-dataout = scaledata(gauss(valuestorescale), 0,0.85);
-gauss(valuestorescale) = dataout;
+% dataout = scaledata(gauss(valuestorescale), 0,0.85);
+% gauss(valuestorescale) = dataout;
 
 %%% Exponential fuzzy mask
 
@@ -859,8 +876,11 @@ end %demo
 
 
 %% BLOCK
-
+try
 goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+catch
+    disp('gog err')
+end
 
 Screen('TextSize', window, 20);
 if stereoModeOn
@@ -884,7 +904,7 @@ if stereoModeOn
     DrawFormattedText(window, 'Trigger detected', 'center', 'center', textcolor,[],[]);
 end
 disp('Trigger detected')
-DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
+% DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
 
 
 timestart = secs; %time elapsed since trigger press
@@ -924,12 +944,18 @@ for block = 1:nSeqs
         
         startSecs = 0; %so we have this variable defined in case sub pressed button before the task even starts
         
-        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)  
-        
+%         try
+%         goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)  
+%         catch
+%             disp('goggle error')
+%         end
         time_zero = vbl;
         if stim == 1
             startblock = vbl; %if the start of a block, record first flip of stim onset
         end
+        
+        recordgoggles = true; %record timestamp of goggles, set to false later on in the script after the first timestamp
+        recordvbl = true; %record timestamp of first vbl
         
         while vbl - start_time < ((fix_grey/ifi - 0.2)*ifi)%time is under 12 s
             if stereoModeOn
@@ -984,7 +1010,26 @@ for block = 1:nSeqs
                 end
                 DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
             end
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+            if recordvbl
+                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix  \r\n', vbl-timestart,Sequence);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-timestart,Sequence);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,Sequence);
+                recordvbl = false;
+            end
+            if recordgoggles %only need the very first go thru the loop
+                try
+                    WaitSecs(goggledelay);
+                    goggles(bs_eye, 'both',togglegoggle,ard); %(BS eye, viewing eye)
+                    gogglestime = GetSecs - timestart;
+                    fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  Fix \r\n', gogglestime,Sequence);
+                    recordgoggles =false;
+                catch
+                    disp('goggle error')
+                end
+            end
+                        
+            
             curr_frame = curr_frame + 1; %increment frame counter
             
             %        then do another flip to clear this half a sec later
@@ -1023,7 +1068,11 @@ for block = 1:nSeqs
             
             if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 save(filename)
+                try
                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                catch
+                    disp('goggle err')
+                end
                 if togglegoggle == 1
                     ShutdownArd(ard,comPort);
                 end
@@ -1089,14 +1138,7 @@ for block = 1:nSeqs
         
         
         
-        %goggles
-       if strcmp(whicheye, 'fellow'); %compare strings
-            goggles(bs_eye, 'fellow',togglegoggle,ard) %(BS eye, viewing eye)
-       elseif strcmp(whicheye, 'BS')
-            goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
-       else
-            goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
-       end
+     
 %         Screen('FillRect', window, grey_bkg) % make the whole screen grey_bkg
 %         ShowFix()
 %         vbl = Screen('Flip', window);
@@ -1112,9 +1154,13 @@ for block = 1:nSeqs
         
         respmade = 0;
         
+        recordgoggles = true; %record timestamp of goggles
+        recordvbl = true; %record timestamp of first vbl
+        
         
         while (vbl - start_time) < ((stim_dur/ifi - 0.2)*ifi) 
            
+            DrawFormattedText(window, messagenexttrial, 'center', 'center', [1 0 0],[],[]);
 
             % Motion
             shiftperframe = cyclespersecond * periods(2) * waitduration;
@@ -1264,7 +1310,53 @@ for block = 1:nSeqs
             
             % fix point
             
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+            [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+            if recordvbl
+                fprintf(fileID,'VBL at time %.3f seconds  %d  %d  \r\n', vbl-timestart,Sequence,Stimulus);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  %d  \r\n', StimOnset-timestart,Sequence,Stimulus);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  %d  \r\n', FlipTime-vbl,Sequence,Stimulus);
+                recordvbl = false;
+            end
+            
+            
+            %goggles
+            if strcmp(whicheye, 'fellow'); %compare strings
+                try
+                    if recordgoggles %only need the very first go thru the loop
+                        WaitSecs(goggledelay);
+                        goggles(bs_eye, 'fellow',togglegoggle,ard) %(BS eye, viewing eye)
+                        gogglestime = GetSecs - timestart;
+                        fprintf(fileID,'Goggles (fellow) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                        recordgoggles = false;
+                    end
+                catch
+                    disp('goggleerr')
+                end
+            elseif strcmp(whicheye, 'BS')
+                try
+                    if recordgoggles %only need the very first go thru the loop
+                        WaitSecs(goggledelay);
+                        goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
+                        gogglestime = GetSecs - timestart;
+                        fprintf(fileID,'Goggles (BS) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                        recordgoggles = false;
+                    end
+                catch
+                    disp('gog err')
+                end
+            else
+                try
+                    if recordgoggles %only need the very first go thru the loop
+                        WaitSecs(goggledelay);
+                        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+                        gogglestime = GetSecs - timestart;
+                        fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                        recordgoggles = false;
+                    end
+                catch
+                    disp('gog err')
+                end
+            end
             
 
             curr_frame = curr_frame + 1; %increment frame counter for task
@@ -1297,13 +1389,17 @@ for block = 1:nSeqs
             
             if  max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 save(filename)
-                goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                try
+                    goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                catch
+                    disp('goggle err')
+                end
                 if togglegoggle == 1
-                   ShutdownArd(ard,comPort);%close goggles
-                end            
+                    ShutdownArd(ard,comPort);%close goggles
+                end
                 pressedKeys
                 disp('Escape this madness!!')
-%                 save any data
+                %                 save any data
                 fclose(fileID);
                 save(filename)
                 sca
@@ -1329,59 +1425,162 @@ for block = 1:nSeqs
 
     end
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%% LAST BLOCK %%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %for last block add one last 6s fix
     if block == 5
-        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
-        if stereoModeOn
-            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-        end
-        Screen('FillRect', window, grey); % make the whole screen grey_bkg
-        ShowFix();
-        if stereoModeOn
-            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        
+        respmade = 0;
+        recordgoggles = true; %record timestamp of goggles
+        recordvbl = true; %record timestamp of first vbl
+        startfix = vbl;
+        
+        
+        curr_frame = 1;
+        start_time = vbl;
+        
+        totalframes = fix_grey/ifi;
+        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand);
+        
+        
+        while vbl - start_time < ((fix_grey/ifi - 0.2)*ifi)%time is under 6 s
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
             Screen('FillRect', window, grey); % make the whole screen grey_bkg
-            DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
-            ShowFix();
-        end
-        if debugmode
-            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-            DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
-        end
-        vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
-        time_zero = vbl;
-%       then do another flip to clear this half a sec later
-%       KbQueueStop();
-        %check for ESC key
-        
-        vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
-        [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
-        %         [pressed, firstPress]=KbQueueCheck(deviceindexExperimenter);
-        
-        
-        pressedKeys = KbName(firstPress);
-        
-        
-        % Check the keyboard to see if a button has been pressed
-        [keyIsDown,secs, keyCode] = KbCheck([-1]);
-        
-        if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
-            save(filename)
-            goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
-            if togglegoggle == 1
-                ShutdownArd(ard,comPort);% close goggles
+%             ShowFix();
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                Screen('FillRect', window, grey); % make the whole screen grey_bkg
+                DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
+                ShowFix();
+            end
+            if debugmode
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                DrawFormattedText(window, '6s fixation...', 'center', 'center', black,[],[]);
             end
             
-            pressedKeys
-            disp('Escape this madness!!')
-            % save any data
-            save(filename);
-            fclose(fileID);
-            sca
-        end
-        time_elapsed = vbl - time_zero;
-        disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds',time_elapsed));
-    end
-       
+            
+            
+            
+            % --------- flash fix pt ------------------------------------------------
+            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+                %show alternative fix
+                if curr_frame == taskframe %if the very first frame
+                    startSecs = GetSecs();
+                    disp('Task!')%rough onset of alternative fix
+                end
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
+                AlternativeShowFixRed(); %red
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                    AlternativeShowFixRed(); %red
+                end
+                % disp(num2str(curr_frame))
+                % disp(num2str(taskframe))
+                % disp('alternative')
+                
+            else
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
+                ShowFix(); %white
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                    ShowFix(); %white
+                end
+                % disp(num2str(curr_frame))
+                % disp(num2str(taskframe))
+                % disp('normal')
+            end %----------------------------------------------------------
+            
+            
+            
+            
+            [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
+            
+            if recordvbl
+                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix \r\n', vbl-timestart,Sequence);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-timestart,Sequence);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,Sequence);
+                recordvbl = false;
+            end
+            
+            try
+                if recordgoggles %only need the very first go thru the loop
+                    WaitSecs(goggledelay);
+                    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+                    gogglestime = GetSecs - timestart;
+                    fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d Fix  \r\n', gogglestime,Sequence);
+                    recordgoggles = false;
+                end
+            catch
+                disp('gog err')
+            end
+            
+            
+%             time_zero = vbl;
+            %       then do another flip to clear this half a sec later
+            %       KbQueueStop();
+            %check for ESC key
+            
+%             vbl = Screen('Flip', window, vbl + (fix_grey/ifi - 0.2) * ifi);
+%             [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+%             %         [pressed, firstPress]=KbQueueCheck(deviceindexExperimenter);
+            
+            
+            
+            % record responses
+            [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+            [keyIsDown, secs, keyCode] = KbCheck([-1]);
+            pressedKeys = KbName(firstPress); %which key
+            timeSecs = firstPress(find(firstPress)); %what time
+            if pressed %report the keypress for the experimenter to see
+                % Again, fprintf will give an error if multiple keys have been pressed
+                fprintf('"%s" typed at time %.3f seconds %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,block, stim);
+                fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs,block,stim);
+                
+                %               fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
+                RT = timeSecs - startSecs;
+                responses{resp,1}= block;
+                responses{resp,2} = stim;
+                responses{resp,3} = pressedKeys;
+                responses{resp,4} = RT;
+                respmade = 1;
+                
+            end
+            % end of response recording
+            
+                    
+            
+            % Check the keyboard to see if a button has been pressed
+            [keyIsDown,secs, keyCode] = KbCheck([-1]);
+            
+            if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+                save(filename)
+                try
+                    goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+                catch
+                    disp('goggle err')
+                end
+                if togglegoggle == 1
+                    ShutdownArd(ard,comPort);% close goggles
+                end
+                
+                pressedKeys
+                disp('Escape this madness!!')
+                % save any data
+                save(filename);
+                fclose(fileID);
+                sca
+            end
+            time_elapsed = vbl - startfix;
+            disp(sprintf('    Time elapsed for 6s fix:  %.5f seconds',time_elapsed));
+        end %while
+    end %end block
 %          
     totalblocktime(block) = vbl - startblock;
     disp(sprintf('    Time elapsed for block:  %.5f seconds \n \n',totalblocktime));       
@@ -1395,19 +1594,24 @@ disp(sprintf('    Time elapsed for experiment:  %.5f seconds (Using GetSecs)',to
      
 % disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
 
+try
 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+catch
+    disp('gog err')
+end
 if togglegoggle == 1
     ShutdownArd(ard,comPort); % close goggles
 end
       
 catch overallerror
-    if togglegoggle
-    goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+    if togglegoggle && (strcmp(ard.status,'open')) %if ard is open, else it has been already closed during the ESC key routine and we don't need to shut it down again  
+        try
+        goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+        catch
+            disp('gogg err')
+        end
+        ShutdownArd(ard,comPort);
     end
-    save(filename)
-if togglegoggle == 1
-    ShutdownArd(ard,comPort);
-end
     save(filename)
     rethrow(overallerror)
     sca
