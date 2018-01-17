@@ -3,22 +3,28 @@
 %
 % 2017 Yulia Revina, NTU, SG
 
-%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% STEREO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
+stereoMode = 4;        % 4 for split screen, 10 for two screens
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%% DEBUG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%% DEBUG ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 debugmode = 0;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-stereoModeOn = 1;
-stereoMode = 4;
-
+%%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% if ~IsWin
-    devices = PsychHID('Devices');
-% end
+devices = PsychHID('Devices');
 keyboardind = GetKeyboardIndices();
 mouseind = GetMouseIndices();
 
@@ -41,9 +47,6 @@ responses = {};
 resp = 1; %counter for responses
 
 fileID = fopen(filenametxt,'w');
-
-
-
 
 
 if togglegoggle == 1;
@@ -112,12 +115,15 @@ end
 
 if stereoModeOn
 %     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
-    [window, windowRect] = PsychImaging('OpenWindow', 0, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
+    if IsWin
+        screenNumber = 0;
+    end
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey, [], [], [], stereoMode); % StereoMode 4 for side by side
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
 %         Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
-        Screen('OpenWindow', 0, 128, [], [], [], stereoMode);
+        Screen('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode);
     end
 else %just open one window
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
@@ -163,7 +169,11 @@ scannertrigger = KbName('s');
 
 % define keyboards used by subject and experimenter
 % run KbQueueDemo(deviceindex) to test various indices
-deviceindexSubject = []; %possibly MRI keypad
+if IsWin
+    deviceindexSubject = [0]; %possibly MRI keypad
+else
+    deviceindexSubject = []; %possibly MRI keypad
+end
 %can only listen to one device though...
 % deviceindexExperimenter = 11; %possibly your laptop keyboard
 
@@ -180,14 +190,14 @@ SetMouse(xCenter,yCenter,window);
 WaitSecs(.1);
 [mouseX, mouseY, buttons] = GetMouse(window);
 
-
-
 %% stim parameters
 
-dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir ='D:/MRI scripts/Retinotopic Mapping/';
 % dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
+% dir = '/media/laptop1/THE STICK/MRI scripts/Retinotopic Mapping/';
+dir ='/home/laptop1/Documents/Yulia/Retinotopic Mapping/';
 
 
 stimDur = 125; %ms
@@ -206,7 +216,6 @@ texturerectangle = CenterRectOnPointd(baseRect * sizemultiplier,...
 textcolor = [0 0 0];
 
 nFrames2wait4nextStim = stimDur/1000/ifi; 
-
 
 
 % % %% stimuli
@@ -232,30 +241,31 @@ nFrames2wait4nextStim = stimDur/1000/ifi;
 
 
 
-
 try
     %% stimuli
-    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    end
     
     %load the images
     % theImage = ones(1,1,3,nStims); %images are in format H x W x 3 uint8
     % img = ones(1,1,3,nStims); %images are in format H x W x 3 uint8
-   testrect = CenterRectOnPointd([0 0 1920 1080], xCenter, yCenter);
-% testrect = CenterRectOnPointd([0 0 1600 900], xCenter, yCenter);
-Screen('FillRect',window, [1 0 0], testrect);
-Screen('FrameRect',window, [1 1 0], testrect, 30);
-DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
-disp('Loading...')
-
-
-Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-Screen('FillRect', window, grey) % make the whole screen grey_bkg
-Screen('FillRect',window, [1 0 0], testrect);
-Screen('FrameRect',window, [1 1 0], testrect, 30);
-DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
-
-
-
+    %    testrect = CenterRectOnPointd([0 0 1920 1080], xCenter, yCenter);
+    testrect = CenterRectOnPointd([0 0 1600 900], xCenter, yCenter);
+    Screen('FillRect',window, [1 0 0], testrect);
+    Screen('FrameRect',window, [1 1 0], testrect, 30);
+    DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
+    disp('Loading...')
+    
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+        Screen('FillRect',window, [1 0 0], testrect);
+        Screen('FrameRect',window, [1 1 0], testrect, 30);
+        DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
+    end
+    
+    
     WaitSecs(1);
     
     
@@ -275,21 +285,24 @@ DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
         img(:, :, 4) = alpha;
         texture2(imnumber) = Screen('MakeTexture', window, img);
         
-         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-    Screen('FillRect', window, grey) % make the whole screen grey_bkg
-    Screen('FillRect',window, [1 0 0], testrect);
-    Screen('FrameRect',window, [1 1 0], testrect, 30);
-%   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
-    DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
-    disp(sprintf('Loading... %d',imnumber))
-    
-    
-    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-    Screen('FillRect', window, grey) % make the whole screen grey_bkg
-    Screen('FillRect',window, [1 0 0], testrect);
-    Screen('FrameRect',window, [1 1 0], testrect, 30);
-%   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
-    DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        end
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+        Screen('FillRect',window, [1 0 0], testrect);
+        Screen('FrameRect',window, [1 1 0], testrect, 30);
+        %   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
+        DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
+        disp(sprintf('Loading... %d',imnumber))
+        
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            Screen('FillRect',window, [1 0 0], testrect);
+            Screen('FrameRect',window, [1 1 0], testrect, 30);
+            %   imageTexture(imnumber) = Screen('MakeTexture', window, theImage(:,:,:,imnumber));
+            DrawFormattedText(window, sprintf('Loading... %d',imnumber), 'center', 'center', textcolor, [], []);
+        end
         
         vbl = Screen('Flip', window);
     end
@@ -317,27 +330,33 @@ DrawFormattedText(window, 'Loading...', 'center', 'center', textcolor, [], []);
     fixBTex(2) = Screen('MakeTexture', window, fixB);
     
     %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
-Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
-vbl = Screen('Flip', window); 
-
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    end
+    DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        DrawFormattedText(window, 'Finished', 'center', 'center', textcolor, [], []);
+    end
     vbl = Screen('Flip', window);
     
     WaitSecs(2);
     
     
     %% present instructions and wait for trigger
-   Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-Screen('FillRect', window, grey) % make the whole screen grey_bkg
-
-instructions = 'Please fixate at the center at all times \n \n Press with index finger when you see color change \n \n Standby for Scanner Trigger';
-DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
-
-Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-Screen('FillRect', window, grey) % make the whole screen grey_bkg
-DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    end
+    Screen('FillRect', window, grey) % make the whole screen grey_bkg
+    
+    instructions = 'Please fixate at the center at all times \n \n Press with index finger when you see color change \n \n Standby for Scanner Trigger';
+    DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+    
+    if stereoModeOn
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+        DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
+    end
     
     %flip to screen
     Screen('TextSize', window, 20);
@@ -380,15 +399,17 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     
     while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
         
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        end
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+        Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
         
-     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-    Screen('FillRect', window, grey) % make the whole screen grey_bkg
-    Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
-    
-    
-    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-    Screen('FillRect', window, grey) % make the whole screen grey_bkg
-    Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+        if stereoModeOn
+            Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+        end
     
         
         if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
@@ -397,22 +418,30 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
                 startSecs = GetSecs(); %rough onset of alternative fix
                 disp('Task!')
             end
-            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-        Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
-        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-        Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
-            %                 disp(num2str(curr_frame))
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
+            Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+            end
+            %   disp(num2str(curr_frame))
             %   disp(num2str(taskframe))
-            %                 disp('alternative')
+            %   disp('alternative')
             
         else
-             Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-        Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
-        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-        Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
-            %                 disp(num2str(curr_frame))
-            %  disp(num2str(taskframe))
-            %                 disp('normal')
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
+            Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+            end
+            % disp(num2str(curr_frame))
+            % disp(num2str(taskframe))
+            % disp('normal')
         end
         
         vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
@@ -420,7 +449,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         
         % record responses
         [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
-         [keyIsDown, secs, keyCode] = KbCheck([-1]);
+        [keyIsDown, secs, keyCode] = KbCheck([-1]);
         pressedKeys = KbName(firstPress); %which key
         timeSecs = firstPress(find(firstPress)); %what time
         if pressed %report the keypress for the experimenter to see
@@ -438,19 +467,17 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
         end
         % end of response recording
         
-        
         if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
             goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
             if togglegoggle == 1
-                ShutdownArd(ard,comPort);
+                ShutdownArd(ard,comPort);% close goggles
             end
-            %             close goggles
-            %             save any data
             pressedKeys
             disp('Escape this madness!!')
+            % save any data
             fclose(fileID);
-            sca
             save(filename)
+            sca
         end
     end %while
     fix_end = vbl;
@@ -491,7 +518,7 @@ DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], []);
     respmade = 0;
     
     curr_time = vbl - expt_start; %last time stamp - start of expt
-requested_time = 12; %12s fix so we should be on timepoint 12.0s
+    requested_time = 12; %12s fix so we should be on timepoint 12.0s
     
     for i = 1:8 %8 repetitions of the cycle
         disp(sprintf('Cycle Number %d', i))
@@ -501,9 +528,11 @@ requested_time = 12; %12s fix so we should be on timepoint 12.0s
         for imnumber = 1:nStims
             nflip = 0;
             stimstart = vbl;
-            Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-        Screen('FillRect', window, grey) % make the whole screen grey_bkg
-        Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
+            Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
             
             %         First, the image without the alpha channel.
             %         Screen('DrawTexture', window, texture1(imnumber), [], []);
@@ -514,16 +543,19 @@ requested_time = 12; %12s fix so we should be on timepoint 12.0s
             %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
             
             
-            
-               Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
                 Screen('FillRect', window, grey) % make the whole screen grey_bkg
                 Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
                 Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
                 DrawFormattedText(window, sprintf('Time for prev stim: %d     N flips %d /n /n Cycle : %d', stim_dur_for_debug,nflips_for_debug,i), 'center', 'center', [1 0 0], [], []);
-            
+            end
             
             
             if debugmode
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
                 DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
             end
             
@@ -533,19 +565,27 @@ requested_time = 12; %12s fix so we should be on timepoint 12.0s
                     startSecs = GetSecs(); %rough onset of alternative fix
                     disp('Task!')
                 end
-                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                    Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
+                Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+                if stereoModeOn
                     Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
                     Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+                end
                 %                 disp(num2str(curr_frame))
                 %   disp(num2str(taskframe))
                 %                 disp('alternative')
                 
             else
-                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-                    Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+                if stereoModeOn
+                    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                end
+                Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+                if stereoModeOn
                     Screen('SelectStereoDrawBuffer', window, 0);  %LEFR
                     Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+                end
                 %                 disp(num2str(curr_frame))
                 %  disp(num2str(taskframe))
                 %                 disp('normal')
@@ -554,261 +594,57 @@ requested_time = 12; %12s fix so we should be on timepoint 12.0s
             
             %     Flip to the screen
             if mod(imnumber,2) == 0 % every 2 stims... show the stim for 1 extra frame
-%                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames. On ave we need 7.5 frames
-%                 vbl = Screen('Flip', window, vbl + (0.13333333333/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
+                %                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames. On ave we need 7.5 frames
+                %                 vbl = Screen('Flip', window, vbl + (0.13333333333/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
                 %check timing
-            curr_time = GetSecs - expt_start;
-            requested_time = requested_time + 0.125; %increment by 125 ms
-            if curr_time - requested_time > ifi %if one frame over
-                nflip = 7;
-            elseif curr_time - requested_time < -ifi %if one frame under
-                nflip = 9;
-            else
-                nflip = 8;
-            end
-
-            vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi)); %every 8 frames. On ave we need 7.5 frames 
+                curr_time = GetSecs - expt_start;
+                requested_time = requested_time + 0.125; %increment by 125 ms
+                if curr_time - requested_time > ifi %if one frame over
+                    nflip = 7;
+                elseif curr_time - requested_time < -ifi %if one frame under
+                    nflip = 9;
+                else
+                    nflip = 8;
+                end
+                
+                vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi)); %every 8 frames. On ave we need 7.5 frames
             else %every 7 frames
-%                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
-%                 vbl = Screen('Flip', window, vbl + (0.116666666/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+                %                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
+                %                 vbl = Screen('Flip', window, vbl + (0.116666666/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
                 %check timing
-            curr_time = GetSecs - expt_start;
-            requested_time = requested_time + 0.125; %increment by 125 ms
-            if curr_time - requested_time > ifi %if one frame over
-                nflip = 6;
-            elseif curr_time - requested_time < -ifi %if one frame under
-                nflip = 8;
-            else
-                nflip = 7;
-            end
+                curr_time = GetSecs - expt_start;
+                requested_time = requested_time + 0.125; %increment by 125 ms
+                if curr_time - requested_time > ifi %if one frame over
+                    nflip = 6;
+                elseif curr_time - requested_time < -ifi %if one frame under
+                    nflip = 8;
+                else
+                    nflip = 7;
+                end
              vbl = Screen('Flip', window, vbl + ((nflip - 0.2)*ifi));
                 % on frame 7. This is 0.116666 ms. So we underrun by 0.00833 on
                 % each frame. Every 14 frames, there is a 1 frame deficit so we
                 % show the frame again.if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
             end
             curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
-                stimend = vbl;
-                  disp(sprintf('Time for stim: %d     N flips %d', stimend - stimstart,nflip));
-                stim_dur_for_debug = stimend - stimstart;
-         nflips_for_debug = nflip;
-         DrawFormattedText(window, sprintf('Time for prev stim: %d     N flips %d', stimend - stimstart,nflip), 'center', 'center', textcolor, [], []);
-                
-                % record responses
-                [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
-                 [keyIsDown, secs, keyCode] = KbCheck([-1]);
-                pressedKeys = KbName(firstPress); %which key
-                timeSecs = firstPress(find(firstPress)); %what time
-                if pressed %report the keypress for the experimenter to see
-                    % Again, fprintf will give an error if multiple keys have been pressed
-                    fprintf('"%s" typed at time %.3f seconds, []  Stim  \r\n', KbName(firstPress), timeSecs - startSecs);
-                    fprintf(fileID,'"%s" typed at time %.3f seconds []  Task No %d  \r\n', KbName(firstPress), timeSecs - startSecs, TaskNo);
-                    RT = timeSecs - startSecs;
-                    responses{resp,1}= TaskNo;
-                    responses{resp,2} = 'Stim';
-                    responses{resp,3} = pressedKeys;
-                    responses{resp,4} = RT;
-                    respmade = 1;
-                else
-                    
-                end
-                % end of response recording
-                
-                
-                if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
-                    goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
-                    if togglegoggle == 1
-                        ShutdownArd(ard,comPort);
-                    end
-                    %             close goggles
-                    %             save any data
-                    pressedKeys
-                    disp('Escape this madness!!')
-                    fclose(fileID);
-                    sca
-                    save(filename)
-                end
-                
-                
-                
-                
-                if mod(curr_frame,96) == 0 %every 96 frames...
-                    
-                    if ~respmade %if no response whatsoever
-                        RT = NaN;
-                        responses{resp,1}= TaskNo;
-                        responses{resp,2} = 'Stim';
-                        responses{resp,3} = 'No response';
-                        responses{resp,4} = RT;
-                    end
-                    resp = resp + 1; %update resp counter (do we even need this?)
-                    
-                    %reset curr_frame
-                    curr_frame = 1;
-                    %new task frame
-                    taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
-                    %reset response
-                    respmade = 0;
-                    %increment task number
-                    TaskNo = TaskNo+1;
-                end
-                % %
-                % %         if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
-                % % %             stimstart = vbl;
-                % %             Screen('FillRect', window, grey) % make the whole screen grey_bkg
-                % %             Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
-                % %
-                % %             %         First, the image without the alpha channel.
-                % %             %         Screen('DrawTexture', window, texture1(imnumber), [], []);
-                % %
-                % %             %         Then, the RGBA texture.
-                % %             Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
-                % %
-                % %             %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
-                % %             DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
-                % %
-                % %
-                % %             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
-                % %                 %show alternative fix
-                % %                 if curr_frame == taskframe %if the very first frame
-                % %                     startSecs = GetSecs() %rough onset of alternative fix
-                % %                 end
-                % %                 Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
-                % %                 %                 disp(num2str(curr_frame))
-                % %                 %   disp(num2str(taskframe))
-                % %                 %                 disp('alternative')
-                % %
-                % %             else
-                % %                 Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
-                % %                 %                 disp(num2str(curr_frame))
-                % %                 %  disp(num2str(taskframe))
-                % %                 %                 disp('normal')
-                % %             end
-                % %
-                % %
-                % %             %     Flip to the screen
-                % %             vbl = Screen('Flip', window, vbl + (1 - 0.2) * ifi); % repeat ONE extra frame here
-                % % %             curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
-                % %             stimend = vbl;
-                % %             disp(sprintf('Time for stim: %d', stimend - stimstart));
-                % %
-                % %             % record responses
-                % %             [pressed, firstPress]=KbQueueCheck();
-                % %             pressedKeys = KbName(firstPress); %which key
-                % %             timeSecs = firstPress(find(firstPress)); %what time
-                % %             if pressed %report the keypress for the experimenter to see
-                % %                 % Again, fprintf will give an error if multiple keys have been pressed
-                % %                 fprintf('"%s" typed at time %.3f seconds, []  Stim  \r\n', KbName(firstPress), timeSecs - startSecs);
-                % %                 fprintf(fileID,'"%s" typed at time %.3f seconds []  Task No %d  \r\n', KbName(firstPress), timeSecs - startSecs, TaskNo);
-                % %                 RT = timeSecs - startSecs;
-                % %                 responses{resp,1}= TaskNo;
-                % %                 responses{resp,2} = 'Stim';
-                % %                 responses{resp,3} = pressedKeys;
-                % %                 responses{resp,4} = RT;
-                % %                 respmade = 1;
-                % %             else
-                % %
-                % %             end
-                % %             % end of response recording
-                % %
-                % %
-                % %             if max(strcmp(pressedKeys,'ESCAPE'))
-                % %                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
-                % %                 if togglegoggle == 1
-                % %                     ShutdownArd(ard,comPort);
-                % %                 end
-                % %                 %             close goggles
-                % %                 %             save any data
-                % %                 pressedKeys
-                % %                 disp('Escape this madness!!')
-                % %                 fclose(fileID);
-                % %                 sca
-                % %             end
-                % %
-                % %
-                % %
-                % %
-                % %             if mod(curr_frame,96) == 0 %every 96 frames...
-                % %
-                % %                 if ~respmade %if no response whatsoever
-                % %                     RT = NaN;
-                % %                     responses{resp,1}= TaskNo;
-                % %                     responses{resp,2} = 'Stim';
-                % %                     responses{resp,3} = 'No response';
-                % %                     responses{resp,4} = RT;
-                % %                 end
-                % %                 resp = resp + 1; %update resp counter (do we even need this?)
-                % %
-                % %                 %reset curr_frame
-                % %                 curr_frame = 1;
-                % %                 %new task frame
-                % %                 taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
-                % %                 %reset response
-                % %                 respmade = 0;
-                % %                 %increment task number
-                % %                 TaskNo = TaskNo+1;
-                % %             end
-                % %         end %repeat stim
-                
-            end %stim
-            cycle_end = vbl;
-            disp(sprintf('Time for cycle: %d', cycle_end - cycle_start));
-            
-        end %cycle
-        %
-        start_time = vbl;
-        fix_start = vbl;
-        %% %%% 12s fix %%%%%%%%%%%%%%%%%%
-        
-        % Task
-        curr_frame = 1;
-        start_time = vbl;
-        
-        totalframes = 12/ifi;
-        taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
-        
-        respmade = 0;
-        
-        goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
-        
-        
-        while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
-            Screen('FillRect', window, grey) % make the whole screen grey_bkg
-            Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
-            
-            if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
-                %show alternative fix
-                if curr_frame == taskframe %if the very first frame
-                    startSecs = GetSecs() %rough onset of alternative fix
-                end
-                Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
-                %                 disp(num2str(curr_frame))
-                %   disp(num2str(taskframe))
-                %                 disp('alternative')
-                
-            else
-                Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
-                %                 disp(num2str(curr_frame))
-                %  disp(num2str(taskframe))
-                %                 disp('normal')
-            end
-            
-            vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
-            curr_frame = curr_frame +1;
-            
-            fix_end = vbl;
+            stimend = vbl;
+            disp(sprintf('Time for stim: %d     N flips %d', stimend - stimstart,nflip));
+            stim_dur_for_debug = stimend - stimstart;
+            nflips_for_debug = nflip;
+            DrawFormattedText(window, sprintf('Time for prev stim: %d     N flips %d', stimend - stimstart,nflip), 'center', 'center', textcolor, [], []);
             
             % record responses
             [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
-             [keyIsDown, secs, keyCode] = KbCheck([-1]);
+            [keyIsDown, secs, keyCode] = KbCheck([-1]);
             pressedKeys = KbName(firstPress); %which key
             timeSecs = firstPress(find(firstPress)); %what time
             if pressed %report the keypress for the experimenter to see
                 % Again, fprintf will give an error if multiple keys have been pressed
-                fprintf('"%s" typed at time %.3f seconds, []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
-                fprintf(fileID,'"%s" typed at time %.3f seconds []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+                fprintf('"%s" typed at time %.3f seconds, []  Stim  \r\n', KbName(firstPress), timeSecs - startSecs);
+                fprintf(fileID,'"%s" typed at time %.3f seconds []  Task No %d  \r\n', KbName(firstPress), timeSecs - startSecs, TaskNo);
                 RT = timeSecs - startSecs;
-                responses{resp,1}= [];
-                responses{resp,2} = 'Fix';
+                responses{resp,1}= TaskNo;
+                responses{resp,2} = 'Stim';
                 responses{resp,3} = pressedKeys;
                 responses{resp,4} = RT;
                 respmade = 1;
@@ -816,6 +652,7 @@ requested_time = 12; %12s fix so we should be on timepoint 12.0s
                 
             end
             % end of response recording
+            
             
             if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
@@ -831,24 +668,241 @@ requested_time = 12; %12s fix so we should be on timepoint 12.0s
                 save(filename)
             end
             
-        end %while
-        disp(sprintf('Time for first fix: %d', fix_end- fix_start));
-        expt_end = vbl;
+            
+            
+            
+            if mod(curr_frame,96) == 0 %every 96 frames...
+                
+                if ~respmade %if no response whatsoever
+                    RT = NaN;
+                    responses{resp,1}= TaskNo;
+                    responses{resp,2} = 'Stim';
+                    responses{resp,3} = 'No response';
+                    responses{resp,4} = RT;
+                end
+                resp = resp + 1; %update resp counter (do we even need this?)
+                
+                %reset curr_frame
+                curr_frame = 1;
+                %new task frame
+                taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+                %reset response
+                respmade = 0;
+                %increment task number
+                TaskNo = TaskNo+1;
+            end
+            % %
+            % %         if mod(imnumber,2) == 0 % every 2 stims... show the stim again to make up for delay
+            % % %             stimstart = vbl;
+            % %             Screen('FillRect', window, grey) % make the whole screen grey_bkg
+            % %             Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+            % %
+            % %             %         First, the image without the alpha channel.
+            % %             %         Screen('DrawTexture', window, texture1(imnumber), [], []);
+            % %
+            % %             %         Then, the RGBA texture.
+            % %             Screen('DrawTexture', window, texture2(imnumber), [], texturerectangle, [], 0);
+            % %
+            % %             %         Screen('DrawTexture', window, imageTexture(imnumber), [], [], 0); %Draw
+            % %             DrawFormattedText(window, sprintf('Image %d',imnumber), 'center', 'center', [1 0 0], [], []);
+            % %
+            % %
+            % %             if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/0.125) %if between taskframe and taskframe + 1s
+            % %                 %show alternative fix
+            % %                 if curr_frame == taskframe %if the very first frame
+            % %                     startSecs = GetSecs() %rough onset of alternative fix
+            % %                 end
+            % %                 Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+            % %                 %                 disp(num2str(curr_frame))
+            % %                 %   disp(num2str(taskframe))
+            % %                 %                 disp('alternative')
+            % %
+            % %             else
+            % %                 Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+            % %                 %                 disp(num2str(curr_frame))
+            % %                 %  disp(num2str(taskframe))
+            % %                 %                 disp('normal')
+            % %             end
+            % %
+            % %
+            % %             %     Flip to the screen
+            % %             vbl = Screen('Flip', window, vbl + (1 - 0.2) * ifi); % repeat ONE extra frame here
+            % % %             curr_frame = curr_frame + 1; %update "frame" (125ms image presentation counts as one frame here rather than 1 refresh)
+            % %             stimend = vbl;
+            % %             disp(sprintf('Time for stim: %d', stimend - stimstart));
+            % %
+            % %             % record responses
+            % %             [pressed, firstPress]=KbQueueCheck();
+            % %             pressedKeys = KbName(firstPress); %which key
+            % %             timeSecs = firstPress(find(firstPress)); %what time
+            % %             if pressed %report the keypress for the experimenter to see
+            % %                 % Again, fprintf will give an error if multiple keys have been pressed
+            % %                 fprintf('"%s" typed at time %.3f seconds, []  Stim  \r\n', KbName(firstPress), timeSecs - startSecs);
+            % %                 fprintf(fileID,'"%s" typed at time %.3f seconds []  Task No %d  \r\n', KbName(firstPress), timeSecs - startSecs, TaskNo);
+            % %                 RT = timeSecs - startSecs;
+            % %                 responses{resp,1}= TaskNo;
+            % %                 responses{resp,2} = 'Stim';
+            % %                 responses{resp,3} = pressedKeys;
+            % %                 responses{resp,4} = RT;
+            % %                 respmade = 1;
+            % %             else
+            % %
+            % %             end
+            % %             % end of response recording
+            % %
+            % %
+            % %             if max(strcmp(pressedKeys,'ESCAPE'))
+            % %                 goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+            % %                 if togglegoggle == 1
+            % %                     ShutdownArd(ard,comPort);
+            % %                 end
+            % %                 %             close goggles
+            % %                 %             save any data
+            % %                 pressedKeys
+            % %                 disp('Escape this madness!!')
+            % %                 fclose(fileID);
+            % %                 sca
+            % %             end
+            % %
+            % %
+            % %
+            % %
+            % %             if mod(curr_frame,96) == 0 %every 96 frames...
+            % %
+            % %                 if ~respmade %if no response whatsoever
+            % %                     RT = NaN;
+            % %                     responses{resp,1}= TaskNo;
+            % %                     responses{resp,2} = 'Stim';
+            % %                     responses{resp,3} = 'No response';
+            % %                     responses{resp,4} = RT;
+            % %                 end
+            % %                 resp = resp + 1; %update resp counter (do we even need this?)
+            % %
+            % %                 %reset curr_frame
+            % %                 curr_frame = 1;
+            % %                 %new task frame
+            % %                 taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+            % %                 %reset response
+            % %                 respmade = 0;
+            % %                 %increment task number
+            % %                 TaskNo = TaskNo+1;
+            % %             end
+            % %         end %repeat stim
+            
+        end %stim
+        cycle_end = vbl;
+        disp(sprintf('Time for cycle: %d', cycle_end - cycle_start));
         
-        if ~respmade %if no response whatsoever
-            RT = NaN;
+    end %cycle
+    %
+    start_time = vbl;
+    fix_start = vbl;
+    %% %%% 12s fix %%%%%%%%%%%%%%%%%%
+    
+    % Task
+    curr_frame = 1;
+    start_time = vbl;
+    
+    totalframes = 12/ifi;
+    taskframe = round(1/ifi + ((totalframes-(1/ifi))-1/ifi).*rand); % task can appear 1s after trial start and no later than 1s before end of trial (to give time for resp)
+    
+    respmade = 0;
+    
+    goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
+    
+    
+    while vbl - start_time < ((12/ifi - 0.2)*ifi)%time is under 12 s
+        Screen('FillRect', window, grey) % make the whole screen grey_bkg
+        Screen('DrawTexture', window, SpiderTex(2), [], [], 0); %Draw
+        
+        if curr_frame > taskframe - 1 && curr_frame < (taskframe + 1/ifi) %if between taskframe and taskframe + 1s
+            %show alternative fix
+            if curr_frame == taskframe %if the very first frame
+                startSecs = GetSecs() %rough onset of alternative fix
+            end
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
+            Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+             if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                Screen('DrawTexture', window, fixATex(2), [], [], 0); %Draw() %red
+            end
+            %                 disp(num2str(curr_frame))
+            %   disp(num2str(taskframe))
+            %                 disp('alternative')
+            
+        else
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+            end
+            Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+            if stereoModeOn
+                Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                Screen('DrawTexture', window, fixBTex(2), [], [], 0); %Draw %blue
+            end
+            %                 disp(num2str(curr_frame))
+            %  disp(num2str(taskframe))
+            %                 disp('normal')
+        end
+        
+        vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
+        curr_frame = curr_frame +1;
+        
+        fix_end = vbl;
+        
+        % record responses
+        [pressed, firstPress]=KbQueueCheck(deviceindexSubject);
+        [keyIsDown, secs, keyCode] = KbCheck([-1]);
+        pressedKeys = KbName(firstPress); %which key
+        timeSecs = firstPress(find(firstPress)); %what time
+        if pressed %report the keypress for the experimenter to see
+            % Again, fprintf will give an error if multiple keys have been pressed
+            fprintf('"%s" typed at time %.3f seconds, []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+            fprintf(fileID,'"%s" typed at time %.3f seconds []  Fix  \r\n', KbName(firstPress), timeSecs - startSecs);
+            RT = timeSecs - startSecs;
             responses{resp,1}= [];
             responses{resp,2} = 'Fix';
-            responses{resp,3} = 'No response';
+            responses{resp,3} = pressedKeys;
             responses{resp,4} = RT;
+            respmade = 1;
+        else
+            
         end
-        resp = resp + 1; %update resp counter
+        % end of response recording
         
-        %% the end
-        DrawFormattedText(window, sprintf('The End!'), 'center', 'center', [1 0 0], [], []);
-        vbl = Screen('Flip', window);
-        WaitSecs(2);
+        if max(strcmp(pressedKeys,'ESCAPE')) || keyCode(escapeKey)
+            goggles(bs_eye, 'neither',togglegoggle,ard) %(BS eye, viewing eye)
+            if togglegoggle == 1
+                ShutdownArd(ard,comPort);
+            end
+            %             close goggles
+            %             save any data
+            pressedKeys
+            disp('Escape this madness!!')
+            fclose(fileID);
+            sca
+            save(filename)
+        end
         
+    end %while
+    disp(sprintf('Time for first fix: %d', fix_end- fix_start));
+    expt_end = vbl;
+    
+    if ~respmade %if no response whatsoever
+        RT = NaN;
+        responses{resp,1}= [];
+        responses{resp,2} = 'Fix';
+        responses{resp,3} = 'No response';
+        responses{resp,4} = RT;
+    end
+    resp = resp + 1; %update resp counter
+    
+    %% the end
+    DrawFormattedText(window, sprintf('The End!'), 'center', 'center', [1 0 0], [], []);
+    vbl = Screen('Flip', window);
+    WaitSecs(2);
+    
 catch ERR
     rethrow(ERR)
     if togglegoggle == 1;
@@ -863,16 +917,16 @@ catch ERR
     sca
 end
 if togglegoggle == 1;
-        %Close goggles
-        % Shut down ARDUINO
-        goggles(bs_eye, 'neither', togglegoggle,ard)
-        ShutdownArd(ard,comPort);
-        disp('Arduino is off')
-       
-    end
-    save(filename)
-    fclose(fileID);
+    %Close goggles
+    % Shut down ARDUINO
+    goggles(bs_eye, 'neither', togglegoggle,ard)
+    ShutdownArd(ard,comPort);
+    disp('Arduino is off')
     
-    disp(sprintf('Total run time: %d', expt_end-expt_start))
-    
-    sca
+end
+save(filename)
+fclose(fileID);
+
+disp(sprintf('Total run time: %d', expt_end-expt_start))
+
+sca
