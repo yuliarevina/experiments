@@ -14,7 +14,8 @@
 
 % Written by Yulia Revina, NTU, Singapore. January 2018.
 
-delays = [0 0.05 0.1 0.2 0.3 0.4 0.5]; %delays to check in ms
+% delays = [0 0.05 0.1 0.2 0.3 0.4 0.5]; %delays to check in ms
+% delays = [0 0.07 0.072 0.074 0.076 0.078 0.08]; %delays to check in ms
 
 % stims to switch every TR ie 2s. Might help to see if there is an
 % asynchrony in TR as well
@@ -268,22 +269,22 @@ for i = 1:length(delays)
         Screen('TextSize', window, 60);
         DrawFormattedText(window, sprintf('Goggles after screen. Delay: %f', delays(i)), 'center', 'center', [1 1 1],[],[]); %show what delay is
         %on right now
-        disp(sprintf('Delay: %f', delays(i)))
+%         disp(sprintf('Delay: %f', delays(i)))
         vbl = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip red (just one frame, 16.6ms)
-        currtime = GetSecs - timestart;
-        disp(currtime)
+%         currtime = GetSecs - timestart;
+%         disp(currtime)
         WaitSecs(delays(i)); %wait before ON goggles
         goggles(bs_eye,'both',togglegoggle,ard);
         Screen('FillRect', window, [0 1 0], [300 300 600 600]); % make the whole screen green
         vbl = Screen('Flip', window, vbl + (((switchfreq)/ifi) - 0.2) * ifi); %flip black on after Switch Freq = 2s
-        currtime = GetSecs - timestart;
-        disp(currtime)
+%         currtime = GetSecs - timestart;
+%         disp(currtime)
         WaitSecs(delays(i)); %wait before OFF goggles
         goggles(bs_eye,'neither',togglegoggle,ard);
         Screen('FillRect', window, [1 0 0]); % make the whole screen red
         vbl = Screen('Flip', window, vbl + (((switchfreq-ifi)/ifi) - 0.2) * ifi); %turn green screen off after 2s
-        currtime = GetSecs - timestart;
-        disp(currtime)
+%         currtime = GetSecs - timestart;
+%         disp(currtime)
     end
 
 end

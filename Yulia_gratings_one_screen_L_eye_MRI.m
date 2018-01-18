@@ -12,7 +12,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 % goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
-goggledelay = 0.000 %seconds
+goggledelay = 0.070 %seconds
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,7 +46,7 @@ devices = PsychHID('Devices');
 if IsWin
     deviceindexSubject = [0]; %possibly MRI keypad
 else
-    deviceindexSubject = [8]; %possibly MRI keypad
+    deviceindexSubject = [9]; %possibly MRI keypad
 end
 %can only listen to one device though...
 % deviceindexExperimenter = 11; %possibly your laptop keyboard
@@ -1012,9 +1012,9 @@ for block = 1:nSeqs
             end
             [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi); %flip on next frame after trigger press or after last flip of stim
             if recordvbl
-                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix  \r\n', vbl-timestart,Sequence);
-                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-timestart,Sequence);
-                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,Sequence);
+                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix  \r\n', vbl-timestart,block);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-timestart,block);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,block);
                 recordvbl = false;
             end
             if recordgoggles %only need the very first go thru the loop
@@ -1022,7 +1022,7 @@ for block = 1:nSeqs
                     WaitSecs(goggledelay);
                     goggles(bs_eye, 'both',togglegoggle,ard); %(BS eye, viewing eye)
                     gogglestime = GetSecs - timestart;
-                    fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  Fix \r\n', gogglestime,Sequence);
+                    fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  Fix \r\n', gogglestime,block);
                     recordgoggles =false;
                 catch
                     disp('goggle error')
@@ -1049,6 +1049,8 @@ for block = 1:nSeqs
                 
                 fprintf('"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs, block);
                 fprintf(fileID,'"%s" typed at time %.3f seconds  %d  Fix  \r\n', KbName(firstPress), timeSecs - startSecs, block);
+                fprintf(fileID,'"%s" typed at time %.3f seconds from start  %d  Fix  \r\n', KbName(firstPress), timeSecs - timestart, block);
+                
                 
                 %fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
                 RT = timeSecs - startSecs;
@@ -1312,9 +1314,9 @@ for block = 1:nSeqs
             
             [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
             if recordvbl
-                fprintf(fileID,'VBL at time %.3f seconds  %d  %d  \r\n', vbl-timestart,Sequence,Stimulus);
-                fprintf(fileID,'StimOnset at time %.3f seconds  %d  %d  \r\n', StimOnset-timestart,Sequence,Stimulus);
-                fprintf(fileID,'Time taken to flip %.3f seconds  %d  %d  \r\n', FlipTime-vbl,Sequence,Stimulus);
+                fprintf(fileID,'VBL at time %.3f seconds  %d  %d  \r\n', vbl-timestart,block,stim);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  %d  \r\n', StimOnset-timestart,block,stim);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  %d  \r\n', FlipTime-vbl,block,stim);
                 recordvbl = false;
             end
             
@@ -1326,7 +1328,7 @@ for block = 1:nSeqs
                         WaitSecs(goggledelay);
                         goggles(bs_eye, 'fellow',togglegoggle,ard) %(BS eye, viewing eye)
                         gogglestime = GetSecs - timestart;
-                        fprintf(fileID,'Goggles (fellow) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                        fprintf(fileID,'Goggles (fellow) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,block,stim);
                         recordgoggles = false;
                     end
                 catch
@@ -1338,7 +1340,7 @@ for block = 1:nSeqs
                         WaitSecs(goggledelay);
                         goggles(bs_eye, 'BS',togglegoggle,ard) %(BS eye, viewing eye)
                         gogglestime = GetSecs - timestart;
-                        fprintf(fileID,'Goggles (BS) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                        fprintf(fileID,'Goggles (BS) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,block,stim);
                         recordgoggles = false;
                     end
                 catch
@@ -1350,7 +1352,7 @@ for block = 1:nSeqs
                         WaitSecs(goggledelay);
                         goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
                         gogglestime = GetSecs - timestart;
-                        fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,Sequence,Stimulus);
+                        fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d  %d  \r\n', gogglestime,block,stim);
                         recordgoggles = false;
                     end
                 catch
@@ -1371,6 +1373,7 @@ for block = 1:nSeqs
                 % Again, fprintf will give an error if multiple keys have been pressed
                 fprintf('"%s" typed at time %.3f seconds %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs,block, stim);
                 fprintf(fileID,'"%s" typed at time %.3f seconds  %d  %d  \r\n', KbName(firstPress), timeSecs - startSecs,block,stim);
+                fprintf(fileID,'"%s" typed at time %.3f seconds  from start %d  %d  \r\n', KbName(firstPress), timeSecs - timestart,block,stim);
                 
 %               fprintf('"%s" typed at time %.3f seconds\n', KbName(firstPress), timeSecs - startSecs);
                 RT = timeSecs - startSecs;
@@ -1503,9 +1506,9 @@ for block = 1:nSeqs
             [vbl, StimOnset, FlipTime, MissedBeam] = Screen('Flip', window, vbl + (waitframes - 0.2) * ifi);
             
             if recordvbl
-                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix \r\n', vbl-timestart,Sequence);
-                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-timestart,Sequence);
-                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,Sequence);
+                fprintf(fileID,'VBL at time %.3f seconds  %d  Fix \r\n', vbl-timestart,block);
+                fprintf(fileID,'StimOnset at time %.3f seconds  %d  Fix  \r\n', StimOnset-timestart,block);
+                fprintf(fileID,'Time taken to flip %.3f seconds  %d  Fix  \r\n', FlipTime-vbl,block);
                 recordvbl = false;
             end
             
@@ -1514,7 +1517,7 @@ for block = 1:nSeqs
                     WaitSecs(goggledelay);
                     goggles(bs_eye, 'both',togglegoggle,ard) %(BS eye, viewing eye)
                     gogglestime = GetSecs - timestart;
-                    fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d Fix  \r\n', gogglestime,Sequence);
+                    fprintf(fileID,'Goggles (both) triggered at time %.3f seconds  %d Fix  \r\n', gogglestime,block);
                     recordgoggles = false;
                 end
             catch
