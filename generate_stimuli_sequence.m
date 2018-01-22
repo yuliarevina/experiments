@@ -7,12 +7,19 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Enter the subject number you wish to generate sequence for
-subnum = 1; %subject number??
+subnum = 10; %subject number??
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 nRuns = 6;
 nSeqs = 5;
 nStimsInSeq = 6;
+
+% %shortened version for debug
+% nRuns = 2;
+% nSeqs = 2;
+% nStimsInSeq = 6;
+
+rng('shuffle')
 
 allperms = perms([1:6]);
 
