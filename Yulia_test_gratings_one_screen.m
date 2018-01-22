@@ -1,12 +1,12 @@
-% Test script for moving gratings with occlusion etc.
+  %Test script for moving gratings with occlusion etc.
 % Yulia Revina 2017
-
-% clear all; %don't want to do this for the real expt otherwise it will delete the blindspot measurements
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Get some hardware info %%%%%%%%%%%%%%%%%%%%%%%
-
-% if ~IsWin
+ 
+ %clear all; %don't want to do this for the real expt otherwise it will delete the blindspot measurements
+ 
+ % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% % Get some hardware info %%%%%%%%%%%%%%%%%%%%%%%
+ 
+ % if ~IsWin
     devices = PsychHID('Devices');
 % end
 keyboardind = GetKeyboardIndices();
@@ -32,32 +32,32 @@ todaydate  = date;
 stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
 stereoMode = 4;        % 4 for split screen, 10 for two screens
 makescreenshotsforvideo = 0;
-
-BS_measurementON = 1;                     
+ 
+BS_measurementON = 1;                      
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     
+togglegoggle = 1; % 0 goggles off for debug; 1 =  goggles on for real expt
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%
 
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 1; %show the debug bars at the start?
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% DEMO ON/OFF %%%%   %%%%%%%%%%%%%% %%% %%%%%%%%%%%%%%%%%%%%%%%%%
+Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%%%%%%%%
 
 
-bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+bs_eye = 'left';   %% Right eye has the blind spot. Left fixation spot
 
-distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
+distance2screen = 70; % how many centimeters from eye to screen? To make this portable on different machines. Just dummy value. Not used yet
 
-outside_BS = 5; %deg of visual angle
-outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
+outside_BS = 5; %deg of visual angle  
+outside_BS = round(deg2pix_YR(outside_BS)); %in pixel  s for our screen
 
-% brightness = 0.1;
-brightness = 0.7; % for debugging
-textcolor = [0 0 0];
-
-% timing
+brightness = 0.1;        
+  % brightness = 0.7; % fo r debugging
+textcolor = [0 0 0]; 
+                
+ %              timing
 goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
 
 % GAMMA CORRECTION
@@ -84,7 +84,7 @@ filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), 
 %    Screen('CopyWindow', rightFixWin, w, [], rightScreenRect);	  
 %    Screen('Flip',w);
 
-%% -------------------------------
+  %% -------------------------------
 % set up screen and psychtoolbox |
 % --------------------------------
 
@@ -103,7 +103,7 @@ end
 AssertOpenGL;
 
 
-if IsWin
+if IsWin 
     Priority(1); %MAX FOR WIN
 else
     Priority(2);   % Linux
@@ -117,7 +117,7 @@ black = BlackIndex(screenNumber);  %value of white for display screen screenNumb
 grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
 % grey_bkg = white*0.10
 % grey_bkg = grey*brightness/10
-grey_bkg = black
+grey_bkg = black;
 
 
 
@@ -255,6 +255,7 @@ else
     ard =[]; %dummy variable in case we are not using goggles
 end
 
+
 try
 %% ---------------
 %  Intro screen  |
@@ -311,9 +312,10 @@ oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2, BS_center_v);
                                                                            
 ShowFix()
 
-% show blind spot  
+%show blind spot  
 Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
 if strcmp(bs_eye, 'right')
+           
      DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your LEFT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
 else
      DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the +', 'center', 'center', textcolor, [],[]);
@@ -323,10 +325,11 @@ Screen('Flip', window);
 KbStrokeWait(-1);
 
 %% --------------------
+
 % Recording responses |
 % ---------------------
-
-numberofreps = 1; %how many repetitions of each type of trial?
+rng('shuffle'); %randomize the random num generator
+numberofreps = 10; %how many repetitions of each type of trial?
 nTaskTrials = 5; %number of task trials with the red fixation
 
 allcondscombos = CombVec(1:5,1:5)'; %generate all combinations of conditions and SFs, eg 1 1, 1 2, 1 3, ... 3 3, 3 4 etc
@@ -336,8 +339,8 @@ allcondscombos = repmat(allcondscombos,numberofreps,1); % multiply the combinati
 % run possibly. Depending on how we wannna split it up).
 
 %create a third column for the counterbalancing
-allcondscombos(1:size(allcondscombos,1)/2,3) = 1; %standard is first
 allcondscombos(size(allcondscombos,1)/2 + 1:end,3) = 2; %standard is second
+allcondscombos(1:size(allcondscombos,1)/2,3) = 1; %standard is first
 
 %shuffle rows
 condsorder = randperm(size(allcondscombos,1)); %this is the order of the conditions for each subject
@@ -348,6 +351,7 @@ taskTrials = sort(taskTrials) %sort into ascending order
 taskNo = 1;
 task = false;
 RedFix = NaN(size(allcondscombos,1), 2);
+
 RedFix(taskTrials,1) = 1;
 
 
