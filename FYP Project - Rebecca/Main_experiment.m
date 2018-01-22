@@ -60,12 +60,12 @@ outside_BS = round(deg2pix_YR(outside_BS)); %in pixels for our screen
 brightness = 0.1;
 % brightness = 0.7; % for debugging
 textcolor = [0 0 0];
-
+    
 % timing
 goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
 
 % GAMMA CORRECTION
-load CLUT_Station1_1152x864_100Hz_25_Apr_2016.mat
+% load CLUT_Station4_1152x864_100Hz_27_Apr_2016.mat
 
 % ASK FOR SUBJECT DETAILS
 
@@ -107,6 +107,11 @@ end
 % an OpenGL Psychtoolbox
 AssertOpenGL;
 
+PsychImaging('PrepareConfiguration')
+
+PsychImaging('AddTask', 'LeftView', 'DisplayColorCorrection', 'LookupTable');
+PsychImaging('AddTask', 'RightView', 'DisplayColorCorrection', 'LookupTable');
+
 
 if IsWin
     Priority(1); %MAX FOR WIN
@@ -129,10 +134,10 @@ grey_bkg = black
 % % Set the blend function for the screen
 % Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 
-% % % correct non-linearity from CLUT
-if ~IsWin
-    oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
-end
+% % % % correct non-linearity from CLUT
+% if ~IsWin
+%     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
+% end
 
 
 % Open an on screen window and color it grey
@@ -142,11 +147,41 @@ if stereoModeOn
     leftScreenRect = windowRect;
     rightScreenRect = windowRect;
     if stereoMode == 10
-        Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
+        Screen('OpenWindow', screenNumber, 128, [], [], [], stereoMode);
     end
 else %just open one window
     [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
 end
+
+
+
+
+load CLUT_Station4_1152x864_100Hz_27_Apr_2016.mat
+PsychColorCorrection('SetLookupTable', window, clut, 'LeftView');
+
+load CLUT_Station2_1152x864_100Hz_27_Apr_2016.mat
+% clut = 1-clut; %for debug
+PsychColorCorrection('SetLookupTable', window, clut, 'RightView');
+
+
+% % Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+% % GAMMA CORRECTION
+% % load CLUT_Station4_1152x864_100Hz_27_Apr_2016.mat
+% % 
+% % % % correct non-linearity from CLUT
+% % if ~IsWin
+% %     oldCLUT= Screen('LoadNormalizedGammaTable', window, clut, [], 0);
+% % end
+% % Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+% % GAMMA CORRECTION
+% % load CLUT_Station2_1152x864_100Hz_27_Apr_2016.mat
+% % 
+% % % % correct non-linearity from CLUT
+% % if ~IsWin
+% %     oldCLUT= Screen('LoadNormalizedGammaTable', window, clut, [], 1);
+% % end
+
+
 
 
 % % Set the blend function for the screen
@@ -482,8 +517,9 @@ KbStrokeWait(-1);
 
 %make a square grating texture
 cyclesPerDeg = 0.89; 
-orientations_real = [35 40 45 50 55];
+orientations_real = [30 37.5 45 52.5 60]; %7.5 deg
 % orientations_real = [25 35 45 55 65]; %for debug
+% orientations_real = [5 25 45 65 85]; %for debug
 orientations = 360 - orientations_real; %because the image will be mirrored in our set up
 condition = [0 1]; %0 = both BS; 1 = both fellow
 maxsize= 1000; %px, for example
@@ -634,6 +670,8 @@ durationMask = 0.5; % 500ms
 %   1           50              2               2      0.654
 %   1           55              1               2      0.519
 %  ...          ...             ...             ...     ...
+
+rng('shuffle'); % randomize the random number generator. Otherwise
 
 nrepetitions = 50; %show each unique condition 50 times
 
