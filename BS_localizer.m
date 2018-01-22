@@ -20,7 +20,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 % goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
 goggledelay = 0.090 %seconds
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,7 +49,7 @@ KbName('UnifyKeyNames')
 if IsWin
     deviceindexSubject = [0]; %possibly MRI keypad
 else
-    deviceindexSubject = []; %possibly MRI keypad
+    deviceindexSubject = [9]; %possibly MRI keypad
 end
     
 %can only listen to one device though...
@@ -449,12 +449,13 @@ while ~keyCode(scannertrigger)
     [keyIsDown, secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
 end
 disp('Trigger detected')
-% DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger. Comment this out for debugging to keep listening for s
+DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger. Comment this out for debugging to keep listening for s
 
-vbl = secs;
+% vbl = secs;
 expt_start = secs;
+vbl = WaitSecs('UntilTime', expt_start+(2-goggledelay));
+expt_start2 = vbl;
 KbQueueCreate(deviceindexSubject);
-
 KbQueueStart(deviceindexSubject);
     
 for Sequence = 1:nSeq
@@ -1033,8 +1034,9 @@ disp(sprintf('    Time elapsed for 12s fix:  %.5f seconds from startblock',time_
 
 %check session timing
 expt_end = vbl;
-disp(sprintf('Total run time: %d', expt_end-expt_start))
-
+disp(sprintf('Total run time: %d', expt_end-expt_start2))
+disp(sprintf('Total run time + (1 extra TR - goggledelay): %d', expt_end-expt_start))
+disp(sprintf('Total run time (using GetSecs): %d', GetSecs-expt_start))
 
 if togglegoggle == 1;
     % Close goggles

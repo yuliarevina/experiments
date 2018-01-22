@@ -10,6 +10,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+goggledelay = 0.070;%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -436,12 +437,16 @@ try
     end
     disp('Trigger detected')
     DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
-    vbl = secs; %get timestamp
-    KbQueueCreate(deviceindexSubject); %start listening for key presses
-    KbQueueStart(deviceindexSubject);
+%     vbl = secs; %get timestamp
+
     start_time = secs;
     expt_start = secs;
-    
+    vbl = WaitSecs('UntilTime', expt_start+(2-goggledelay));
+    expt_start2 = vbl;
+
+    KbQueueCreate(deviceindexSubject); %start listening for key presses
+    KbQueueStart(deviceindexSubject);
+
     
     if strcmp(bs_eye,'right')
         fixationpoint = [r_fix_cord1(1), yCenter];
@@ -1034,5 +1039,5 @@ save(filename)
 fclose(fileID);
 
 disp(sprintf('Total run time: %d', expt_end-expt_start))
-
+disp(sprintf('Total run time 2: %d', expt_end-expt_start2))
 sca

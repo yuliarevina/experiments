@@ -10,7 +10,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 % goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
 goggledelay = 0.070 %seconds
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -904,11 +904,19 @@ if stereoModeOn
     DrawFormattedText(window, 'Trigger detected', 'center', 'center', textcolor,[],[]);
 end
 disp('Trigger detected')
-% DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
+DisableKeysForKbCheck(scannertrigger); % now disable the scanner trigger
 
 
 timestart = secs; %time elapsed since trigger press
-vbl= secs; %get trigger press for timing of block 1
+% vbl= secs; %get trigger press for timing of block 1
+% disp(GetSecs - timestart);
+% strt = GetSecs;
+vbl = WaitSecs('UntilTime', timestart+(2-goggledelay));
+% vbl = WaitSecs(2 - goggledelay); %TR - delay so we shift everything after this forward by delay s.
+% GetSecs - strt
+% disp(GetSecs - timestart);
+% vbl = GetSecs; %rewrite vbl to account for the delay
+
 
 KbQueueCreate(deviceindexSubject);
 KbQueueStart(deviceindexSubject);
@@ -1593,7 +1601,7 @@ totalexpttime = sum(totalblocktime);
 disp(sprintf('    Time elapsed for experiment:  %.5f seconds',totalexpttime));  
 timeend = GetSecs;
 totalexpttime2 = timeend -timestart;
-disp(sprintf('    Time elapsed for experiment:  %.5f seconds (Using GetSecs)',totalexpttime));  
+disp(sprintf('    Time elapsed for experiment:  %.5f seconds (Using GetSecs)',totalexpttime2));  
      
 % disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
 
