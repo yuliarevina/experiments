@@ -34,7 +34,7 @@ debugmode = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+% bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 devices = PsychHID('Devices');
@@ -262,7 +262,7 @@ to_use = randperm(24,8);
 
 %save sequences for future use
 seqsforfile = allstimscomboslocalizer(to_use(1:nSeq), :);
-fileIDseqname = 'sequences.txt';
+fileIDseqname = sprintf('%s_Localizer_sequences.txt', todaydate);
 fileIDseq = fopen(fileIDseqname,'w');
 fprintf(fileIDseq,'%d', seqsforfile);
 fclose(fileIDseq);
