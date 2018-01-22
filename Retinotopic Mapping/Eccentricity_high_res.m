@@ -22,7 +22,7 @@ debugmode = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+% bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 devices = PsychHID('Devices');
@@ -193,12 +193,12 @@ WaitSecs(.1);
 
 %% stim parameters
 
-dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir ='D:/MRI scripts/Retinotopic Mapping/';
 % dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
 % dir = '/media/laptop1/THE STICK/MRI scripts/Retinotopic Mapping/';
-% dir ='/home/laptop1/Documents/Yulia/Retinotopic Mapping/';
+dir ='/home/laptop1/Documents/Yulia/Retinotopic Mapping/';
 
 
 stimDur = 125; %ms
@@ -708,7 +708,7 @@ try
                 %                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim) * ifi); %every 8 frames. On ave we need 7.5 frames
                 %                 vbl = Screen('Flip', window, vbl + (0.13333333333/ifi - 0.2) * ifi); %every 8 frames. On ave we need 7.5 frames
                 %check timing
-                curr_time = GetSecs - expt_start;
+                curr_time = GetSecs - expt_start2;
                 requested_time = requested_time + 0.125; %increment by 125 ms
                 if curr_time - requested_time > ifi %if one frame over
                     nflip = 7;
@@ -723,7 +723,7 @@ try
                 %                 vbl = Screen('Flip', window, vbl + (nFrames2wait4nextStim - 1) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
                 %                 vbl = Screen('Flip', window, vbl + (0.116666666/ifi - 0.2) * ifi); % try to flip every 125 ms. Get ready to flip 6.5 frames after last, in other words, it will happen
                 %check timing
-                curr_time = GetSecs - expt_start;
+                curr_time = GetSecs - expt_start2;
                 requested_time = requested_time + 0.125; %increment by 125 ms
                 if curr_time - requested_time > ifi %if one frame over
                     nflip = 6;
