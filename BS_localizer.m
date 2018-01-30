@@ -264,7 +264,11 @@ to_use = randperm(24,8);
 seqsforfile = allstimscomboslocalizer(to_use(1:nSeq), :);
 fileIDseqname = sprintf('%s_Localizer_sequences.txt', todaydate);
 fileIDseq = fopen(fileIDseqname,'w');
-fprintf(fileIDseq,'%d', seqsforfile);
+for i = 1:nSeq %row
+    for j = 1:nStim %column
+        fprintf(fileIDseq,'%d ', seqsforfile (i,j));
+    end
+end
 fclose(fileIDseq);
 
 
