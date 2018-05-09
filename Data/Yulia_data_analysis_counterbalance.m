@@ -152,7 +152,8 @@ hold off;
 
 disp ('Palamedes...')
 %Stimulus intensities
-StimLevels = [0.25 0.30 0.35 0.40 0.45]; 
+% StimLevels = [0.25 0.30 0.35 0.40 0.45]; 
+StimLevels = [0.20 0.30 0.40 0.50 0.60]; 
 figure('name','Maximum Likelihood Psychometric Function Fitting');
     axes
     hold on
@@ -193,7 +194,7 @@ for condition = 1:5 %conditions
     %Parameter grid defining parameter space through which to perform a
     %brute-force search for values to be used as initial guesses in iterative
     %parameter search.
-    searchGrid.alpha = 0.25:.001:.45; %PSE
+    searchGrid.alpha = 0.20:.001:.65; %PSE
     searchGrid.beta = logspace(0,1,101); %slope
     searchGrid.gamma = 0.0;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
     searchGrid.lambda = 0.02;  %ditto % lapse rate, finger error, upper asympt
@@ -251,3 +252,84 @@ xlabel('Stimulus Intensity - cycles per deg SF');
 ylabel('Proportion "Comparison More Stripes"');
 plot([0 5],[0.5 0.5])
 plot([0.3 0.3], [0 1], 'LineStyle', '--')
+
+%% Check number of false positive and false negatives for RedFix task
+
+% False positive - Pressed yes when red fix not there
+% False negative - Didn't press yes when red fix was there (missed it)
+
+% Gives you the trial numbers of FP and FN
+
+falsepositive = find(RedFix(:,1) ~= 1 & RedFix(:,2) == 1)
+falsenegative = find(RedFix(:,1) == 1 & RedFix(:,2) ~= 1)
+
+
+%% RT analisys
+
+% 7th column of the matrix (also 6th but we can just use either so let's do
+% 7th for now
+
+RT_col = 6;
+
+% all RTs histogram
+
+RT = ones(ntrialseachcond*5,5);
+
+all_RT = subjectdata(:,RT_col);
+
+figure; hist(all_RT);
+
+% RTs by condition
+for cond_counter = 1:5
+ tmp3 = find((subjectdata(:,1) == cond_counter))'; %condition 1
+ RT(:,cond_counter) = subjectdata(tmp3,RT_col);
+end
+
+figure; subplot(2,3, 1); hist(RT(:,1)); xlabel ('Intact')
+subplot(2,3, 2); hist(RT(:,2)); xlabel ('BS')
+subplot(2,3, 3); hist(RT(:,3)); xlabel ('Occluded')
+subplot(2,3, 4); hist(RT(:,4)); xlabel ('Del Sharp')
+subplot(2,3, 5); hist(RT(:,5)); xlabel ('Del Fuzzy')
+
+median_intact = median(RT(:,1));
+median_BS = median(RT(:,2));
+median_Occ = median(RT(:,3));
+median_Deleted_Sharp = median(RT(:,4));
+median_Deleted_Fuzzy = median(RT(:,5));
+
+figure; subplot(2,3, 1); boxplot(RT(:,1)); xlabel ('Intact')
+subplot(2,3, 2); boxplot(RT(:,2)); xlabel ('BS')
+subplot(2,3, 3); boxplot(RT(:,3));xlabel ('Occluded')
+subplot(2,3, 4); boxplot(RT(:,4)); xlabel ('Del Sharp')
+subplot(2,3, 5); boxplot(RT(:,5)); xlabel ('Del Fuzzy')
+
+
+disp('Intact vs BS')
+[p,h,stats] = ranksum(RT(:,1),RT(:,2)) %independent samples
+
+disp('Intact vs Occ')
+[p,h,stats] = ranksum(RT(:,1),RT(:,3)) %independent samples
+
+disp('Intact vs Del Sh')
+[p,h,stats] = ranksum(RT(:,1),RT(:,4)) %independent samples
+
+disp('Intact vs Del Fuzz')
+[p,h,stats] = ranksum(RT(:,1),RT(:,5)) %independent samples
+
+disp('BS vs Occ')
+[p,h,stats] = ranksum(RT(:,2),RT(:,3)) %independent samples
+
+disp('BS vs Del Sh')
+[p,h,stats] = ranksum(RT(:,2),RT(:,4)) %independent samples
+
+disp('BS vs Del Fuzz')
+[p,h,stats] = ranksum(RT(:,2),RT(:,5)) %independent samples
+
+disp('Occ vs Del Sh')
+[p,h,stats] = ranksum(RT(:,3),RT(:,4)) %independent samples
+
+disp('Occ vs Del Fuzz')
+[p,h,stats] = ranksum(RT(:,3),RT(:,5)) %independent samples
+
+disp('Del Sh vs Del Fuzz')
+[p,h,stats] = ranksum(RT(:,4),RT(:,5)) %independent samples
