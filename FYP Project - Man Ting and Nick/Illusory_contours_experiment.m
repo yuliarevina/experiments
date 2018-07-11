@@ -49,7 +49,7 @@ Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+bs_eye = 'left';   %% Right eye has the blind spot. Left fixation spot
 
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
@@ -506,9 +506,40 @@ disp('BS cleared')
 
 
 
-%% Stimuli specifications
+%% Stimuli specifications & plot for debug purposes
 
 try
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%  Task parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    dotpositions = [-1 -0.5 0 0.5 1]; %how many degrees from the arc middle? -ve = inside illusory shape; +ve outside illusory shape
+    durationStim = 0.400; %secs
+    durationDot = 0.050; %secs
+    durationMask = 0.400; %secs
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%    MASKS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % Generate random grey ovals as in Kellman papers
+    
+    nOvals = 50;
+    minWidth = 100; %pix
+    maxWidth = 400;
+    widths = minWidth + (maxWidth - minWidth).*rand(nOvals,1);
+    heights = minWidth + (maxWidth - minWidth).*rand(nOvals,1);
+        %  r = a + (b-a).*rand(N,1).
+        
+    
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%     PERIPHERAL STIMS         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
     %BS coords
     % BS_center_h2_l, BS_center_v_l
     % BS_center_h2_r, BS_center_v_r
@@ -538,13 +569,13 @@ try
     arc_middle_L = [BS_center_h2_l, BS_center_v_l];
     arc_middle_R = [BS_center_h2_r, BS_center_v_r];
     
-    arc_angle = 45; %try a 45 deg angle, maybe can change later
+    arc_angle = 90; %try a 45 deg angle, maybe can change later
     width_of_stim = deg2pix_YR(10) % define width of kanizsa rect in degrees, try 10deg for now
-    inducer_diameter = deg2pix_YR(3) %define inducer circle size (see papers for confirmation, try 3deg for now)
+    inducer_diameter = deg2pix_YR(5) %define inducer circle size (see papers for confirmation, try 3deg for now)
     
     %length of curve, BS height + some value
-    arc_length_L = BS_diameter_v_l + deg2pix_YR(2); % BS height plus 2 deg (one deg each side). Can change later
-    arc_length_R = BS_diameter_v_r + deg2pix_YR(2);
+    arc_length_L = BS_diameter_v_l + deg2pix_YR(10); % BS height plus 10 deg (5 deg each side). Can change later
+    arc_length_R = BS_diameter_v_r + deg2pix_YR(10);
     
     %radius of circle underlying the arc (needed for further geometric
     %calculations
@@ -557,15 +588,15 @@ try
     origin_of_arc_R = [BS_center_h2_r + radius_R, BS_center_v_r];
     
     %chord legth -> absolute value of formula, otherwise get -ve number
-    chord_length_L = abs(radius_L * 2 * sin(arc_angle/2));
-    chord_length_R = abs(radius_R * 2 * sin(arc_angle/2));
+    chord_length_L = abs(radius_L * 2 * sind(arc_angle/2));
+    chord_length_R = abs(radius_R * 2 * sind(arc_angle/2));
     
     % top and bottom points of the chord (needed for base rect and other
     % calculations)
-    top_point_of_chord_L = [origin_of_arc_L(1) + abs(radius_L* cos(arc_angle/2)), BS_center_v_l + (chord_length_L/2)];
-    top_point_of_chord_R = [origin_of_arc_R(1) - abs(radius_R *cos(arc_angle/2)), BS_center_v_r + (chord_length_R/2)];
-    bottom_point_of_chord_L = [origin_of_arc_L(1) + abs(radius_L * cos(arc_angle/2)),BS_center_v_l -  (chord_length_L/2)];
-    bottom_point_of_chord_R = [origin_of_arc_R(1) - abs(radius_R * cos(arc_angle/2)),BS_center_v_r -  (chord_length_R/2)];
+    top_point_of_chord_L = [origin_of_arc_L(1) + abs(radius_L* cosd(arc_angle/2)), BS_center_v_l - (chord_length_L/2)];
+    top_point_of_chord_R = [origin_of_arc_R(1) - abs(radius_R *cosd(arc_angle/2)), BS_center_v_r - (chord_length_R/2)];
+    bottom_point_of_chord_L = [origin_of_arc_L(1) + abs(radius_L * cosd(arc_angle/2)),BS_center_v_l +  (chord_length_L/2)];
+    bottom_point_of_chord_R = [origin_of_arc_R(1) - abs(radius_R * cosd(arc_angle/2)),BS_center_v_r +  (chord_length_R/2)];
     
     %inducer circle centres for LEFT
     inducer_centre_L(1,1:2) = top_point_of_chord_L; % top of chord
@@ -583,19 +614,31 @@ try
     baseRectL = [inducer_centre_L(3,1:2) inducer_centre_L(2,1:2)]
        
     %base rectangle for RIGHT - use inducer circle centres as the 4 coords
-    baseRectR = [inducer_centre_R(1,1:2) inducer_centre_R(1,1:2)]
+    baseRectR = [inducer_centre_R(1,1:2) inducer_centre_R(4,1:2)]
     
     %define base rectangles for plotting circle wedge. Width = radius,
     %height = chord
-    baseRectL_forArc = [origin_of_arc_L(1), origin_of_arc_L(2)-chord_length_L/2, origin_of_arc_L(1)+radius_L, origin_of_arc_L(2)+chord_length_L/2]; %format = x_topcorner, y_topcorner, x_bottomcorner, y_bottomcorner
-    baseRectR_forArc = [origin_of_arc_R(1)-radius_R, origin_of_arc_R(2)-chord_length_R/2, origin_of_arc_R(1), origin_of_arc_R(2)+chord_length_R/2]; %format = x_topcorner, y_topcorner, x_bottomcorner, y_bottomcorner
     
+    baseRectL_forArc = [0 0 radius_L*2 radius_L*2] %square with diameter 2*radius
+    baseRectL_forArc = CenterRectOnPoint(baseRectL_forArc, origin_of_arc_L(1), origin_of_arc_L(2)); %centre on origin
+    
+    baseRectR_forArc = [0 0 radius_R*2 radius_R*2] %square with diameter 2*radius
+    baseRectR_forArc = CenterRectOnPoint(baseRectR_forArc, origin_of_arc_R(1), origin_of_arc_R(2)); %centre on origin
+    
+%     baseRectL_forArc = [origin_of_arc_L(1), origin_of_arc_L(2)-chord_length_L/2, origin_of_arc_L(1)+radius_L, origin_of_arc_L(2)+chord_length_L/2]; %format = x_topcorner, y_topcorner, x_bottomcorner, y_bottomcorner
+%     baseRectR_forArc = [origin_of_arc_R(1)-radius_R, origin_of_arc_R(2)-chord_length_R/2, origin_of_arc_R(1), origin_of_arc_R(2)+chord_length_R/2]; %format = x_topcorner, y_topcorner, x_bottomcorner, y_bottomcorner
+%     
     %define inducer circles and centre on 8 locations (4 for each eye/side)
     inducer_rect = [0 0 inducer_diameter inducer_diameter];
     inducer_circle_L_1 = CenterRectOnPoint(inducer_rect, inducer_centre_L(1,1), inducer_centre_L(1,2));
     inducer_circle_L_2 = CenterRectOnPoint(inducer_rect, inducer_centre_L(2,1), inducer_centre_L(2,2));
     inducer_circle_L_3 = CenterRectOnPoint(inducer_rect, inducer_centre_L(3,1), inducer_centre_L(3,2));
     inducer_circle_L_4 = CenterRectOnPoint(inducer_rect, inducer_centre_L(4,1), inducer_centre_L(4,2));
+    
+    inducer_circle_R_1 = CenterRectOnPoint(inducer_rect, inducer_centre_R(1,1), inducer_centre_R(1,2));
+    inducer_circle_R_2 = CenterRectOnPoint(inducer_rect, inducer_centre_R(2,1), inducer_centre_R(2,2));
+    inducer_circle_R_3 = CenterRectOnPoint(inducer_rect, inducer_centre_R(3,1), inducer_centre_R(3,2));
+    inducer_circle_R_4 = CenterRectOnPoint(inducer_rect, inducer_centre_R(4,1), inducer_centre_R(4,2));
     
     %plot everything on the screen for debug
     
@@ -604,58 +647,1070 @@ try
     % Left BS
     % Select left-eye image buffer for drawing:
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    
+    
+    % Put everything on offscreen windows for later fast plotting
+    Periphery_Screen_LEFT =Screen('OpenOffscreenWindow',window, grey);
+    Screen('FillRect', Periphery_Screen_LEFT, [0 0 0 0], windowRect); %draw transparency (need this, otherwise plots everything on a opaque grey screen)
+    
     %draw fixation dot
-    Screen('CopyWindow', leftFixWin, window, [], leftScreenRect);
-    ShowFix()
+%     Screen('CopyWindow', leftFixWin, Periphery_Screen_LEFT, [], leftScreenRect);
+%     ShowFix()
     %draw a blindspot oval to test its location
     oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l];
     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l);
     % show blind spot
-    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+%     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
-    Screen('FillArc',window,[1 0 0],baseRectL_forArc,90-(arc_angle/2),arc_angle) %centred on 90 deg point
+    Screen('FillOval', Periphery_Screen_LEFT, [0 0 0], inducer_circle_L_1);
+    Screen('FillOval', Periphery_Screen_LEFT, [0 0 0], inducer_circle_L_2);
     
-    DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
-    DrawFormattedText(window, 'X', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
-    DrawFormattedText(window, 'X', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
-    DrawFormattedText(window, 'X', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
+    Screen('FillArc',Periphery_Screen_LEFT,[0.5 0.5 0.5],baseRectL_forArc,90-(arc_angle/2),arc_angle) %centred on 90 deg point
     
+    Screen('FillOval', Periphery_Screen_LEFT, [0 0 0], inducer_circle_L_3);
+    Screen('FillOval', Periphery_Screen_LEFT, [0 0 0], inducer_circle_L_4);
+    
+    Screen('FillRect', Periphery_Screen_LEFT, [0.5 0.5 0.5], baseRectL);
+    
+    %debugging marks
+%     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
+
+
+
+    
+    
+    Screen('DrawTextures', window, Periphery_Screen_LEFT);
+    ShowFix()
+    nx
+    ny
+%      DrawFormattedText(window, '*',  middle_of_base_rect_L(1),  middle_of_base_rect_L(2), [0 1 0], [],1);
     disp('leftarc')
     
     %%%%%%%%%%%%%%%%%% RIGHT SCREEN
     % RIGHT BS
     % Select left-eye image buffer for drawing:
     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    
+    % Put everything on offscreen windows for later fast plotting
+    Periphery_Screen_RIGHT =Screen('OpenOffscreenWindow',window, grey);
+    
+    Screen('FillRect', Periphery_Screen_RIGHT, [0 0 0 0], windowRect);
+    
+    
     %    draw fixation dot
-    Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-    ShowFix()
+%     Screen('CopyWindow', rightFixWin, Periphery_Screen_RIGHT, [], rightScreenRect);
+%     ShowFix()
     %draw a blindspot oval to test its location
     oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r];
     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r);
     % show blind spot
-    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
-    Screen('FillArc',window,[1 0 0],baseRectR_forArc,90-(arc_angle/2),arc_angle) %centred on 90 deg point
-    DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
-    DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
-    DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
-    DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
+%     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
+    Screen('FillOval', Periphery_Screen_RIGHT, [0 0 0], inducer_circle_R_1);
+    Screen('FillOval', Periphery_Screen_RIGHT, [0 0 0], inducer_circle_R_2);
     
+    Screen('FillArc',Periphery_Screen_RIGHT,[0.5 0.5 0.5],baseRectR_forArc,270-(arc_angle/2),arc_angle) %centred on 90 deg point
+    
+    Screen('FillOval', Periphery_Screen_RIGHT, [0 0 0], inducer_circle_R_3);
+    Screen('FillOval', Periphery_Screen_RIGHT, [0 0 0], inducer_circle_R_4);
+    
+    Screen('FillRect', Periphery_Screen_RIGHT, [0.5 0.5 0.5], baseRectR);
+    
+    %debugging marks
+%     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
 %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
     
 %     baseRect = [0 0 200 200];
 %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
 %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
-    
-    
+    Screen('DrawTextures', window, Periphery_Screen_RIGHT);
+    ShowFix()
+    nx
+    ny
     
     Screen('Flip', window);
     disp('rightarc')
     KbStrokeWait(-1);
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%     FOVEAL STIMS         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %screen center coords
+    %from Show Fix function
+    centre_of_stim = [xCenter yCenter];
+
+    %initialise vars
+    inducer_centre_L_fovea = [NaN NaN; NaN NaN; NaN NaN; NaN NaN];
+    inducer_centre_R_fovea = [NaN NaN; NaN NaN; NaN NaN; NaN NaN];
+    
+    %work out arc middle with respect to rectangle as defined above
+    
+    middle_of_base_rect_L = [(baseRectL(1) + baseRectL(3))/2, (baseRectL(2) + baseRectL(4))/2]
+    middle_of_base_rect_R = [(baseRectR(1) + baseRectR(3))/2, (baseRectR(2) + baseRectR(4))/2]
+    
+    
+    x_offset_arc_L = arc_middle_L(1) - middle_of_base_rect_L(1); %how far is arc away from base rect middle in x?
+    x_offset_arc_R = abs(arc_middle_R(1) - middle_of_base_rect_R(1)); %how far is arc away from base rect middle in x?
+    
+    
+    
+    %instead BS middle use the new arc middle coords and calculate
+    %everything from there as above
+    
+    arc_middle_L_fovea = [centre_of_stim(1) + x_offset_arc_L, centre_of_stim(2)] % stim will centred on centre of screen (centre_of_stim(1) centre_of_stim(2)), so arc is shifted in x as prev calculated (but no shift in y)
+    arc_middle_R_fovea = [centre_of_stim(1) - x_offset_arc_R, centre_of_stim(2)] % stim will centred on centre of screen (nx ny), so arc is shifted in x as prev calculated (but no shift in y)
+
+    
+    % centre of circle underlying the arc (needed for further geometric
+    % calculations
+    origin_of_arc_L_fovea = [arc_middle_L_fovea(1) - radius_L, arc_middle_L_fovea(2)];
+    origin_of_arc_R_fovea = [arc_middle_R_fovea(1) + radius_R, arc_middle_R_fovea(2)];
+    
+%     %chord legth -> absolute value of formula, otherwise get -ve number
+%     chord_length_L = abs(radius_L * 2 * sind(arc_angle/2));
+%     chord_length_R = abs(radius_R * 2 * sind(arc_angle/2));
+    
+    % top and bottom points of the chord (needed for base rect and other
+    % calculations)
+    top_point_of_chord_L_fovea = [origin_of_arc_L_fovea(1) + abs(radius_L* cosd(arc_angle/2)), arc_middle_L_fovea(2) - (chord_length_L/2)];
+    top_point_of_chord_R_fovea = [origin_of_arc_R_fovea(1) - abs(radius_R *cosd(arc_angle/2)), arc_middle_R_fovea(2) - (chord_length_R/2)];
+    bottom_point_of_chord_L_fovea = [origin_of_arc_L_fovea(1) + abs(radius_L * cosd(arc_angle/2)),arc_middle_L_fovea(2) +  (chord_length_L/2)];
+    bottom_point_of_chord_R_fovea = [origin_of_arc_R_fovea(1) - abs(radius_R * cosd(arc_angle/2)),arc_middle_R_fovea(2) +  (chord_length_R/2)];
+    
+    %inducer circle centres for LEFT
+    inducer_centre_L_fovea(1,1:2) = top_point_of_chord_L_fovea; % top of chord
+    inducer_centre_L_fovea(2,1:2) = bottom_point_of_chord_L_fovea; %bottom of chord
+    inducer_centre_L_fovea(3,1:2) = [top_point_of_chord_L_fovea(1) - width_of_stim, top_point_of_chord_L_fovea(2)]; % same as 1, but shifted by radius in x
+    inducer_centre_L_fovea(4,1:2) = [bottom_point_of_chord_L_fovea(1) - width_of_stim, bottom_point_of_chord_L_fovea(2)]; % same as 2, but shifted by radius in x
+    
+    %inducer circle centre for RIGHT
+    inducer_centre_R_fovea(1,1:2) = top_point_of_chord_R_fovea; % top of chord
+    inducer_centre_R_fovea(2,1:2) = bottom_point_of_chord_R_fovea; %bottom of chord
+    inducer_centre_R_fovea(3,1:2) = [top_point_of_chord_R_fovea(1) + width_of_stim, top_point_of_chord_R_fovea(2)]; % same as 1, but shifted by radius in x
+    inducer_centre_R_fovea(4,1:2) = [bottom_point_of_chord_R_fovea(1) + width_of_stim, bottom_point_of_chord_R_fovea(2)]; % same as 2, but shifted by radius in x
+    
+    %base rectangle for LEFT - use inducer circle centers as the 4 coords
+    baseRectL_fovea = [inducer_centre_L_fovea(3,1:2) inducer_centre_L_fovea(2,1:2)]
+       
+    %base rectangle for RIGHT - use inducer circle centres as the 4 coords
+    baseRectR_fovea = [inducer_centre_R_fovea(1,1:2) inducer_centre_R_fovea(4,1:2)]
+    
+    %define base rectangles for plotting circle wedge. Width = radius,
+    %height = chord
+    
+    baseRectL_forArc_fovea = [0 0 radius_L*2 radius_L*2] %square with diameter 2*radius
+    baseRectL_forArc_fovea = CenterRectOnPoint(baseRectL_forArc, origin_of_arc_L_fovea(1), origin_of_arc_L_fovea(2)); %centre on origin
+    
+    baseRectR_forArc_fovea = [0 0 radius_R*2 radius_R*2] %square with diameter 2*radius
+    baseRectR_forArc_fovea = CenterRectOnPoint(baseRectR_forArc, origin_of_arc_R_fovea(1), origin_of_arc_R_fovea(2)); %centre on origin
+    
+%     baseRectL_forArc = [origin_of_arc_L(1), origin_of_arc_L(2)-chord_length_L/2, origin_of_arc_L(1)+radius_L, origin_of_arc_L(2)+chord_length_L/2]; %format = x_topcorner, y_topcorner, x_bottomcorner, y_bottomcorner
+%     baseRectR_forArc = [origin_of_arc_R(1)-radius_R, origin_of_arc_R(2)-chord_length_R/2, origin_of_arc_R(1), origin_of_arc_R(2)+chord_length_R/2]; %format = x_topcorner, y_topcorner, x_bottomcorner, y_bottomcorner
+%     
+    %define inducer circles and centre on 8 locations (4 for each eye/side)
+%     inducer_rect = [0 0 inducer_diameter inducer_diameter];
+    inducer_circle_L_1_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_L_fovea(1,1), inducer_centre_L_fovea(1,2));
+    inducer_circle_L_2_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_L_fovea(2,1), inducer_centre_L_fovea(2,2));
+    inducer_circle_L_3_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_L_fovea(3,1), inducer_centre_L_fovea(3,2));
+    inducer_circle_L_4_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_L_fovea(4,1), inducer_centre_L_fovea(4,2));
+    
+    inducer_circle_R_1_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_R_fovea(1,1), inducer_centre_R_fovea(1,2));
+    inducer_circle_R_2_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_R_fovea(2,1), inducer_centre_R_fovea(2,2));
+    inducer_circle_R_3_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_R_fovea(3,1), inducer_centre_R_fovea(3,2));
+    inducer_circle_R_4_fovea = CenterRectOnPoint(inducer_rect, inducer_centre_R_fovea(4,1), inducer_centre_R_fovea(4,2));
+    
+    
+    %%%%%%%%%%%%%%%     plot everything on the screen for debug
+    % ------------------------------------------------------------------------------------------------------------------------------------------------------
+    % ------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    %%%%%%%%%%%%%%%%% LEFT SCREEN
+    % Left BS
+    % Select left-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    
+    
+    % Put everything on offscreen windows for later fast plotting
+    Fovea_Screen_LEFT =Screen('OpenOffscreenWindow',window, grey);
+    Screen('FillRect', Fovea_Screen_LEFT, [0 0 0 0], windowRect);
+    
+    %draw fixation dot
+%     Screen('CopyWindow', leftFixWin, Fovea_Screen_LEFT, [], leftScreenRect);
+%     ShowFix()
+    %draw a blindspot oval to test its location
+    oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l];
+    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l);
+    % show blind spot
+%     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+    
+    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_1_fovea);
+    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_2_fovea);
+    
+    Screen('FillArc',Fovea_Screen_LEFT,[1 0.5 0.5],baseRectL_forArc_fovea,90-(arc_angle/2),arc_angle) %centred on 90 deg point
+    
+    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_3_fovea);
+    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_4_fovea);
+    
+    Screen('FillRect', Fovea_Screen_LEFT, [1 0.5 0.5], baseRectL_fovea);
+    
+    %debugging marks
+%     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
+
+
+
+    
+    
+    Screen('DrawTextures', window, Fovea_Screen_LEFT);
+    
+    Screen('FillRect', window, [1 1 0.5], [centre_of_stim(1)-4, centre_of_stim(2) - 4,  centre_of_stim(1) + 4, centre_of_stim(2)+4]);
+    
+    ShowFix()
+    nx
+    ny
+%      DrawFormattedText(window, '*',  middle_of_base_rect_L(1),  middle_of_base_rect_L(2), [0 1 0], [],1);
+    disp('leftarc')
+    
+    %%%%%%%%%%%%%%%%%% RIGHT SCREEN
+    % RIGHT BS
+    % Select left-eye image buffer for drawing:
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    
+    % Put everything on offscreen windows for later fast plotting
+    Fovea_Screen_RIGHT =Screen('OpenOffscreenWindow',window, grey);
+    
+    Screen('FillRect', Fovea_Screen_RIGHT, [0 0 0 0], windowRect);
+    
+    
+%     %    draw fixation dot
+%     Screen('CopyWindow', rightFixWin, Fovea_Screen_RIGHT, [], rightScreenRect);
+%     ShowFix()
+    %draw a blindspot oval to test its location
+    oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r];
+    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r);
+    % show blind spot
+%     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+    
+    Screen('FillOval', Fovea_Screen_RIGHT, [0 0 0], inducer_circle_R_1_fovea);
+    Screen('FillOval', Fovea_Screen_RIGHT, [0 0 0], inducer_circle_R_2_fovea);
+    
+    Screen('FillArc',Fovea_Screen_RIGHT,[1 0.5 0.5],baseRectR_forArc_fovea,270-(arc_angle/2),arc_angle) %centred on 90 deg point
+    
+    Screen('FillOval', Fovea_Screen_RIGHT, [0 0 0], inducer_circle_R_3_fovea);
+    Screen('FillOval', Fovea_Screen_RIGHT, [0 0 0], inducer_circle_R_4_fovea);
+    
+    Screen('FillRect', Fovea_Screen_RIGHT, [1 0.5 0.5], baseRectR_fovea);
+    
+    %debugging marks
+%     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
+%     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
+%     Screen('FillArc',window,[1 1 1],baseRect,45,90)
+    
+%     baseRect = [0 0 200 200];
+%     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
+%     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+    Screen('DrawTextures', window, Fovea_Screen_RIGHT);
+    ShowFix()
+    nx
+    ny
+    
+    Screen('Flip', window);
+    disp('rightarc')
+    KbStrokeWait(-1);
+    
+    
 catch ERR1
     sca
     rethrow('ERR1')
 end
+
+
+%% trials sequence
+
+% condition = 1, 2, 3, 4, 5
+% 1. BS (BS eye) (periphery)
+% 2. Occluder (Fellow eye) (periphery)
+% 3. Control (Fellow eye) (periphery)
+% 4. Occluder (Fellow eye) (fovea)
+% 5. Control (Fellow eye) (fovea)
+
+
+% dot position = [- 1 -0.5 0 0.5 1] %degrees away from arc centre (inside or outside of stim)
+%   -ve equals inside
+%   +ve equals outside
+%
+
+
+% response = [1 2]
+% 1 Inside
+% 2 Outside
+
+% RT = reaction time in secs
+
+
+% EXAMPLE RESULTS MATRIX
+% CONDITION | DOT POSITION | | RESP  | RT       
+%   1           -1              1     0.50         
+%   2           -0.5            1     0.456        
+%   3           0               2     0.765        
+%   4           0.5             1     1.034        
+%   5           1               2     0.470        
+%   1           -1              1     0.845        
+%   2           -0.5            2     1.09         
+%   3           0               1     1.235            
+%   4           0.5             2     0.654        
+%   5           1               1     0.519        
+%  ...          ...             ...    ...
+
+
+rng('shuffle'); % randomize the random number generator. Otherwise
+
+nrepetitions = 40; %show each unique condition 50 times
+
+condsvector = [ones(1,5), 2*ones(1,5), 3*ones(1,5), 4*ones(1,5), 5 *ones(1,5)]';
+
+dotpositionvector = repmat(dotpositions,1,5)';
+
+allconds = [condsvector dotpositionvector];
+
+allconds(:,3:4) = NaN; %make columns for other varibles
+
+experimentalconditions = repmat(allconds,nrepetitions,1); %all conditions for the experiment: eg each cond x 40 = 1000 trials
+
+%select the order of the conditions
+%shuffle rows
+condsorder = randperm(size(experimentalconditions,1)); %this is the order of the conditions for each subject
+
+curr_response = 0; %store current response on trial n, just initializing the variable here
+respmade = 0; %logical variable, response made or not yet
+
+
+
+%% main experimental session
+
+% present illusory shapes either peripherally or in fovea; BS, occluded or
+% control
+% Flash probe dot
+% ask Q - was the dot inside or outside the illusory shape
+%   
+
+
+% display texture example syntax
+% Screen('DrawTexture', windowPointer, texturePointer [,sourceRect]
+% [,destinationRect] [,rotationAngle])
+
+Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+DrawFormattedText(window, 'Press any key to continue. Remember to fixate on the central cross!', 'center', 'center', textcolor, [], 1);
+
+
+Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+DrawFormattedText(window, 'Press any key to continue. Remember to fixate on the central cross!', 'center', 'center', textcolor, [], 1);
+Screen('Flip', window)
+ 
+KbStrokeWait(-1);
+
+
+
+for trialN = 1:size(experimentalconditions,1)
+    
+    % experimental conditions are all trials not in random order
+    % condsorder is the predefined random order they will be displayed in
+    % trialN = counter for trial number. Go through condsorder one by one and
+    % extract the trial specifications from there.
+    % e.g. trial 2 -> condsorder(2) = 35. experimentalconditions(35,:) = trial
+    % (row) 35 in the big matrix of all possible conditions
+    %   row 35 ->>  [0    55     1   NaN   NaN]
+    
+    %current_trial = experimentalconditions(condsorder(trialN),:)
+    
+    vbl = GetSecs;
+    
+    
+     % -----------------------------
+    % 500 ms blank screen
+    % ------------------------------
+     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+     ShowFix()
+     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+     Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+     ShowFix()
+     vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+     
+     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+     ShowFix()
+     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+     Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+     ShowFix()
+     vbl = Screen('Flip', window, vbl + (0.5/ifi - 0.2  ) * ifi);
+     
+     
+     
+     currcondition = experimentalconditions(condsorder(trialN),1);
+     currdotposition = experimentalconditions(condsorder(trialN),2);
+%      currstandardposition = experimentalconditions(condsorder(trialN),3);
+    
+    if strcmp(bs_eye, 'left') %if BS eye = left
+        dotpositionsinpix = deg2pix_YR(dotpositions); % -ve is lower X values and inside shape
+        Periphery_Screen = Periphery_Screen_LEFT;
+        Fovea_Screen = Fovea_Screen_LEFT;
+    elseif strcmp(bs_eye, 'right')%if BS eye = right
+        dotpositionsinpix = -deg2pix_YR(dotpositions); % -ve deg value (inside shape) is higher X values and thus inside shape (cos shape is flipped)
+        Periphery_Screen = Periphery_Screen_RIGHT;
+        Fovea_Screen = Fovea_Screen_RIGHT;
+    end
+    
+    
+    disp(sprintf('Trial type: \n \n 1 = BS; 2 = OccPeri; 3 = ControlPeri; 4 = OccFov; 5 = ControlFov: \n \n %d | Dot: %d',currcondition,currdotposition))
+
+     start_time = vbl;
+     frame_counter_stim = 0;
+     frame_counter_dot = 0;
+    % ------------------------------
+    % present stim
+    % -------------------------------
+    while vbl - start_time < durationStim
+        % DISPLAY STIMULUS
+        
+        %LEFT SCREEN
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        % Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);%    draw stereo fusion helper lines
+        frame_counter_stim = frame_counter_stim+1;
+                
+        switch currcondition
+            case 1 %BS. Draw Stim on BS side. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix frame
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    Screen('DrawTexture', window, Periphery_Screen_LEFT) %show Stim
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    ShowFix() %blank screen
+                end
+               
+            case 2 %Occ Peri. Draw stim on Fellow side. Periphery. Put on occluder. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    Screen('DrawTexture', window, Periphery_Screen_RIGHT) %show Stim
+                    oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r); %right BS
+                    % show blind spot shaped occluder
+                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    ShowFix() %blank screen
+                end
+                
+            case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    Screen('DrawTexture', window, Periphery_Screen_RIGHT) %show Stim
+                    ShowFix() %blank screen
+                end
+                
+            case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    Screen('DrawTexture', window, Fovea_Screen_RIGHT) %show Stim
+                    oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1), arc_middle_R_fovea(2)); %right centred on arc middle
+                    % show blind spot shaped occluder
+                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    ShowFix() %blank screen
+                end
+            case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    Screen('DrawTexture', window, Fovea_Screen_RIGHT) %show Stim
+                    ShowFix() %blank screen
+                end
+        end
+        
+        
+        
+        %display BSs for debug
+        
+        oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
+        oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r); %right BS
+        Screen('FrameOval', window, [0 1 0], oval_rect_centred);
+        oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
+        oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l); %right BS
+        Screen('FrameOval', window, [0 0 1], oval_rect_centred);
+        
+        
+        % RIGHT SCREEN
+        
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        %    draw fixation dot
+        Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+        
+      
+         switch currcondition
+            case 1 %BS. Draw Stim on BS side. Flash dot on Fellow side
+%                 Screen('CopyWindow', rightFixWin, window, [], rightScreenRect); %always right fix frame
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    Screen('DrawTexture', window, Periphery_Screen_RIGHT) %show Stim
+                    ShowFix() %blank screen
+                end
+               
+            case 2 %Occ Peri. Draw stim on Fellow side. Periphery. Put on occluder. Flash dot on Fellow side
+%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    Screen('DrawTexture', window, Periphery_Screen_LEFT) %show Stim
+                    oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l); %left BS
+                    % show blind spot shaped occluder
+                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    ShowFix() %blank screen
+                end
+                
+            case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
+%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    Screen('DrawTexture', window, Periphery_Screen_LEFT) %show Stim
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    ShowFix() %blank screen
+                end
+                
+            case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
+%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    Screen('DrawTexture', window, Fovea_Screen_LEFT) %show Stim
+                    oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1), arc_middle_L_fovea(2)); %left centred on arc middle
+                    % show blind spot shaped occluder
+                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    ShowFix() %blank screen
+                end
+            case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
+%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    Screen('DrawTexture', window, Fovea_Screen_LEFT) %show Stim
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    ShowFix() %blank screen
+                end
+         end
+         
+         %display BSs for debug
+         
+         oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
+         oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r); %right BS
+         Screen('FrameOval', window, [0 1 0], oval_rect_centred);
+         oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
+         oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l); %right BS
+         Screen('FrameOval', window, [0 0 1], oval_rect_centred);
+         
+         
+         
+         % present dot for the last 50 ms of stim duration
+         
+         if vbl - start_time >= (durationStim - durationDot)
+             %calculate dot coords and screen side
+             frame_counter_dot = frame_counter_dot+1;
+             
+             if currcondition == 1 || currcondition == 2 || currcondition == 3 %if peripheral
+                 
+                 if strcmp(bs_eye, 'left') %if BS eye = left
+                     dotpositionsinpix = deg2pix_YR(currdotposition) % -ve is lower X values and inside shape
+                     dotcoords = [arc_middle_L(1) + dotpositionsinpix; arc_middle_L(2)]
+                     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT (fellow eye screen for dot)
+                 elseif strcmp(bs_eye, 'right')%if BS eye = right
+                     dotpositionsinpix = -deg2pix_YR(currdotposition) % -ve deg value (inside shape) is higher X values and thus inside shape (cos shape is flipped)
+                     dotcoords = [arc_middle_R(1) + dotpositionsinpix; arc_middle_R(2)];
+                     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                 end
+          
+             else %foveal conditions
+                 
+                  if strcmp(bs_eye, 'left') %if BS eye = left
+                     dotpositionsinpix = deg2pix_YR(currdotposition) % -ve is lower X values and inside shape
+                     dotcoords = [arc_middle_L_fovea(1) + dotpositionsinpix; arc_middle_L_fovea(2)]
+                     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                 elseif strcmp(bs_eye, 'right')%if BS eye = right
+                     dotpositionsinpix = -deg2pix_YR(currdotposition) % -ve deg value (inside shape) is higher X values and thus inside shape (cos shape is flipped)
+                     dotcoords = [arc_middle_R_fovea(1) + dotpositionsinpix; arc_middle_R_fovea(2)]
+                     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                 end
+            
+             end
+             
+         %present dot
+         dot_rect = [0 0 10 10]; %dot size
+         dot_rect_centred = CenterRectOnPoint(dot_rect, dotcoords(1),dotcoords(2)); %
+         Screen('FillOval', window, [1 0 0], dot_rect_centred);   
+             
+         end
+         
+        
+         
+         vbl = Screen('Flip', window, vbl + (1 - 0.2) * ifi);
+         
+                
+                
+                
+% %         if currcondition == 1 %draw right BS at right BS location, RIGHT BS coords on RIGHT side of the screen
+% %             Screen('CopyWindow', rightFixWin, aperture(1), [], rightScreenRect); %Always Right fix frame because this is right screen
+% %             Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_RIGHT); %right BS aperture
+% %             Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, orientation(2)) % FULL GRATING %Right screen -> RIGHT BS position
+% %             Screen('DrawTexture', window, aperture(1), [], [], 0) %right aperture mask
+% %             ShowFix()
+% %         elseif currcondition == 2 %fellow eye; draw left BS at left side (but still on right screen)
+% %             Screen('CopyWindow', rightFixWin, aperture(2), [], rightScreenRect); %Always Right fix frame because this is right screen
+% %             Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT); %Left BS location
+% %             Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, orientation(2)) % FULL GRATING %Right screen -> LEFT side for BS position
+% %             Screen('DrawTexture', window, aperture(2), [], [], 0)
+% %             ShowFix()
+% %         else % fellow eye with occluder (annulus condition). Identical to fellow eye cond but put an occluder the size of the BS on the middle
+% %             Screen('CopyWindow', rightFixWin, aperture(2), [], rightScreenRect); %Always Right fix frame because this is right screen
+% %             Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT); %Left BS location
+% %             Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, orientation(2)) % FULL GRATING %Right screen -> LEFT side for BS position
+% %             Screen('DrawTexture', window, aperture(2), [], [], 0)
+% %             Screen('FillOval', window, [0.5 0.5 0.5], BS_oval_LEFT) %add grey annulus the size of the BS
+% %             ShowFix()
+% %         end
+% %         
+       
+        
+    end% while
+    
+     frame_counter_stim
+     frame_counter_dot
+    
+    KbStrokeWait(-1);
+    
+    
+    % display mask
+    
+    %generate random widths and heights
+    widths = minWidth + (maxWidth - minWidth).*rand(nOvals,1);
+    heights = minWidth + (maxWidth - minWidth).*rand(nOvals,1);
+    
+    %generate random centre positions within the rectangle defined by inducer
+    %centres
+    
+    
+    %initialize vars
+    oval_positions_R_fovea = [1:nOvals; 1:nOvals]';
+    oval_positions_L_fovea = [1:nOvals; 1:nOvals]';
+    oval_positions_R = [1:nOvals; 1:nOvals]';
+    oval_positions_L = [1:nOvals; 1:nOvals]';
+    
+    
+    % use base rectangles from above
+    
+    makebiggerbyNpix = 100; %add some pixels to the base rectangle so the ovals appear more spread out
+    
+    oval_positions_R_fovea(:,1) = [(baseRectR_fovea(1)-makebiggerbyNpix) + ((baseRectR_fovea(3)+makebiggerbyNpix) - (baseRectR_fovea(1)-makebiggerbyNpix)).*rand(nOvals,1)]; %x coords
+    oval_positions_R_fovea(:,2) = [(baseRectR_fovea(2)-makebiggerbyNpix) + ((baseRectR_fovea(4)+makebiggerbyNpix) - (baseRectR_fovea(2)-makebiggerbyNpix)).*rand(nOvals,1)]; %y coords
+    
+    oval_positions_L_fovea(:,1) = [(baseRectL_fovea(1)-makebiggerbyNpix) + ((baseRectL_fovea(3)+makebiggerbyNpix) - (baseRectL_fovea(1)-makebiggerbyNpix)).*rand(nOvals,1)]; %x coords
+    oval_positions_L_fovea(:,2) = [(baseRectL_fovea(2)-makebiggerbyNpix) + ((baseRectL_fovea(4)+makebiggerbyNpix) - (baseRectL_fovea(2)-makebiggerbyNpix)).*rand(nOvals,1)]; %y coords
+    
+    
+    oval_positions_R(:,1) = [(baseRectR(1)-makebiggerbyNpix) + ((baseRectR(3)+makebiggerbyNpix) - (baseRectR(1)-makebiggerbyNpix)).*rand(nOvals,1)]; %x coords
+    oval_positions_R(:,2) = [(baseRectR(2)-makebiggerbyNpix) + ((baseRectR(4)+makebiggerbyNpix) - (baseRectR(2)-makebiggerbyNpix)).*rand(nOvals,1)]; %y coords
+    
+    oval_positions_L(:,1) = [(baseRectL(1)-makebiggerbyNpix) + ((baseRectL(3)+makebiggerbyNpix) - (baseRectL(1)-makebiggerbyNpix)).*rand(nOvals,1)]; %x coords
+    oval_positions_L(:,2) = [(baseRectL(2)-makebiggerbyNpix) + ((baseRectL(4)+makebiggerbyNpix) - (baseRectL(2)-makebiggerbyNpix)).*rand(nOvals,1)]; %y coords
+    
+  
+%     baseRectR_fovea
+%     baseRectL_fovea
+%     baseRectR
+%     baseRectL
+    
+    
+    %generate all the base rectangles for all ovals
+    
+    baseRectGreyOval = [zeros(nOvals,1), zeros(nOvals,1), widths, heights ];
+    baseRectGreyOval_centred_R_fovea = CenterRectOnPointd(baseRectGreyOval, oval_positions_R_fovea(:,1), oval_positions_R_fovea(:,2));
+    baseRectGreyOval_centred_L_fovea = CenterRectOnPointd(baseRectGreyOval, oval_positions_L_fovea(:, 1), oval_positions_L_fovea(:, 2));
+    baseRectGreyOval_centred_R = CenterRectOnPointd(baseRectGreyOval, oval_positions_R(:,1), oval_positions_R(:,2));
+    baseRectGreyOval_centred_L = CenterRectOnPointd(baseRectGreyOval, oval_positions_L(:,1), oval_positions_L(:,2));
+    
+        
+    % generate random shades of grey (50 shades of grey for 50 ovals, for
+    % example)
+    
+    minGrey = 0;
+    maxGrey = 1;
+    fiftyshadesofgrey = minGrey + (maxGrey - minGrey).*rand(nOvals,1); %generate greys between min and max
+        
+    %draw to screen
+    
+     %LEFT SCREEN
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        % Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);%    draw stereo fusion helper lines
+        frame_counter_stim = frame_counter_stim+1;
+                
+        switch currcondition
+            case 1 %BS. Draw Stim on BS side. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix frame
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L(i,:));
+                    end
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R(i,:));
+                    end
+                    ShowFix() %blank screen
+                end
+                
+            case 2 %Occ Peri. Draw stim on Fellow side. Periphery. Put on occluder. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L(i,:));
+                    end
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R(i,:));
+                    end
+                    ShowFix() %blank screen
+                end
+                
+            case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L(i,:));
+                    end
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R(i,:));
+                    end
+                    ShowFix() %blank screen
+                end
+                
+            case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L_fovea(i,:));
+                    end
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R_fovea(i,:));
+                    end
+                    ShowFix() %blank screen
+                end
+            case 5 %%Control Fov. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
+                Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                if strcmp(bs_eye, 'left') %if BS eye = left
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L_fovea(i,:));
+                    end
+                    ShowFix() %blank screen
+                elseif strcmp(bs_eye, 'right')%if BS eye = right
+                    for i = 1:nOvals
+                        Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R_fovea(i,:));
+                    end
+                    ShowFix() %blank screen
+                end
+        end
+        
+        
+        
+        %display BSs for debug
+        
+        oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
+        oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r); %right BS
+        Screen('FrameOval', window, [0 1 0], oval_rect_centred);
+        oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
+        oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l); %right BS
+        Screen('FrameOval', window, [0 0 1], oval_rect_centred);
+    
+    
+    
+    fiftyshadesofgrey(1:10)
+    
+    
+    
+    
+    % RIGHT SCREEN
+    
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    %    draw fixation dot
+    Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+    
+    switch currcondition
+        case 1 %BS. Draw Stim on BS side. Flash dot on Fellow side
+%             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix frame
+            if strcmp(bs_eye, 'left') %if BS eye = left
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L(i,:));
+                end
+                ShowFix() %blank screen
+            elseif strcmp(bs_eye, 'right')%if BS eye = right
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R(i,:));
+                end
+                ShowFix() %blank screen
+            end
+            
+        case 2 %Occ Peri. Draw stim on Fellow side. Periphery. Put on occluder. Flash dot on Fellow side
+%             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+            if strcmp(bs_eye, 'left') %if BS eye = left
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L(i,:));
+                end
+                ShowFix() %blank screen
+            elseif strcmp(bs_eye, 'right')%if BS eye = right
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R(i,:));
+                end
+                ShowFix() %blank screen
+            end
+            
+        case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
+%             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+            if strcmp(bs_eye, 'left') %if BS eye = left
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L(i,:));
+                end
+                ShowFix() %blank screen
+            elseif strcmp(bs_eye, 'right')%if BS eye = right
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R(i,:));
+                end
+                ShowFix() %blank screen
+            end
+            
+        case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
+%             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+            if strcmp(bs_eye, 'left') %if BS eye = left
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L_fovea(i,:));
+                end
+                ShowFix() %blank screen
+            elseif strcmp(bs_eye, 'right')%if BS eye = right
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R_fovea(i,:));
+                end
+                ShowFix() %blank screen
+            end
+        case 5 %%Control Fov. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
+%             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+            if strcmp(bs_eye, 'left') %if BS eye = left
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_L_fovea(i,:));
+                end
+                ShowFix() %blank screen
+            elseif strcmp(bs_eye, 'right')%if BS eye = right
+                for i = 1:nOvals
+                    Screen('FillOval', window, fiftyshadesofgrey(i), baseRectGreyOval_centred_R_fovea(i,:));
+                end
+                ShowFix() %blank screen
+            end
+    end
+    
+       %display BSs for debug
+         
+         oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
+         oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r); %right BS
+         Screen('FrameOval', window, [0 1 0], oval_rect_centred);
+         oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
+         oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l); %right BS
+         Screen('FrameOval', window, [0 0 1], oval_rect_centred);
+    
+    fiftyshadesofgrey(1:10)
+    
+    % display for mask duration
+    
+    vbl = GetSecs;
+     vbl = Screen('Flip', window, vbl + (waitframes - 0.2  ) * ifi);
+     
+%      vbl = Screen('Flip', window, vbl + (durationMask/ifi - 0.2  ) * ifi);
+    
+    
+    KbStrokeWait(-1);
+    
+    
+    
+    %record response
+    
+    %------------------------
+    % Make response
+    % -----------------------
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+    Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+    DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+    
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+    DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+    Screen('Flip', window);
+    
+    
+    
+    resp2Bmade = true;
+    curr_response = 0;
+    numFrames = 0;
+    starttime = GetSecs;
+    
+    while resp2Bmade %record L or R
+        [keyIsDown,secs, keyCode] = KbCheck(-1);
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+        DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+        
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+        DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+        Screen('Flip', window);
+        
+        
+        if keyIsDown
+            if keyCode(escapeKey);
+                resp2Bmade = false; endtime = GetSecs; save (filename); sca;
+            elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
+            elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
+            else
+                %just go through the while loop since resp2Bmade is
+                %still true
+            end %end if
+        end
+        % if L or R has been pressed, record response
+        
+        % EXAMPLE RESULTS MATRIX
+        % CONDITION | DOT POSITION | | RESP  | RT
+        %   1           -1              1     0.50
+        %   2           -0.5            1     0.456
+        
+        
+        subjectdata(trialN,1) = currcondition; %record cond of this trial
+        subjectdata(trialN,2) = currdotposition; %record orientation of comparison of this trial
+        subjectdata(trialN,3) = curr_response; % which side was the control stim on?
+        subjectdata(trialN,4) = secs - starttime; %Record RT
+           
+              
+    end %while
+    
+    resp2Bmade = true; %reset response logical variable
+    disp(sprintf('Trial %d out of %d completed', trialN, size(experimentalconditions,1)))
+    
+    if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
+         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
+%          Screen('FillRect', window, grey) % make the whole screen grey
+         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', trialN, length(condsorder));
+         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+         
+         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
+         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', trialN, length(condsorder));
+         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+
+         Screen('Flip', window);
+         
+         while ~keyCode(upKey)
+             [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+         end
+    end
+     
+    
+    Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+     Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+     ShowFix();
+     DrawFormattedText(window, 'Press space to start next trial', 'center', 'center', [0 0 0],[],1);
+     
+     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+     DrawFormattedText(window, 'Press space to start next trial', 'center', 'center', [0 0 0],[],1);
+     ShowFix();
+     % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
+     Screen('Flip', window);
+     
+     [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
+     
+     
+     while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
+         
+         [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+         %
+         if keyCode(escapeKey)
+             save (filename)
+             sca %if esc then just quit demo
+             break;
+         end
+         %                 if keyCode(downKey)
+         %                     %record red fix thing
+         %                     RedFix(ntrials,2) = 1;
+         %                     disp('Down Key')
+         %                 end
+         %                 if keyIsDown
+         %                     find(keyCode,1)
+         %                 end
+         
+     end %end while. Move onto next trial
+    
+    
+    
+    
+end %for trial
+
+
+
+
+
+
+catch ERR2
 
 sca
 end% big try loop
