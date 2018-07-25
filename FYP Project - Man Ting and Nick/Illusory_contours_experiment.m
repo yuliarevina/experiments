@@ -49,7 +49,7 @@ Demo = 1; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-bs_eye_for_this_run = 'right';   %% Right eye has the blind spot. Left fixation spot
+bs_eye_for_this_run = 'left';   %% Right eye has the blind spot. Left fixation spot
 
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
@@ -978,6 +978,15 @@ end
 %   +ve equals outside
 %
 
+%dot eye = 1 - BS; 2 - Fellow
+% which eye was the dot flashed in. 
+% For the BS it will always be fellow
+% For occl and control peri it will always be fellow (cannot flash in BS as
+% won't see it)
+% For occl and control fovea it will be in BS eye half the time and in
+% fellow eye half the time, to control for any effects of presenting the
+% dot not in the same eye as the stimulus.
+
 
 % response = [1 2]
 % 1 Inside
@@ -987,23 +996,23 @@ end
 
 
 % EXAMPLE RESULTS MATRIX
-% CONDITION | DOT POSITION | | RESP  | RT       
-%   1           -1              1     0.50         
-%   2           -0.5            1     0.456        
-%   3           0               2     0.765        
-%   4           0.5             1     1.034        
-%   5           1               2     0.470        
-%   1           -1              1     0.845        
-%   2           -0.5            2     1.09         
-%   3           0               1     1.235            
-%   4           0.5             2     0.654        
-%   5           1               1     0.519        
+% CONDITION | DOT POSITION | DOT EYE | RESP  | RT       
+%   1           -1              2        1     0.50         
+%   2           -0.5            2        1     0.456        
+%   3           0               2        2     0.765        
+%   4           0.5             2        1     1.034        
+%   5           1               1        2     0.470        
+%   1           -1              2        1     0.845        
+%   2           -0.5            2        2     1.09         
+%   3           0               2        1     1.235            
+%   4           0.5             1        2     0.654        
+%   5           1               2        1     0.519        
 %  ...          ...             ...    ...
 
 
 rng('shuffle'); % randomize the random number generator. Otherwise
 
-nrepetitions = 1; %show each unique condition 50 times
+nrepetitions = 10; %show each unique condition 50 times
 
 condsvector = [ones(1,5), 2*ones(1,5), 3*ones(1,5), 4*ones(1,5), 5 *ones(1,5)]';
 
@@ -1011,9 +1020,19 @@ dotpositionvector = repmat(dotpositions,1,5)';
 
 allconds = [condsvector dotpositionvector];
 
-allconds(:,3:4) = NaN; %make columns for other varibles
+allconds(:,3:5) = NaN; %make columns for other varibles
 
 experimentalconditions = repmat(allconds,nrepetitions,1); %all conditions for the experiment: eg each cond x 40 = 1000 trials
+
+ntrialsofeachcond = nrepetitions * 5; %eg 10 x 5 = 50 trials in total of "blind spot"
+dotEyeVector = [ones(1,ntrialsofeachcond/2), 2*ones(1,ntrialsofeachcond/2)]; %make a vector of 1s and 2s
+
+
+for i = 4:5 %for conditions 4 and 5 only
+    dotEyeVector = dotEyeVector(randperm(length(dotEyeVector))); %shuffle the vector of 1s and 2s
+    %to shuffle a vector:     YourVector(randperm(length(YourVector))
+    experimentalconditions((experimentalconditions(:,1) == i),3) = dotEyeVector'; %add eye vector to the dotEye column for conds 4 and 5
+end
 
 %select the order of the conditions
 %shuffle rows
@@ -1089,6 +1108,7 @@ for trialN = 1:size(experimentalconditions,1)
      
      currcondition = experimentalconditions(condsorder(trialN),1);
      currdotposition = experimentalconditions(condsorder(trialN),2);
+     currdoteye = experimentalconditions(condsorder(trialN),3);
 %      currstandardposition = experimentalconditions(condsorder(trialN),3);
     
     if strcmp(bs_eye, 'left') %if BS eye = left
@@ -1101,6 +1121,7 @@ for trialN = 1:size(experimentalconditions,1)
         Fovea_Screen = Fovea_Screen_RIGHT;
     end
     
+    curr_occluder_offset = 4 + (6-4).*rand;
     
     disp(sprintf('Trial type: \n \n 1 = BS; 2 = OccPeri; 3 = ControlPeri; 4 = OccFov; 5 = ControlFov: \n \n %d | Dot: %d',currcondition,currdotposition))
 
@@ -1134,10 +1155,10 @@ for trialN = 1:size(experimentalconditions,1)
                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Periphery_Screen_RIGHT) %show Stim
-                    oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r); %right BS
+                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_r]; %right BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r-deg2pix_YR(curr_occluder_offset), BS_center_v_r); %right BS, centre on BS + (4-6) deg [random number between 4 and 6]
                     % show blind spot shaped occluder
-                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
                 end
                 
@@ -1156,10 +1177,10 @@ for trialN = 1:size(experimentalconditions,1)
                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Fovea_Screen_RIGHT) %show Stim
-                    oval_rect = [0 0 BS_diameter_h2_r BS_diameter_v_r]; %right BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1), arc_middle_R_fovea(2)); %right centred on arc middle
+                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_r]; %right BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1)-deg2pix_YR(curr_occluder_offset), arc_middle_R_fovea(2)); %right centred on arc middle
                     % show blind spot shaped occluder
-                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
                 end
             case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
@@ -1205,10 +1226,10 @@ for trialN = 1:size(experimentalconditions,1)
 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Periphery_Screen_LEFT) %show Stim
-                    oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l); %left BS
-                    % show blind spot shaped occluder
-                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_l]; %left BS, make a rectangle as an occluder
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+deg2pix_YR(curr_occluder_offset), BS_center_v_l); %left BS
+                    % show rectangular occluder
+                    Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     ShowFix() %blank screen
@@ -1227,10 +1248,10 @@ for trialN = 1:size(experimentalconditions,1)
 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Fovea_Screen_LEFT) %show Stim
-                    oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l]; %left BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1), arc_middle_L_fovea(2)); %left centred on arc middle
-                    % show blind spot shaped occluder
-                    Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
+                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_l]; %left BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1)+deg2pix_YR(curr_occluder_offset), arc_middle_L_fovea(2)); %left centred on arc middle
+                    % show rectangular occluder
+                    Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     ShowFix() %blank screen
@@ -1279,11 +1300,23 @@ for trialN = 1:size(experimentalconditions,1)
                   if strcmp(bs_eye, 'left') %if BS eye = left
                      dotpositionsinpix = deg2pix_YR(currdotposition); % -ve is lower X values and inside shape
                      dotcoords = [arc_middle_L_fovea(1) + dotpositionsinpix; arc_middle_L_fovea(2)];
-                     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                     
+                     if currdoteye == 1 %BS eye
+                         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                     else %if 2 (fellow) or NaN just present to fellow as normal
+                         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                     end
+                     
                  elseif strcmp(bs_eye, 'right')%if BS eye = right
                      dotpositionsinpix = -deg2pix_YR(currdotposition); % -ve deg value (inside shape) is higher X values and thus inside shape (cos shape is flipped)
                      dotcoords = [arc_middle_R_fovea(1) + dotpositionsinpix; arc_middle_R_fovea(2)];
-                     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                     
+                     if currdoteye == 1 %BS
+                         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+                     else
+                         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+                     end
+                     
                  end
             
              end
@@ -1641,8 +1674,9 @@ for trialN = 1:size(experimentalconditions,1)
         
         subjectdata(trialN,1) = currcondition; %record cond of this trial
         subjectdata(trialN,2) = currdotposition; %record orientation of comparison of this trial
-        subjectdata(trialN,3) = curr_response; % which side was the control stim on?
-        subjectdata(trialN,4) = secs - starttime; %Record RT
+        subjectdata(trialN,3) = currdoteye; %record which eye was the dot flashed in
+        subjectdata(trialN,4) = curr_response; % which side was the control stim on?
+        subjectdata(trialN,5) = secs - starttime; %Record RT
            
               
     end %while
