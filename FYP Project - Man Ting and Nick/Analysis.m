@@ -1,17 +1,17 @@
 % Analysis script for Illusory Contours Expt
 
-ntrialseachcond = 1;
+ntrialseachcond = 6;
 
 
 %% extract data
 conditions = nan(5,ntrialseachcond,5);
 tmp1 = [];
 tmp2 = [];
-results = nan(5,1,2);
+results = nan(9,1,2);
 for i = 1:5; %conditions
     %     conditions(:,i) = find(subjectdata(:,1) == i); %find all intact trials, all BS trials...
     %     tmp(:,i) = find(subjectdata(:,1) == i);
-    for j = 1:5 %dot positions
+    for j = 1:9 %dot positions
         %       SFs(:,j) = find(subjectdata(:,2) == j);
         %         conditions(j,:,i) = find(subjectdata(tmp(:,i),2) == j);
         %         conditions(j,:,i) = find(subjectdata(tmp(:,i),2) == j);
@@ -28,29 +28,55 @@ for i = 1:5; %conditions
             
             switch j
                 case 1
-                    dotpos = -1;
+%                     dotpos = -1;
+%                     dotpos = -2;
+                    dotpos = -4;
                 case 2
-                    dotpos = -0.5;
+%                     dotpos = -0.5;
+%                     dotpos = -1;
+                    dotpos = -3;
                 case 3
-                    dotpos = -0;
+                    dotpos = -2;
                 case 4
-                    dotpos = 0.5;
+%                     dotpos = 0.5;
+%                     dotpos = 1;
+                    dotpos = -1;
                 case 5
+%                     dotpos = 1;
+%                     dotpos = 2;
+                     dotpos = 0;
+
+                case 6
+                    %                     dotpos = 1;
+                    %                     dotpos = 3;
                     dotpos = 1;
+                    
+                case 7
+                    %                     dotpos = 1;
+                    %                     dotpos = 4;
+                    dotpos = 2;
+                case 8
+                    %                     dotpos = 1;
+                    %                     dotpos = 4;
+                    dotpos = 3;
+                case 9
+                    %                     dotpos = 1;
+                    %                     dotpos = 4;
+                    dotpos = 4;
             end
-        
+            
             
             if i == 1 % if BS; responses are normal. L screen standard is L hand side for the participant.
 %                 tmp1 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == cond) & subjectdata(:,3) == 1)'; %INSIDE
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2)'; %OUTSIDE
+                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
             elseif i==2 % fellow. Periphery. Occluder
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2)'; %OUTSIDE
+                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
             elseif i==3
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2)'; %OUTSIDE
+                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
             elseif i==4
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2)'; %OUTSIDE
+                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
             elseif i==5
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,3) == 2)'; %OUTSIDE
+                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
             end
         %for the mistake in counterbalancing
 %             tmp2 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == i) & subjectdata(:,3) == 1)'; %standard second; check for trials where they answer 1st
@@ -64,13 +90,13 @@ end
 
 
 %% figure
-figure; plot(1:5, results(1:5,1,1), 'ro-') %BS
+figure; plot(1:9, results(1:9,1,1), 'ro-') %BS
 hold on;
-plot(1:5, results(1:5,1,2), 'bs-') %Occ Peri
-plot(1:5, results(1:5,1,3), 'go-') %Control Peri
-plot(1:5, results(1:5,1,4), 'kx-') %Occ Fov
-plot(1:5, results(1:5,1,5), 'cx-') %Control Fov
-axis([0.5 5.5 -0.5 ntrialseachcond+0.5])
+plot(1:9, results(1:9,1,2), 'bs-') %Occ Peri
+plot(1:9, results(1:9,1,3), 'go-') %Control Peri
+plot(1:9, results(1:9,1,4), 'kx-') %Occ Fov
+plot(1:9, results(1:9,1,5), 'cx-') %Control Fov
+axis([0.5 9.5 -0.5 ntrialseachcond+0.5])
 [leg] = legend('BS', 'Fellow', 'Location', 'Northwest');
 ax = findobj(gcf,'type','axes'); %Retrieve the axes to be copied
 hold off;
@@ -96,7 +122,8 @@ markershape(5) = 'x';
 disp ('Palamedes...')
 %Stimulus intensities
 StimLevels = [-1, -0.5, 0, 0.5, 1]; %hardtask
-
+StimLevels = [-2, -1, 0, 1, 2, 3, 4]; %hardtask
+StimLevels = [-4, -3, -2, -1, 0, 1, 2, 3, 4]; %hardtask
 
 figure('name','Maximum Likelihood Psychometric Function Fitting');
     axes
@@ -119,10 +146,10 @@ for condswitch = 1:5 %conditions
     
     %Number of positive responses (e.g., 'yes' or 'correct' at each of the
     %   entries of 'StimLevels'
-    NumPos = [results(1,:,condswitch) results(2,:,condswitch) results(3,:,condswitch) results(4,:,condswitch) results(5,:,condswitch)];
+    NumPos = [results(1,:,condswitch) results(2,:,condswitch) results(3,:,condswitch) results(4,:,condswitch) results(5,:,condswitch) results(6,:,condswitch) results(7,:,condswitch) results(8,:,condswitch) results(9,:,condswitch)];
     
     %Number of trials at each entry of 'StimLevels'
-    OutOfNum = [ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond];
+    OutOfNum = [ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond ntrialseachcond];
     
     
     

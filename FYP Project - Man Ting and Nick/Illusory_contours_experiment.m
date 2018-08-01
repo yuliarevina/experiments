@@ -45,11 +45,11 @@ togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 1; %show the debug bars at the start?
+Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-bs_eye_for_this_run = 'left';   %% Right eye has the blind spot. Left fixation spot
+bs_eye_for_this_run = 'right';   %% Right eye has the blind spot. Left fixation spot
 
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
@@ -515,9 +515,11 @@ try
     %%%  Task parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    dotpositions = [-1 -0.5 0 0.5 1]; %how many degrees from the arc middle? -ve = inside illusory shape; +ve outside illusory shape
+%     dotpositions = [-1 -0.5 0 0.5 1]; %how many degrees from the arc middle? -ve = inside illusory shape; +ve outside illusory shape
+    dotpositions = [-4 -3 -2 -1 0 1 2 3 4]; %how many degrees from the arc middle? -ve = inside illusory shape; +ve outside illusory shape
+%     dotpositions = [-4 -2 0 2 4]; %how many degrees from the arc middle? -ve = inside illusory shape; +ve outside illusory shape
     durationStim = 0.400; %secs
-    durationDot = 0.050; %secs
+    durationDot = 0.100; %secs
     durationMask = 0.400; %secs
     
     
@@ -571,13 +573,13 @@ try
     arc_middle_L = [BS_center_h2_l, BS_center_v_l];
     arc_middle_R = [BS_center_h2_r, BS_center_v_r];
     
-    arc_angle = 90; %try a 45 deg angle, maybe can change later
+    arc_angle = 45; %try a 45 deg angle, maybe can change later
     width_of_stim = deg2pix_YR(10); % define width of kanizsa rect in degrees, try 10deg for now
     inducer_diameter = deg2pix_YR(5); %define inducer circle size (see papers for confirmation, try 3deg for now)
     
     %length of curve, BS height + some value
-    arc_length_L = BS_diameter_v_l + deg2pix_YR(10); % BS height plus 10 deg (5 deg each side). Can change later
-    arc_length_R = BS_diameter_v_r + deg2pix_YR(10);
+    arc_length_L = BS_diameter_v_l + deg2pix_YR(7); % BS height plus 10 deg (5 deg each side). Can change later
+    arc_length_R = BS_diameter_v_r + deg2pix_YR(7);
     
     %radius of circle underlying the arc (needed for further geometric
     %calculations
@@ -1012,11 +1014,14 @@ end
 
 rng('shuffle'); % randomize the random number generator. Otherwise
 
-nrepetitions = 10; %show each unique condition 50 times
+nrepetitions = 6; %show each unique condition 50 times
 
 condsvector = [ones(1,5), 2*ones(1,5), 3*ones(1,5), 4*ones(1,5), 5 *ones(1,5)]';
+condsvector = [ones(1,7), 2*ones(1,7), 3*ones(1,7), 4*ones(1,7), 5 *ones(1,7)]';
+condsvector = [ones(1,9), 2*ones(1,9), 3*ones(1,9), 4*ones(1,9), 5 *ones(1,9)]';
 
 dotpositionvector = repmat(dotpositions,1,5)';
+% dotpositionvector = repmat(dotpositions,1,5)';
 
 allconds = [condsvector dotpositionvector];
 
@@ -1024,7 +1029,8 @@ allconds(:,3:5) = NaN; %make columns for other varibles
 
 experimentalconditions = repmat(allconds,nrepetitions,1); %all conditions for the experiment: eg each cond x 40 = 1000 trials
 
-ntrialsofeachcond = nrepetitions * 5; %eg 10 x 5 = 50 trials in total of "blind spot"
+ntrialsofeachcond = nrepetitions * 7; %eg 10 x 5 = 50 trials in total of "blind spot"
+ntrialsofeachcond = nrepetitions * 9; %eg 10 x 5 = 50 trials in total of "blind spot"
 dotEyeVector = [ones(1,ntrialsofeachcond/2), 2*ones(1,ntrialsofeachcond/2)]; %make a vector of 1s and 2s
 
 
@@ -1121,7 +1127,7 @@ for trialN = 1:size(experimentalconditions,1)
         Fovea_Screen = Fovea_Screen_RIGHT;
     end
     
-    curr_occluder_offset = 4 + (6-4).*rand;
+    curr_occluder_offset = deg2pix_YR(2) + (deg2pix_YR(4)-deg2pix_YR(2)).*rand;
     
     disp(sprintf('Trial type: \n \n 1 = BS; 2 = OccPeri; 3 = ControlPeri; 4 = OccFov; 5 = ControlFov: \n \n %d | Dot: %d',currcondition,currdotposition))
 
@@ -1155,8 +1161,8 @@ for trialN = 1:size(experimentalconditions,1)
                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Periphery_Screen_RIGHT) %show Stim
-                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_r]; %right BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r-deg2pix_YR(curr_occluder_offset), BS_center_v_r); %right BS, centre on BS + (4-6) deg [random number between 4 and 6]
+                    oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r-curr_occluder_offset, BS_center_v_r); %right BS, centre on BS + (4-6) deg [random number between 4 and 6]
                     % show blind spot shaped occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
@@ -1177,8 +1183,8 @@ for trialN = 1:size(experimentalconditions,1)
                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Fovea_Screen_RIGHT) %show Stim
-                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_r]; %right BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1)-deg2pix_YR(curr_occluder_offset), arc_middle_R_fovea(2)); %right centred on arc middle
+                    oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1)-curr_occluder_offset, arc_middle_R_fovea(2)); %right centred on arc middle
                     % show blind spot shaped occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
@@ -1226,8 +1232,8 @@ for trialN = 1:size(experimentalconditions,1)
 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Periphery_Screen_LEFT) %show Stim
-                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_l]; %left BS, make a rectangle as an occluder
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+deg2pix_YR(curr_occluder_offset), BS_center_v_l); %left BS
+                    oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS, make a rectangle as an occluder
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+curr_occluder_offset, BS_center_v_l); %left BS
                     % show rectangular occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
@@ -1248,8 +1254,8 @@ for trialN = 1:size(experimentalconditions,1)
 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Fovea_Screen_LEFT) %show Stim
-                    oval_rect = [0 0 deg2pix_YR(20) BS_diameter_v_l]; %left BS
-                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1)+deg2pix_YR(curr_occluder_offset), arc_middle_L_fovea(2)); %left centred on arc middle
+                    oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS
+                    oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1)+curr_occluder_offset, arc_middle_L_fovea(2)); %left centred on arc middle
                     % show rectangular occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
                     ShowFix() %blank screen
@@ -1744,7 +1750,7 @@ for trialN = 1:size(experimentalconditions,1)
     
 end %for trial
 
-
+save (filename)
 sca
 
 
@@ -1752,5 +1758,6 @@ sca
 catch ERR2
     ERR2
     ERR2.stack
+    save (filename)
     sca
 end% big try loop
