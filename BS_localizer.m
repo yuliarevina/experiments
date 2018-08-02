@@ -230,17 +230,28 @@ hz = 5; %flicker at 5 times per s
 nSecsPerFlicker = 1/hz;
 nFramesPerFlicker = (1/ifi)*nSecsPerFlicker; % n frames per second x seconds eg 60 x 0.2 = 12 frames
 
-targetDegV = in_deg_v - 2; % annulus is 1deg wide so target is the inner circle 2 deg smaller overall in diameter
+targetDegV = in_deg_v - 2; % target is the inner circle 2 deg smaller overall in diameter (1deg each side)
 targetDegH2 = in_deg_h2 - 2;
+
+annulusDegV = in_deg_v - 1; % annulus is 0.5deg wide so target is the inner circle 1 deg smaller overall in diameter
+annulusDegH2 = in_deg_h2 - 1;
+
 
 targetPxV = deg2pix_YR_MRI(targetDegV); %size of small target circle in px
 targetPxH2 = deg2pix_YR_MRI(targetDegH2);
 
+annulusPxV = deg2pix_YR_MRI(annulusDegV); %size of grey circle for annulus in px
+annulusPxH2 = deg2pix_YR_MRI(annulusDegH2);
+
 %basic rect of target size
 targetRect = [0 0 targetPxH2 targetPxV];
+
+%basic rect of annulus size
+annulusRect = [0 0 annulusPxH2 annulusPxV];
+
 %centre on BS coords
 targetRectCentre = CenterRectOnPointd(targetRect, BS_center_h2, BS_center_v);
-
+annulustRectCentre = CenterRectOnPointd(annulusRect, BS_center_h2, BS_center_v);
 
 
 %% Stimuli types
@@ -350,7 +361,7 @@ Screen('FillOval', aperture(4), [1 1 1 0], occluderRectCentre_Expt);
 
 
 % MAKE GREY OVAL THE SIZE OF TARGET to make an annulus
-Screen('FillOval', aperture(4), [grey grey grey 1], targetRectCentre);
+Screen('FillOval', aperture(4), [grey grey grey 1], annulustRectCentre);
 
 
 
