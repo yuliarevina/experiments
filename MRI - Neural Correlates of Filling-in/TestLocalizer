@@ -1,0 +1,298 @@
+% BS localization for MRI
+
+
+% 12 s fix
+% Target flash 5hz
+% 12 s fix
+% Surr flash 5 hz
+% 12 s fix
+
+
+% Stim 1 - Target both
+% Stim 2 - Target fellow
+% Stim 3 - target BS
+% Stim 4 - Surr both
+
+responses = {};
+resp = 1; %counter for responses
+
+
+
+
+% if ~IsWin
+    devices = PsychHID('Devices');
+% end
+keyboardind = GetKeyboardIndices();
+mouseind = GetMouseIndices();
+
+
+% define keyboards used by subject and experimenter
+% run KbQueueDemo(deviceindex) to test various indices
+deviceindexSubject = []; %possibly MRI keypad
+%can only listen to one device though...
+% deviceindexExperimenter = 11; %possibly your laptop keyboard
+
+
+KbName('UnifyKeyNames')
+
+
+% The avaliable keys to press
+escapeKey = KbName('ESCAPE');
+upKey = KbName('UpArrow');
+downKey = KbName('DownArrow');
+leftKey = KbName('LeftArrow');
+rightKey = KbName('RightArrow');
+space = KbName('space');
+scannertrigger = KbName('s');
+
+DisableKeysForKbCheck([]); % listen for all keys at the start
+
+
+todaydate  = date;
+
+% ASK FOR SUBJECT DETAILS
+
+subCode = input('Enter Subject Code:   ');
+subAge = input('Enter Subject Age in yrs:   ');
+subGender = input('Enter Subject Gender:   ');
+
+
+filename = sprintf('Localizer_%s_%s_%s_%s.txt', todaydate, subCode, num2str(subAge), subGender);
+fileID = fopen(filename,'w');
+
+stereoModeOn = 0; %don't need this for goggles, only for the 2 screen setup
+stereoMode = 4;        % 4 for split screen, 10 for two screens
+makescreenshotsforvideo = 0;
+
+BS_measurementON = 1;                     
+
+%%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Demo = 0; %show the debug bars at the start?
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+
+
+nSeq = 8;
+nStim = 4;
+
+
+
+distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
+
+outside_BS = 5; %deg of visual angle
+outside_BS = round(deg2pix_YR_MRI(outside_BS)); %in pixels for our screen
+
+brightness = 0.1;
+% brightness = 0.7; % for debugging
+textcolor = [0 0 0];
+
+% timing
+goggle_delay = 0.35; %seconds to keep lens closed after stim offset, to account for slow fade out of stim
+
+% GAMMA CORRECTION
+load CLUT_Station1_1152x864_100Hz_25_Apr_2016.mat
+
+
+% _______________________________________________________________________
+%  This is how to select each screen for stereo
+
+% %  % Select left-eye image buffer for drawing:
+%    Screen('SelectStereoDrawBuffer', w, 0);  %LEFT
+%    % draw fixation dot 
+%    Screen('CopyWindow', leftFixWin, w, [], leftScreenRect);	  
+%    % Select right-eye image buffer for drawing:
+%    Screen('SelectStereoDrawBuffer', w, 1);   %RIGHT
+%    % draw fixation dot 
+%    Screen('CopyWindow', rightFixWin, w, [], rightScreenRect);	  
+%    Screen('Flip',w);
+
+
+
+
+
+%% -------------------------------
+% set up screen and psychtoolbox |
+% --------------------------------
+
+% Here we call some default settings for setting up Psychtoolbox
+PsychDefaultSetup(2);
+
+if IsWin
+    Screen('Preference', 'SkipSyncTests', 1); %also remove this for the real expt. This is just for programming and testing the basic script on windows
+end
+% 
+% This script calls Psychtoolbox commands available only in OpenGL-based 
+% versions of the Psychtoolbox. (So far, the OS X Psychtoolbox is the
+% only OpenGL-base Psychtoolbox.)  The Psychtoolbox command AssertPsychOpenGL will issue
+% an error message if someone tries to execute this script on a computer without
+% an OpenGL Psychtoolbox
+AssertOpenGL;
+
+
+if IsWin
+    Priority(1); %MAX FOR WIN
+else
+    Priority(2);   % Linux
+end
+
+screens = Screen('Screens');  % Gives (0 1) if there is an external monitor attached or just (0) for no external
+screenNumber = max(screens);  % puts stimulus on external screen
+
+white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
+black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
+grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
+% grey_bkg = white*0.10
+% grey_bkg = grey*brightness/10
+grey_bkg = black
+
+
+
+% % Set the blend function for the screen
+% Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+
+% % % correct non-linearity from CLUT
+if ~IsWin
+%     oldCLUT= Screen('LoadNormalizedGammaTable', screenNumber, clut);
+end
+
+
+% Open an on screen window and color it grey
+
+if stereoModeOn
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg, [], [], [], stereoMode); % StereoMode 4 for side by side
+    leftScreenRect = windowRect;
+    rightScreenRect = windowRect;
+    if stereoMode == 10
+        Screen('OpenWindow', screenNumber-1, 128, [], [], [], stereoMode);
+    end
+else %just open one window
+    [window, windowRect] = PsychImaging('OpenWindow', screenNumber, grey_bkg);
+end
+
+
+% % Set the blend function for the screen
+Screen('BlendFunction', window, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+% 
+
+
+white = WhiteIndex(screenNumber);  %value of white for display screen screenNumber
+black = BlackIndex(screenNumber);  %value of white for display screen screenNumber
+grey = GrayIndex(screenNumber);  %value of white for display screen screenNumber
+
+
+% Get the size of the on screen window in pixels
+% For help see: Screen WindowSize?
+[screenXpixels, screenYpixels] = Screen('WindowSize', window);
+
+% Get the centre coordinate of the window in pixels
+% For help see: help RectCenter
+[xCenter, yCenter] = RectCenter(windowRect);
+
+% Query the frame duration
+ifi = Screen('GetFlipInterval', window);
+
+waitframes = 1; % update every frame?
+    
+% Translate frames into seconds for screen update interval:
+waitduration = waitframes * ifi; % basically just = ifi if we update on every frame
+
+
+% Need mouse control for blind spot measurements
+sinceLastClick = 0;
+mouseOn = 1;
+lastKeyTime = GetSecs;
+SetMouse(xCenter,yCenter,window);
+WaitSecs(.1);
+[mouseX, mouseY, buttons] = GetMouse(window);
+
+
+%% Fix frame
+
+% Fixation point on the RIGHT
+
+fp_offset = 400;
+
+% frame
+frameSize = 900;
+
+rightFixWin = Screen('OpenOffScreenWindow',window, grey_bkg, windowRect); 
+leftFixWin = Screen('OpenOffScreenWindow',window, grey_bkg, windowRect); 
+[center(1), center(2)] = RectCenter(windowRect);
+fix_r1 = 8;
+fix_r2 = 4; 
+fix_cord1 = [center-fix_r1 center+fix_r1] ;
+fix_cord2 = [center-fix_r2 center+fix_r2] ;
+l_fix_cord1 = [center-fix_r1 center+fix_r1] + [fp_offset 0 fp_offset 0];
+l_fix_cord2 = [center-fix_r2 center+fix_r2] + [fp_offset 0 fp_offset 0];
+r_fix_cord1 = [center-fix_r1 center+fix_r1] - [fp_offset 0 fp_offset 0];
+r_fix_cord2 = [center-fix_r2 center+fix_r2] - [fp_offset 0 fp_offset 0];
+Screen('FillOval', rightFixWin, uint8(white), l_fix_cord1);
+Screen('FillOval', rightFixWin, uint8(black), l_fix_cord2);
+
+% Two crosses in and lower
+Screen('DrawText',leftFixWin, '+', center(1), 200,white);
+Screen('DrawText',leftFixWin, '+', center(1), 1050-200,white);
+Screen('DrawText',rightFixWin, '+', center(1), 200,white);
+Screen('DrawText',rightFixWin, '+', center(1), 1050-200,white);
+
+% Frame
+frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
+Screen('FrameRect',leftFixWin, [0 256 0], frameRect, 4);
+Screen('FrameRect',rightFixWin, [256 0 0], frameRect, 4);
+%DEBUG
+% Screen('DrawText',rightFixWin,'Adjust UPPER grating!',300,400,white,[],[],1);
+
+% Fixation point on the LEFT
+leftFixWin = Screen('OpenOffScreenWindow',window, grey, windowRect); 
+Screen('FillOval', leftFixWin, uint8(white), r_fix_cord1);
+Screen('FillOval', leftFixWin, uint8(black), r_fix_cord2);
+
+% Two crosses in and lower
+Screen('DrawText',leftFixWin, '+', center(1), 200,white);
+Screen('DrawText',leftFixWin, '+', center(1), 1050-200,white);
+
+% Frame
+frameRect = CenterRect([0 0 frameSize frameSize],windowRect);
+
+
+try
+%% set up arduino
+if togglegoggle == 1;
+    disp('We need to switch on the Arduino...')
+    [ard, comPort] = InitArduino;
+    disp('Arduino Initiated')
+    
+    goggles(bs_eye, 'both', togglegoggle,ard)
+%     ToggleArd(ard,'LensOn') % need both eyes to view everything up until the actual experiment trials (and for the BS measurement)
+    
+    % Remember to switch this off if the code stops for any reason. Any
+    % Try/Catch routines should have LensOff integrated there...
+else
+%     ard =[]; %dummy variable in case we are not using goggles
+end
+catch
+    disp('Error in your code')
+     if togglegoggle == 1;
+        %Close goggles
+        % Shut down ARDUINO
+        goggles(bs_eye, 'neither', togglegoggle,ard)
+        ShutdownArd(ard,comPort);
+        disp('Arduino is off')
+        fclose(fileID);
+    sca
+     end
+disp('Everything is fine')
+     if togglegoggle == 1;
+        %Close goggles
+        % Shut down ARDUINO
+        goggles(bs_eye, 'neither', togglegoggle,ard)
+        ShutdownArd(ard,comPort);
+        disp('Arduino is off')
+        fclose(fileID);
+sca
