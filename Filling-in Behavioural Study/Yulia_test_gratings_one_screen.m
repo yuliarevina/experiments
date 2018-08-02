@@ -37,12 +37,12 @@ BS_measurementON = 1;
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
-togglegoggle = 1; % 0 goggles off for debug; 1 =  goggles on for real expt
+togglegoggle = 0; % 0 goggles off for debug; 1 =  goggles on for real expt
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%   %%%%%%%%%%%%%% %%% %%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 0; %show the debug bars at the start?
+Demo = 1; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%%%%%%%%
 
 
@@ -53,8 +53,8 @@ distance2screen = 70; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle  
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixel  s for our screen
 
-brightness = 0.1;        
-  % brightness = 0.7; % fo r debugging
+% brightness = 0.1;        
+  brightness = 0.7; % fo r debugging
 textcolor = [0 0 0]; 
                 
  %              timing
@@ -408,7 +408,8 @@ cyclespersecond = 3;
 
 midCS  = 3;
 % cyclesPerDeg = [ .4 .45 .5 .55 .6]; %edit this
-cyclesPerDeg = [ .25 .30 .35 .40 .45]; 
+% cyclesPerDeg = [ .25 .30 .35 .40 .45]; %subs 1-37
+cyclesPerDeg = [ .20 .30 .40 .50 .60]; %subs 38 - 
 
 constant_tempFreq = 1;
 
@@ -662,7 +663,7 @@ if Demo == 1
                             Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
                         case 5
                             Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Demo);
-                            Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
+%                             Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
                     end   %switch
                 end  %if
             end %for
