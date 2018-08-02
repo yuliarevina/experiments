@@ -22,7 +22,7 @@ debugmode = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% bs_eye = 'right';   %% Right eye has the blind spot. Left fixation spot
+% bs_eye = 'neither';   %% Right eye has the blind spot. Left fixation spot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 devices = PsychHID('Devices');
@@ -193,12 +193,12 @@ WaitSecs(.1);
 
 %% stim parameters
 
-% dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
+dir = 'C:/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir = '/media/perception/Windows/Users/HSS/Documents/GitHub/experiments/Retinotopic Mapping/';
 % dir ='D:/MRI scripts/Retinotopic Mapping/';
 % dir = 'C:/Users/Psychology/Documents/Yulia''s Expt/MRI scripts/Retinotopic Mapping/';
 % dir = '/media/laptop1/THE STICK/MRI scripts/Retinotopic Mapping/';
-dir ='/home/laptop1/Documents/Yulia/Retinotopic Mapping/';
+% dir ='/home/laptop1/Documents/Yulia/Retinotopic Mapping/';
 
 
 stimDur = 125; %ms
@@ -453,6 +453,7 @@ try
     elseif strcmp(bs_eye,'left')
         fixationpoint = [l_fix_cord1(1), yCenter];
     else
+%         fixationpoint = [xCenter, yCenter];
         sca
         if togglegoggle == 1;
             %Close goggles
