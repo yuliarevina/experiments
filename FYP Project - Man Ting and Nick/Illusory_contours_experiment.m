@@ -894,20 +894,22 @@ try
     %base rectangle for LEFT - use inducer circle centers as the 4 coords
     baseRectL_fovea = [inducer_centre_L_fovea(3,1:2) inducer_centre_L_fovea(2,1:2)];
        
-%     %recalculate for concave
-%     baseRectL_fovea_concave = [inducer_centre_L_fovea_concave(3,1:2) inducer_centre_L_fovea_concave(2,1:2)];
+    %recalculate for concave
+    baseRectL_fovea_concave = [inducer_centre_L_fovea_concave(3,1:2) inducer_centre_L_fovea_concave(2,1:2)];
 
     %base rectangle for RIGHT - use inducer circle centres as the 4 coords
     baseRectR_fovea = [inducer_centre_R_fovea(1,1:2) inducer_centre_R_fovea(4,1:2)];
     
-%     %recalculate for concave
-%     baseRectR_fovea_concave = [inducer_centre_R_fovea_concave(1,1:2) inducer_centre_R_fovea_concave(4,1:2)];
+    %recalculate for concave
+    baseRectR_fovea_concave = [inducer_centre_R_fovea_concave(1,1:2) inducer_centre_R_fovea_concave(4,1:2)];
     
     
     % for concave need to recalculate
     middle_of_base_rect_L_fovea_concave = [(baseRectL_fovea_concave(1) + baseRectL_fovea_concave(3))/2, (baseRectL_fovea_concave(2) + baseRectL_fovea_concave(4))/2]
     middle_of_base_rect_R_fovea_concave = [(baseRectR_fovea_concave(1) + baseRectR_fovea_concave(3))/2, (baseRectR_fovea_concave(2) + baseRectR_fovea_concave(4))/2]
     
+    %recalculate again so that the rectangle only covers half the stim (we
+    %don't want it covering the curve)
     baseRectL_fovea_concave = [inducer_centre_L_fovea_concave(3,1:2), (middle_of_base_rect_L_fovea_concave(1)),  inducer_centre_L_fovea_concave(2,2)];
     baseRectR_fovea_concave = [middle_of_base_rect_R_fovea_concave(1), inducer_centre_R_fovea_concave(1,2), inducer_centre_R_fovea_concave(4,1:2)];
     
@@ -1082,7 +1084,7 @@ try
     
     
     % Put everything on offscreen windows for later fast plotting
-    Periphery_Screen_LEFT(2) =Screen('OpenOffscreenWindow',window, grey);
+    Periphery_Screen_LEFT(2) =Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
     Screen('BlendFunction', Periphery_Screen_LEFT(2), 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     Screen('FillRect', Periphery_Screen_LEFT(2), [0 0 0 0], windowRect); %draw transparency (need this, otherwise plots everything on a opaque grey screen)
     %
@@ -1096,6 +1098,13 @@ try
     %         Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
     Screen('FillArc',transparent_arc_left_peri,[0.5 1 0.5 0],baseRectL_forArc_concave,270-(arc_angle/2),arc_angle); %centred on 90 deg point
+    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
+
+    
+    
     %
     Screen('DrawTexture', Periphery_Screen_LEFT(2), transparent_arc_left_peri,[], [], []);
     %         Screen('DrawTextures', window, transparent_arc_left_peri, [], [], []);
@@ -1115,7 +1124,7 @@ try
     Screen('FillArc', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_concave, 0, 270);
     
     %draw grey rectangle for the second half of the Kanizsa shape
-    Screen('FillRect', Periphery_Screen_LEFT(2), [1 0.5 0.5], baseRectL_concave);
+    Screen('FillRect', Periphery_Screen_LEFT(2), [0.5 0.5 0.5 1], baseRectL_concave);
     %
     
     Screen('DrawTextures', window, Periphery_Screen_LEFT(2), [], [], []);
@@ -1237,7 +1246,15 @@ try
     %         Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     Screen('BlendFunction', transparent_arc_right_peri, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
     Screen('FillArc',transparent_arc_right_peri,[0.5 1 0.5 0],baseRectR_forArc_concave,90-(arc_angle/2),arc_angle); %centred on 90 deg point
-    %
+    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
+
+    
+    
+    
+    
     Screen('DrawTexture', Periphery_Screen_RIGHT(2), transparent_arc_right_peri,[], [], []);
     
     
@@ -1251,7 +1268,7 @@ try
     Screen('FillArc', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_concave, 90, 270);
     
     %draw grey rectangle for the second half of the Kanizsa shape
-    Screen('FillRect', Periphery_Screen_RIGHT(2), [1 0.5 0.5], baseRectR_concave);
+    Screen('FillRect', Periphery_Screen_RIGHT(2), [0.5 0.5 0.5], baseRectR_concave);
     %
     
     Screen('DrawTextures', window, Periphery_Screen_RIGHT(2), [], [], []);
@@ -1296,9 +1313,9 @@ try
     
     
     % Put everything on offscreen windows for later fast plotting
-    Fovea_Screen_LEFT(2) =Screen('OpenOffscreenWindow',window, [1 0.5 0.5 1]);
+    Fovea_Screen_LEFT(2) =Screen('OpenOffscreenWindow',window, [1 0.5 0.5 0]);
     Screen('BlendFunction', Fovea_Screen_LEFT(2), 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-    Screen('FillRect', Fovea_Screen_LEFT(2), [0 0 1 1], windowRect);
+    Screen('FillRect', Fovea_Screen_LEFT(2), [0 0 1 0], windowRect);
     
     %draw fixation dot
     %     Screen('CopyWindow', leftFixWin, Fovea_Screen_LEFT, [], leftScreenRect);
@@ -1315,7 +1332,10 @@ try
     transparent_arc_left_fov=Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
     Screen('BlendFunction', transparent_arc_left_fov, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
     Screen('FillArc',transparent_arc_left_fov,[0.5 0.5 0.5 0],baseRectL_forArc_fovea_concave,270-(arc_angle/2),arc_angle) %centred on 90 deg point
-    
+     Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+    Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
     
     Screen('DrawTexture', Fovea_Screen_LEFT(2), transparent_arc_left_fov,[], [], []);
     
@@ -1330,7 +1350,7 @@ try
     Screen('FillArc', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_fovea_concave, 0, 270);
     
     %draw grey rectangle for the second half of the Kanizsa shape
-    Screen('FillRect', Fovea_Screen_LEFT(2), [1 0.5 0.5], baseRectL_fovea_concave);
+    Screen('FillRect', Fovea_Screen_LEFT(2), [0.5 0.5 0.5], baseRectL_fovea_concave);
     
     
     Screen('DrawTextures', window, Fovea_Screen_LEFT(2), [], [], []);
@@ -1374,7 +1394,7 @@ try
     % Put everything on offscreen windows for later fast plotting
     Fovea_Screen_RIGHT(2) =Screen('OpenOffscreenWindow',window, grey);
     Screen('BlendFunction', Fovea_Screen_RIGHT(2), 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-    Screen('FillRect', Fovea_Screen_RIGHT(2), [0 1 0 1], windowRect);
+    Screen('FillRect', Fovea_Screen_RIGHT(2), [0 1 0 0], windowRect);
     
     
     %     %    draw fixation dot
@@ -1392,6 +1412,10 @@ try
     transparent_arc_right_fov=Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
     Screen('BlendFunction', transparent_arc_right_fov, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
     Screen('FillArc',transparent_arc_right_fov,[0.5 0.5 0.5 0],baseRectR_forArc_fovea_concave,90-(arc_angle/2),arc_angle) %centred on 90 deg point
+    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
     
     Screen('DrawTexture', Fovea_Screen_RIGHT(2), transparent_arc_right_fov,[], [], []);
     
@@ -1543,6 +1567,11 @@ condsorder = randperm(size(experimentalconditions,1)); %this is the order of the
 curr_response = 0; %store current response on trial n, just initializing the variable here
 respmade = 0; %logical variable, response made or not yet
 
+% Fixation point task
+% On half the trials, fixation point will change color for 50ms.
+% Generate a vector of 0 and 1s, the length of experimental conditions
+FixTask = [zeros(length(experimentalconditions)/2,1); ones(length(experimentalconditions)/2,1)];
+FixTask = [FixTask nan(length(experimentalconditions),1)]; %add a column for the response
 
 
 %% main experimental session
@@ -1626,6 +1655,10 @@ for trialN = 1:size(experimentalconditions,1)
     
     curr_occluder_offset = deg2pix_YR(2) + (deg2pix_YR(4)-deg2pix_YR(2)).*rand;
     
+    %task will start no earlier than 50ms after trial start and no later
+    %than 100ms before the end
+    task_frame = 0.05 + ((durationStim-0.1)-0.05).*rand;
+    
     disp(sprintf('Trial type: \n \n 1 = BS; 2 = OccPeri; 3 = ControlPeri; 4 = OccFov; 5 = ControlFov: \n \n %d | Dot: %d',currcondition,currdotposition))
     
     start_time = vbl;
@@ -1647,56 +1680,78 @@ for trialN = 1:size(experimentalconditions,1)
                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix frame
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Periphery_Screen_LEFT(currconvexcave)) %show Stim
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
+                
+%                 if (vbl - start_time) > task_frame && (vbl - start_time) < task_frame+0.05
+%                     %show alternative fix
+%                     AlternativeShowFixRed(); %red
+%                 else
+%                     %show normal fix
+%                     ShowFix() %blank screen
+%                 end
+                
                
             case 2 %Occ Peri. Draw stim on Fellow side. Periphery. Put on occluder. Flash dot on Fellow side
                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Periphery_Screen_RIGHT(currconvexcave)) %show Stim
                     oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
                     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r-curr_occluder_offset, BS_center_v_r); %right BS, centre on BS + (4-6) deg [random number between 4 and 6]
                     % show blind spot shaped occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
                 
+               
             case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Periphery_Screen_RIGHT(currconvexcave)) %show Stim
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
                 
             case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Fovea_Screen_RIGHT(currconvexcave)) %show Stim
                     oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
                     oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1)-curr_occluder_offset, arc_middle_R_fovea(2)); %right centred on arc middle
                     % show blind spot shaped occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
             case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Fovea_Screen_RIGHT(currconvexcave)) %show Stim
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
         end
         
-        
+         
+         if (vbl - start_time) > task_frame && (vbl - start_time) < task_frame+0.05
+             if FixTask(condsorder(trialN)) %if task is to be shown on this trial
+                 %show alternative fix
+                 AlternativeShowFixRed(); %red
+             else
+                 %show normal fix
+                 ShowFix() %blank screen
+             end
+         else
+             %show normal fix
+             ShowFix() %blank screen
+         end %if
         
         %display BSs for debug
         if Demo
@@ -1719,10 +1774,10 @@ for trialN = 1:size(experimentalconditions,1)
             case 1 %BS. Draw Stim on BS side. Flash dot on Fellow side
 %                 Screen('CopyWindow', rightFixWin, window, [], rightScreenRect); %always right fix frame
                 if strcmp(bs_eye, 'left') %if BS eye = left
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     Screen('DrawTexture', window, Periphery_Screen_RIGHT(currconvexcave)) %show Stim
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
                
             case 2 %Occ Peri. Draw stim on Fellow side. Periphery. Put on occluder. Flash dot on Fellow side
@@ -1733,18 +1788,18 @@ for trialN = 1:size(experimentalconditions,1)
                     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+curr_occluder_offset, BS_center_v_l); %left BS
                     % show rectangular occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
                 
             case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Periphery_Screen_LEFT(currconvexcave)) %show Stim
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
                 
             case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
@@ -1755,19 +1810,36 @@ for trialN = 1:size(experimentalconditions,1)
                     oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1)+curr_occluder_offset, arc_middle_L_fovea(2)); %left centred on arc middle
                     % show rectangular occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
             case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
-%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Fovea_Screen_LEFT(currconvexcave)) %show Stim
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    ShowFix() %blank screen
+%                     ShowFix() %blank screen
                 end
          end
+         
+         
+         
+         if (vbl - start_time) > task_frame && (vbl - start_time) < task_frame+0.05
+             if FixTask(condsorder(trialN)) %if task is to be shown on this trial
+                 %show alternative fix
+                 AlternativeShowFixRed(); %red
+             else
+                 %show normal fix
+                 ShowFix() %blank screen
+             end
+         else
+             %show normal fix
+             ShowFix() %blank screen
+         end %if
+         
+         
          
          %display BSs for debug
          if Demo
@@ -2191,12 +2263,12 @@ for trialN = 1:size(experimentalconditions,1)
          Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
          Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
 %          Screen('FillRect', window, grey) % make the whole screen grey
-         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', trialN, length(condsorder));
+         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
          DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
          
          Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
          Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
-         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', trialN, length(condsorder));
+         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
          DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
 
          Screen('Flip', window);
@@ -2220,6 +2292,13 @@ for trialN = 1:size(experimentalconditions,1)
      Screen('Flip', window);
      
      [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
+     
+     if keyCode(downKey)
+         %record red fix thing
+         FixTask(condsorder(trialN,2)) = 1;
+         disp('Down Key')
+     end
+     
      
      
      while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
