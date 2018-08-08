@@ -1,5 +1,5 @@
 % FYP Project experiment script.
-% Do illusory contours go through the blind spot and occluder?
+% Do illusory contours or real contours go through the blind spot and occluder?
 
 
 % Yulia Revina, NTU, Singapore, 2018
@@ -39,17 +39,33 @@ makescreenshotsforvideo = 0;
 BS_measurementON = 1;                     
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Demo = 1; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%% !!!!!!!!!!!!!!!!!!!!!!!!!!!  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+experiment_switcher = 2; % Illusory contours (1) or Real (solid) contours (2)
 
-bs_eye_for_this_run = 'left';   %% Right eye has the blind spot. Left fixation spot
+response_button_counterbalance_mode = 2;
+
+% (1) IC - LEFT button means INSIDE (response code 1)
+%     IC - RIGHT button means OUTSIDE (response code 2)
+%     REAL - LEFT button means LEFT (response code 1 or 2 depending on which eye is being tested as L/R could mean either inside or outside)
+%     REAL - RIGHT button means RIGHT (response code 1 or 2 depending on which eye is being tested as L/R could mean either inside or outside)
+% (2) IC - LEFT button means OUTSIDE (response code 2)
+%     IC - RIGHT button means INSIDE (response code 1)
+%     REAL - LEFT button means RIGHT (response code 1 or 2 depending on which eye is being tested as L/R could mean either inside or outside)
+%     REAL - RIGHT button means LEFT (response code 1 or 2 depending on which eye is being tested as L/R could mean either inside or outside)
+
+% Remember to explain which button is which very carefully to the subject
+% before they start the real study. Make sure their responses make sense in
+% the practice session!! Use stickers on the keyboard if necessary!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+bs_eye_for_this_run = 'right';   %% Right eye has the blind spot. Left fixation spot
 
 distance2screen = 42; % how many centimeters from eye to screen? To make this portable on different machines
 
@@ -578,6 +594,7 @@ try
     arc_middle_L = [BS_center_h2_l, BS_center_v_l];
     arc_middle_R = [BS_center_h2_r, BS_center_v_r];
     
+    curve_thickness = deg2pix_YR(0.5);
     arc_angle = 45; %try a 45 deg angle, maybe can change later
     width_of_stim = deg2pix_YR(10); % define width of kanizsa rect in degrees, try 10deg for now
     inducer_diameter = deg2pix_YR(5); %define inducer circle size (see papers for confirmation, try 3deg for now)
@@ -726,29 +743,57 @@ try
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
-    Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_1);
-    Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_2);
-    
-    Screen('FillArc',Periphery_Screen_LEFT(1),[0.5 0.5 0.5],baseRectL_forArc,90-(arc_angle/2),arc_angle) %centred on 90 deg point
-    
-    Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_3);
-    Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_4);
-    
-    Screen('FillRect', Periphery_Screen_LEFT(1), [0.5 0.5 0.5], baseRectL);
-    
-    %debugging marks
-    %     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
-    
-    
+    if experiment_switcher == 1 %do illusory contours
+        
+        %plot inducers
+        Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_1);
+        Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_2);
+        
+        Screen('FillArc',Periphery_Screen_LEFT(1),[0.5 0.5 0.5],baseRectL_forArc,90-(arc_angle/2),arc_angle) %centred on 90 deg point
+        
+        Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_3);
+        Screen('FillOval', Periphery_Screen_LEFT(1), [0 0 0], inducer_circle_L_4);
+        
+        Screen('FillRect', Periphery_Screen_LEFT(1), [0.5 0.5 0.5], baseRectL);
+        
+        %debugging marks
+        %     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
+        
+                
+    elseif experiment_switcher == 2
+               
+        Screen('FrameArc',Periphery_Screen_LEFT(1),black,baseRectL_forArc,90-(arc_angle/2),arc_angle, curve_thickness) %centred on 90 deg point
+        
+           
+%         Screen('FillRect', Periphery_Screen_LEFT(1), [0.5 0.5 0.5], baseRectL);
+        
+        %debugging marks
+        %     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
+        
+           
+    else
+        sca
+        disp('\n \n Please define experiment type you are running!! Illusory (1) or solid contours (2)')
+        
+    end %experiment switcher
     Screen('DrawTextures', window, Periphery_Screen_LEFT(1));
     ShowFix()
     nx
@@ -778,32 +823,38 @@ try
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
-    Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_1);
-    Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_2);
-    
-    Screen('FillArc',Periphery_Screen_RIGHT(1),[0.5 0.5 0.5],baseRectR_forArc,270-(arc_angle/2),arc_angle) %centred on 90 deg point
-    
-    Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_3);
-    Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_4);
-    
-    Screen('FillRect', Periphery_Screen_RIGHT(1), [0.5 0.5 0.5], baseRectR);
-    
-    %debugging marks
-    %     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
-    %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
-    
-    %     baseRect = [0 0 200 200];
-    %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
-    %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+    if experiment_switcher == 1 %do illusory contours
+        
+        Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_1);
+        Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_2);
+        
+        Screen('FillArc',Periphery_Screen_RIGHT(1),[0.5 0.5 0.5],baseRectR_forArc,270-(arc_angle/2),arc_angle) %centred on 90 deg point
+        
+        Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_3);
+        Screen('FillOval', Periphery_Screen_RIGHT(1), [0 0 0], inducer_circle_R_4);
+        
+        Screen('FillRect', Periphery_Screen_RIGHT(1), [0.5 0.5 0.5], baseRectR);
+        
+        %debugging marks
+        %     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
+        %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
+        
+        %     baseRect = [0 0 200 200];
+        %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
+        %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+        
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Periphery_Screen_RIGHT(1),black,baseRectR_forArc,270-(arc_angle/2),arc_angle,curve_thickness) %centred on 90 deg point
+    end
     Screen('DrawTextures', window, Periphery_Screen_RIGHT(1));
     ShowFix()
     nx
@@ -979,33 +1030,36 @@ try
     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l);
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
-    
-    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_1_fovea);
-    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_2_fovea);
-    
-    Screen('FillArc',Fovea_Screen_LEFT,[0.5 0.5 0.5],baseRectL_forArc_fovea,90-(arc_angle/2),arc_angle) %centred on 90 deg point
-    
-    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_3_fovea);
-    Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_4_fovea);
-    
-    Screen('FillRect', Fovea_Screen_LEFT, [0.5 0.5 0.5], baseRectL_fovea);
-    
-    %debugging marks
-    %     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
-    
-    
-    
-    
-    
+    if experiment_switcher == 1 %do illusory contours
+        
+        Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_1_fovea);
+        Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_2_fovea);
+        
+        Screen('FillArc',Fovea_Screen_LEFT,[0.5 0.5 0.5],baseRectL_forArc_fovea,90-(arc_angle/2),arc_angle) %centred on 90 deg point
+        
+        Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_3_fovea);
+        Screen('FillOval', Fovea_Screen_LEFT, [0 0 0], inducer_circle_L_4_fovea);
+        
+        Screen('FillRect', Fovea_Screen_LEFT, [0.5 0.5 0.5], baseRectL_fovea);
+        
+        %debugging marks
+        %     DrawFormattedText(window, 'X', arc_middle_L(1),  arc_middle_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'Or', origin_of_arc_L(1),  origin_of_arc_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'T', top_point_of_chord_L(1),  top_point_of_chord_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'B', bottom_point_of_chord_L(1),  bottom_point_of_chord_L(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(1,1),  inducer_centre_L(1,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(2,1),  inducer_centre_L(2,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(3,1),  inducer_centre_L(3,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_L(4,1),  inducer_centre_L(4,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectL_forArc(1),  baseRectL_forArc(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectL_forArc(3),  baseRectL_forArc(4), [0 1 0], [],1);
+        
+        
+        
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Fovea_Screen_LEFT,black,baseRectL_forArc_fovea,90-(arc_angle/2),arc_angle,curve_thickness) %centred on 90 deg point
+        
+    end
     Screen('DrawTextures', window, Fovea_Screen_LEFT);
     
     Screen('FillRect', window, [0.5 0.5 0.5], [centre_of_stim(1)-4, centre_of_stim(2) - 4,  centre_of_stim(1) + 4, centre_of_stim(2)+4]);
@@ -1035,33 +1089,38 @@ try
     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r, BS_center_v_r);
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
-    
-    Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_1_fovea);
-    Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_2_fovea);
-    
-    Screen('FillArc',Fovea_Screen_RIGHT(1),[0.5 0.5 0.5],baseRectR_forArc_fovea,270-(arc_angle/2),arc_angle) %centred on 90 deg point
-    
-    Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_3_fovea);
-    Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_4_fovea);
-    
-    Screen('FillRect', Fovea_Screen_RIGHT(1), [0.5 0.5 0.5], baseRectR_fovea);
-    
-    %debugging marks
-    %     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
-    %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
-    
-    %     baseRect = [0 0 200 200];
-    %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
-    %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+    if experiment_switcher == 1 %do illusory contours
+        Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_1_fovea);
+        Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_2_fovea);
+        
+        Screen('FillArc',Fovea_Screen_RIGHT(1),[0.5 0.5 0.5],baseRectR_forArc_fovea,270-(arc_angle/2),arc_angle) %centred on 90 deg point
+        
+        Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_3_fovea);
+        Screen('FillOval', Fovea_Screen_RIGHT(1), [0 0 0], inducer_circle_R_4_fovea);
+        
+        Screen('FillRect', Fovea_Screen_RIGHT(1), [0.5 0.5 0.5], baseRectR_fovea);
+        
+        %debugging marks
+        %     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
+        %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
+        
+        %     baseRect = [0 0 200 200];
+        %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
+        %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Fovea_Screen_RIGHT(1),black,baseRectR_forArc_fovea,270-(arc_angle/2),arc_angle,curve_thickness) %centred on 90 deg point
+        
+    else
+    end
     Screen('DrawTextures', window, Fovea_Screen_RIGHT(1));
     ShowFix()
     nx
@@ -1088,45 +1147,54 @@ try
     Screen('BlendFunction', Periphery_Screen_LEFT(2), 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
     Screen('FillRect', Periphery_Screen_LEFT(2), [0 0 0 0], windowRect); %draw transparency (need this, otherwise plots everything on a opaque grey screen)
     %
-    %draw inducers near the BS
-    Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_concave);
-    Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_concave);
-    %
-    %transparent arc
-    transparent_arc_left_peri =Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
-    % % Set the blend function for the screen
-    %         Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-    Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
-    Screen('FillArc',transparent_arc_left_peri,[0.5 1 0.5 0],baseRectL_forArc_concave,270-(arc_angle/2),arc_angle); %centred on 90 deg point
-    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
-    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
-
     
     
-    %
-    Screen('DrawTexture', Periphery_Screen_LEFT(2), transparent_arc_left_peri,[], [], []);
-    %         Screen('DrawTextures', window, transparent_arc_left_peri, [], [], []);
-    %
-    
-    %         convex_inducers_left_peri =Screen('OpenOffscreenWindow',window, grey);
-    %         Screen('FillRect', Periphery_Screen_LEFT(2), [0 0 0 0], windowRect); %draw transparency (need this, otherwise plots everything on a opaque grey screen)
-    
-    
-    %draw other inducers
-    Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_3_concave);
-    Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_4_concave);
-    
-    
-    %draw inducers near BS again
-    Screen('FillArc', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_concave, 270, 270);
-    Screen('FillArc', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_concave, 0, 270);
-    
-    %draw grey rectangle for the second half of the Kanizsa shape
-    Screen('FillRect', Periphery_Screen_LEFT(2), [0.5 0.5 0.5 1], baseRectL_concave);
-    %
-    
+    if experiment_switcher == 1 %do illusory contours
+        %draw inducers near the BS
+        Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_concave);
+        Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_concave);
+        %
+        %transparent arc
+        transparent_arc_left_peri =Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
+        % % Set the blend function for the screen
+        %         Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+        Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
+        Screen('FillArc',transparent_arc_left_peri,[0.5 1 0.5 0],baseRectL_forArc_concave,270-(arc_angle/2),arc_angle); %centred on 90 deg point
+        Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+        Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_left_peri,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
+        
+        
+        
+        %
+        Screen('DrawTexture', Periphery_Screen_LEFT(2), transparent_arc_left_peri,[], [], []);
+        %         Screen('DrawTextures', window, transparent_arc_left_peri, [], [], []);
+        %
+        
+        %         convex_inducers_left_peri =Screen('OpenOffscreenWindow',window, grey);
+        %         Screen('FillRect', Periphery_Screen_LEFT(2), [0 0 0 0], windowRect); %draw transparency (need this, otherwise plots everything on a opaque grey screen)
+        
+        
+        %draw other inducers
+        Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_3_concave);
+        Screen('FillOval', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_4_concave);
+        
+        
+        %draw inducers near BS again
+        Screen('FillArc', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_concave, 270, 270);
+        Screen('FillArc', Periphery_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_concave, 0, 270);
+        
+        %draw grey rectangle for the second half of the Kanizsa shape
+        Screen('FillRect', Periphery_Screen_LEFT(2), [0.5 0.5 0.5 1], baseRectL_concave);
+        %
+        
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Periphery_Screen_LEFT(2),black,baseRectL_forArc_concave,270-(arc_angle/2),arc_angle,curve_thickness); %centred on 90 deg point
+        
+    else
+        
+    end
     Screen('DrawTextures', window, Periphery_Screen_LEFT(2), [], [], []);
     
     
@@ -1235,42 +1303,43 @@ try
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
-    
-    %draw inducers near the BS
-    Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_concave);
-    Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_concave);
-    
-    %transparent arc
-    transparent_arc_right_peri =Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
-    % % Set the blend function for the screen
-    %         Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
-    Screen('BlendFunction', transparent_arc_right_peri, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
-    Screen('FillArc',transparent_arc_right_peri,[0.5 1 0.5 0],baseRectR_forArc_concave,90-(arc_angle/2),arc_angle); %centred on 90 deg point
-    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
-    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
-
-    
-    
-    
-    
-    Screen('DrawTexture', Periphery_Screen_RIGHT(2), transparent_arc_right_peri,[], [], []);
-    
-    
-    %draw other inducers
-    Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_3_concave);
-    Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_4_concave);
-    
-    
-    %draw inducers near BS again
-    Screen('FillArc', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_concave, 180, 270);
-    Screen('FillArc', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_concave, 90, 270);
-    
-    %draw grey rectangle for the second half of the Kanizsa shape
-    Screen('FillRect', Periphery_Screen_RIGHT(2), [0.5 0.5 0.5], baseRectR_concave);
-    %
-    
+    if experiment_switcher == 1 %do illusory contours
+        
+        %draw inducers near the BS
+        Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_concave);
+        Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_concave);
+        
+        %transparent arc
+        transparent_arc_right_peri =Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
+        % % Set the blend function for the screen
+        %         Screen('BlendFunction', transparent_arc_left_peri, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+        Screen('BlendFunction', transparent_arc_right_peri, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
+        Screen('FillArc',transparent_arc_right_peri,[0.5 1 0.5 0],baseRectR_forArc_concave,90-(arc_angle/2),arc_angle); %centred on 90 deg point
+        Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+        Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_right_peri,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
+        
+        Screen('DrawTexture', Periphery_Screen_RIGHT(2), transparent_arc_right_peri,[], [], []);
+        
+        
+        %draw other inducers
+        Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_3_concave);
+        Screen('FillOval', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_4_concave);
+        
+        
+        %draw inducers near BS again
+        Screen('FillArc', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_concave, 180, 270);
+        Screen('FillArc', Periphery_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_concave, 90, 270);
+        
+        %draw grey rectangle for the second half of the Kanizsa shape
+        Screen('FillRect', Periphery_Screen_RIGHT(2), [0.5 0.5 0.5], baseRectR_concave);
+        %
+        
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Periphery_Screen_RIGHT(2),black,baseRectR_forArc_concave,90-(arc_angle/2),arc_angle,curve_thickness); %centred on 90 deg point
+        
+    end
     Screen('DrawTextures', window, Periphery_Screen_RIGHT(2), [], [], []);
     
     
@@ -1326,33 +1395,38 @@ try
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
-    Screen('FillOval', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_fovea_concave);
-    Screen('FillOval', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_fovea_concave);
-    
-    transparent_arc_left_fov=Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
-    Screen('BlendFunction', transparent_arc_left_fov, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
-    Screen('FillArc',transparent_arc_left_fov,[0.5 0.5 0.5 0],baseRectL_forArc_fovea_concave,270-(arc_angle/2),arc_angle) %centred on 90 deg point
-     Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
-    Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
-    
-    Screen('DrawTexture', Fovea_Screen_LEFT(2), transparent_arc_left_fov,[], [], []);
-    
-    
-    %draw other inducers
-    Screen('FillOval',Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_3_fovea_concave);
-    Screen('FillOval', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_4_fovea_concave);
-    
-    
-    %draw inducers near BS again
-    Screen('FillArc', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_fovea_concave, 270, 270);
-    Screen('FillArc', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_fovea_concave, 0, 270);
-    
-    %draw grey rectangle for the second half of the Kanizsa shape
-    Screen('FillRect', Fovea_Screen_LEFT(2), [0.5 0.5 0.5], baseRectL_fovea_concave);
-    
-    
+    if experiment_switcher == 1 %do illusory contours
+        
+        Screen('FillOval', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_fovea_concave);
+        Screen('FillOval', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_fovea_concave);
+        
+        transparent_arc_left_fov=Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
+        Screen('BlendFunction', transparent_arc_left_fov, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
+        Screen('FillArc',transparent_arc_left_fov,[0.5 0.5 0.5 0],baseRectL_forArc_fovea_concave,270-(arc_angle/2),arc_angle) %centred on 90 deg point
+        Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+        Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_left_fov,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
+        
+        Screen('DrawTexture', Fovea_Screen_LEFT(2), transparent_arc_left_fov,[], [], []);
+        
+        
+        %draw other inducers
+        Screen('FillOval',Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_3_fovea_concave);
+        Screen('FillOval', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_4_fovea_concave);
+        
+        
+        %draw inducers near BS again
+        Screen('FillArc', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_1_fovea_concave, 270, 270);
+        Screen('FillArc', Fovea_Screen_LEFT(2), [0 0 0], inducer_circle_L_2_fovea_concave, 0, 270);
+        
+        %draw grey rectangle for the second half of the Kanizsa shape
+        Screen('FillRect', Fovea_Screen_LEFT(2), [0.5 0.5 0.5], baseRectL_fovea_concave);
+        
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Fovea_Screen_LEFT(2),black,baseRectL_forArc_fovea_concave,270-(arc_angle/2),arc_angle,curve_thickness) %centred on 90 deg point
+        
+    end
     Screen('DrawTextures', window, Fovea_Screen_LEFT(2), [], [], []);
     
     
@@ -1406,46 +1480,52 @@ try
     % show blind spot
     %     Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
     
-    Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_fovea_concave);
-    Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_fovea_concave);
-    
-    transparent_arc_right_fov=Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
-    Screen('BlendFunction', transparent_arc_right_fov, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
-    Screen('FillArc',transparent_arc_right_fov,[0.5 0.5 0.5 0],baseRectR_forArc_fovea_concave,90-(arc_angle/2),arc_angle) %centred on 90 deg point
-    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
-    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
-    Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
-    
-    Screen('DrawTexture', Fovea_Screen_RIGHT(2), transparent_arc_right_fov,[], [], []);
-    
-    %draw other inducers
-    Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_3_fovea_concave);
-    Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_4_fovea_concave);
-    
-    %draw inducers near BS again
-    Screen('FillArc', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_fovea_concave, 180, 270);
-    Screen('FillArc', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_fovea_concave, 90, 270);
-    
-    %grey rect
-    Screen('FillRect', Fovea_Screen_RIGHT(2), [0.5 0.5 0.5], baseRectR_fovea_concave);
-    
-    %debugging marks
-    %     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
-    %     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
-    %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
-    
-    %     baseRect = [0 0 200 200];
-    %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
-    %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+    if experiment_switcher == 1 %do illusory contours
+        
+        Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_fovea_concave);
+        Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_fovea_concave);
+        
+        transparent_arc_right_fov=Screen('OpenOffscreenWindow',window, [0.5 0.5 0.5 1]);
+        Screen('BlendFunction', transparent_arc_right_fov, 'GL_SRC_ALPHA'); %use this for transparency. The one above multiplies the values together so everything becomes transparent, rather than just adding the alpha mask
+        Screen('FillArc',transparent_arc_right_fov,[0.5 0.5 0.5 0],baseRectR_forArc_fovea_concave,90-(arc_angle/2),arc_angle) %centred on 90 deg point
+        Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 0 windowRect(3) windowRect(2)+100]); %transparent rect
+        Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 0 windowRect(1)+100 windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[0 windowRect(4)-100 windowRect(3) windowRect(4)]); %transparent rect
+        Screen('FillRect',transparent_arc_right_fov,[0.5 1 0.5 0],[windowRect(3)-100 windowRect(2) windowRect(3) windowRect(4)]); %transparent rect
+        
+        Screen('DrawTexture', Fovea_Screen_RIGHT(2), transparent_arc_right_fov,[], [], []);
+        
+        %draw other inducers
+        Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_3_fovea_concave);
+        Screen('FillOval', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_4_fovea_concave);
+        
+        %draw inducers near BS again
+        Screen('FillArc', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_1_fovea_concave, 180, 270);
+        Screen('FillArc', Fovea_Screen_RIGHT(2), [0 0 0], inducer_circle_R_2_fovea_concave, 90, 270);
+        
+        %grey rect
+        Screen('FillRect', Fovea_Screen_RIGHT(2), [0.5 0.5 0.5], baseRectR_fovea_concave);
+        
+        %debugging marks
+        %     DrawFormattedText(window, 'X', arc_middle_R(1),  arc_middle_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', origin_of_arc_R(1),  origin_of_arc_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', top_point_of_chord_R(1),  top_point_of_chord_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'X', bottom_point_of_chord_R(1),  bottom_point_of_chord_R(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(1,1),  inducer_centre_R(1,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(2,1),  inducer_centre_R(2,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(3,1),  inducer_centre_R(3,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'O',  inducer_centre_R(4,1),  inducer_centre_R(4,2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectR_forArc(1),  baseRectR_forArc(2), [0 1 0], [],1);
+        %     DrawFormattedText(window, 'C',  baseRectR_forArc(3),  baseRectR_forArc(4), [0 1 0], [],1);
+        %     Screen('FillArc',window,[1 1 1],baseRect,45,90)
+        
+        %     baseRect = [0 0 200 200];
+        %     arc_centre = CenterRectOnPoint(baseRect, BS_center_h2_r, BS_center_v_r);
+        %     Screen('FillArc',window,[1 0 0],baseRect,45,90)
+    elseif experiment_switcher == 2
+        Screen('FrameArc',Fovea_Screen_RIGHT(2),black,baseRectR_forArc_fovea_concave,90-(arc_angle/2),arc_angle,curve_thickness) %centred on 90 deg point
+        
+    end
     Screen('DrawTextures', window, Fovea_Screen_RIGHT(2));
     ShowFix()
     nx
@@ -1713,7 +1793,15 @@ for trialN = 1:size(experimentalconditions,1)
                 if strcmp(bs_eye, 'left') %if BS eye = left
 %                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    Screen('DrawTexture', window, Periphery_Screen_RIGHT(currconvexcave)) %show Stim
+                    if experiment_switcher == 1 % IC
+                        Screen('DrawTexture', window, Periphery_Screen_RIGHT(1)) %show Stim
+                    elseif experiment_switcher == 2 % REAL
+                        Screen('DrawTexture', window, Periphery_Screen_RIGHT(2)) %show Stim
+                        oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
+                        oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r-curr_occluder_offset, BS_center_v_r); %right BS, centre on BS + (4-6) deg [random number between 4 and 6]
+                        % show blind spot shaped deleter
+                        Screen('FillRect', window, grey, oval_rect_centred);
+                    end
 %                     ShowFix() %blank screen
                 end
                 
@@ -1729,12 +1817,20 @@ for trialN = 1:size(experimentalconditions,1)
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
 %                     ShowFix() %blank screen
                 end
-            case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
+            case 5 %%Control Fov. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
 %                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-                    Screen('DrawTexture', window, Fovea_Screen_RIGHT(currconvexcave)) %show Stim
+                    if experiment_switcher == 1
+                        Screen('DrawTexture', window, Fovea_Screen_RIGHT(1)) %show Stim
+                    elseif experiment_switcher == 2
+                        Screen('DrawTexture', window, Fovea_Screen_RIGHT(2)) %show Stim
+                        oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
+                        oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1)-curr_occluder_offset, arc_middle_R_fovea(2)); %right centred on arc middle
+                        % show blind spot shaped deleter
+                        Screen('FillRect', window, grey, oval_rect_centred);
+                    end
 %                     ShowFix() %blank screen
                 end
         end
@@ -1788,22 +1884,30 @@ for trialN = 1:size(experimentalconditions,1)
                     oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+curr_occluder_offset, BS_center_v_l); %left BS
                     % show rectangular occluder
                     Screen('FillRect', window, [0.2 0.2 0.2], oval_rect_centred);
-%                     ShowFix() %blank screen
+                    %                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-%                     ShowFix() %blank screen
+                    %                     ShowFix() %blank screen
                 end
                 
-            case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
-%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
-                if strcmp(bs_eye, 'left') %if BS eye = left
-                    Screen('DrawTexture', window, Periphery_Screen_LEFT(currconvexcave)) %show Stim
-%                     ShowFix() %blank screen
-                elseif strcmp(bs_eye, 'right')%if BS eye = right
-%                     ShowFix() %blank screen
-                end
-                
-            case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
-%                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+             case 3 %Control Peri. Draw stim on Fellow side. Periphery. Flash dot on Fellow side
+                 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
+                 if strcmp(bs_eye, 'left') %if BS eye = left
+                     if experiment_switcher == 1
+                         Screen('DrawTexture', window, Periphery_Screen_LEFT(1)) %show Stim
+                     elseif experiment_switcher == 2
+                         Screen('DrawTexture', window, Periphery_Screen_LEFT(2)) %show Stim
+                         oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS, make a rectangle as an occluder
+                         oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+curr_occluder_offset, BS_center_v_l); %left BS
+                         % show rectangular deleter
+                         Screen('FillRect', window, grey, oval_rect_centred);
+                     end
+                     %                     ShowFix() %blank screen
+                 elseif strcmp(bs_eye, 'right')%if BS eye = right
+                     %                     ShowFix() %blank screen
+                 end
+                 
+             case 4 %Occ Fov. Draw stim on Fellow side. Fovea. Put on occluder. Flash dot on Fellow side
+                 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     Screen('DrawTexture', window, Fovea_Screen_LEFT(currconvexcave)) %show Stim
                     oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS
@@ -1817,10 +1921,18 @@ for trialN = 1:size(experimentalconditions,1)
             case 5 %%Control Peri. Draw stim on Fellow side. Fovea. Flash dot on Fellow side
                 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
-                    Screen('DrawTexture', window, Fovea_Screen_LEFT(currconvexcave)) %show Stim
-%                     ShowFix() %blank screen
+                    if experiment_switcher == 1
+                        Screen('DrawTexture', window, Fovea_Screen_LEFT(1)) %show Stim
+                    elseif experiment_switcher == 2
+                        Screen('DrawTexture', window, Fovea_Screen_LEFT(2)) %show Stim
+                        oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS
+                        oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1)+curr_occluder_offset, arc_middle_L_fovea(2)); %left centred on arc middle
+                        % show rectangular occluder
+                        Screen('FillRect', window, grey, oval_rect_centred);
+                    end
+                    %                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
-%                     ShowFix() %blank screen
+                    %                     ShowFix() %blank screen
                 end
          end
          
@@ -2203,11 +2315,19 @@ for trialN = 1:size(experimentalconditions,1)
     % -----------------------
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
-    DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+    if experiment_switcher == 1
+        DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+    elseif experiment_switcher == 2
+        DrawFormattedText(window,'Was the dot on the LEFT or the RIGHT of the contour?', 'center','center',[0 0 0], [],1);
+    end
     
     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-    DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+    if experiment_switcher == 1
+        DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+    elseif experiment_switcher == 2
+        DrawFormattedText(window,'Was the dot on the LEFT or the RIGHT of the contour?', 'center','center',[0 0 0], [],1);
+    end
     Screen('Flip', window);
     
     
@@ -2232,8 +2352,56 @@ for trialN = 1:size(experimentalconditions,1)
         if keyIsDown
             if keyCode(escapeKey);
                 resp2Bmade = false; endtime = GetSecs; save (filename); sca;
-            elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
-            elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
+            elseif keyCode(leftKey); resp2Bmade = false; 
+                % record response code. At the end of the day we want to
+                % know if they responded inside (1) or outside (2). Which
+                % keyboard button this is assigned to will depend on
+                % counterbalancing mode and BS eye for current subject
+                if experiment_switcher == 1 % IC
+                    if response_button_counterbalance_mode == 1 %left inside
+                      curr_response = 1; 
+                    elseif response_button_counterbalance_mode == 2 %left outside
+                        curr_response = 2; 
+                    end
+                elseif experiment_switcher == 2 % REAL
+                    if response_button_counterbalance_mode == 1 %left = left
+                        if strcmp(bs_eye_for_this_run, 'left') %left = outside
+                            curr_response = 2; 
+                        elseif strcmp(bs_eye_for_this_run, 'right') %left = inside
+                            curr_response = 1; 
+                        end
+                    elseif response_button_counterbalance_mode == 2 %left button = right
+                        if strcmp(bs_eye_for_this_run, 'left') %left button = inside
+                            curr_response = 1; 
+                        elseif strcmp(bs_eye_for_this_run, 'right') %left button = outside
+                            curr_response = 2; 
+                        end
+                    end
+                end   
+                endtime = GetSecs;
+            elseif keyCode(rightKey); resp2Bmade = false; 
+                 if experiment_switcher == 1 % IC
+                    if response_button_counterbalance_mode == 1 %right outside
+                      curr_response = 2; 
+                    elseif response_button_counterbalance_mode == 2 %right inside
+                        curr_response = 1; 
+                    end
+                elseif experiment_switcher == 2 % REAL
+                    if response_button_counterbalance_mode == 1 %right = right
+                        if strcmp(bs_eye_for_this_run, 'left') %right = inside
+                            curr_response = 1; 
+                        elseif strcmp(bs_eye_for_this_run, 'right') %right = outside
+                            curr_response = 2; 
+                        end
+                    elseif response_button_counterbalance_mode == 2 %right button = left
+                        if strcmp(bs_eye_for_this_run, 'left') %right button = outside
+                            curr_response = 2; 
+                        elseif strcmp(bs_eye_for_this_run, 'right') %right button = inside
+                            curr_response = 1; 
+                        end
+                    end
+                 end 
+                endtime = GetSecs;
             else
                 %just go through the while loop since resp2Bmade is
                 %still true
@@ -2242,16 +2410,17 @@ for trialN = 1:size(experimentalconditions,1)
         % if L or R has been pressed, record response
         
         % EXAMPLE RESULTS MATRIX
-        % CONDITION | DOT POSITION | | RESP  | RT
-        %   1           -1              1     0.50
-        %   2           -0.5            1     0.456
+        % CONDITION | DOT POSITION | DOT EYE | CONVEX/CAVE | RESP  | RT
+        %   1           -1              1           1          1    0.50
+        %   2           -0.5            1           2          2    20.456
         
         
         subjectdata(trialN,1) = currcondition; %record cond of this trial
-        subjectdata(trialN,2) = currdotposition; %record orientation of comparison of this trial
+        subjectdata(trialN,2) = currdotposition; %record dot position
         subjectdata(trialN,3) = currdoteye; %record which eye was the dot flashed in
-        subjectdata(trialN,4) = curr_response; % which side was the control stim on?
-        subjectdata(trialN,5) = secs - starttime; %Record RT
+        subjectdata(trialN,4) = currconvexcave; %was it convex or concave
+        subjectdata(trialN,5) = curr_response; % dot INSIDE or OUTSIDE the shape/contour?
+        subjectdata(trialN,6) = secs - starttime; %Record RT
            
               
     end %while
@@ -2260,45 +2429,45 @@ for trialN = 1:size(experimentalconditions,1)
     disp(sprintf('Trial %d out of %d completed', trialN, size(experimentalconditions,1)))
     
     if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
-         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
-%          Screen('FillRect', window, grey) % make the whole screen grey
-         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
-         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
-         
-         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
-         messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
-         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
-
-         Screen('Flip', window);
-         
-         while ~keyCode(upKey)
-             [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
-         end
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
+        %          Screen('FillRect', window, grey) % make the whole screen grey
+        messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
+        DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+        
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
+        messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
+        DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+        
+        Screen('Flip', window);
+        
+        while ~keyCode(upKey)
+            [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+        end
     end
-     
+    
     
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-     Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
-     ShowFix();
-     DrawFormattedText(window, 'Press space to start next trial', 'center', 'center', [0 0 0],[],1);
-     
-     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-     DrawFormattedText(window, 'Press space to start next trial', 'center', 'center', [0 0 0],[],1);
-     ShowFix();
-     % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
-     Screen('Flip', window);
-     
-     [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
-     
-     if keyCode(downKey)
-         %record red fix thing
-         FixTask(condsorder(trialN,2)) = 1;
-         disp('Down Key')
-     end
-     
+    Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+    ShowFix();
+    DrawFormattedText(window, 'Press space to start next trial', 'center', 'center', [0 0 0],[],1);
+    
+    Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+    Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+    DrawFormattedText(window, 'Press space to start next trial', 'center', 'center', [0 0 0],[],1);
+    ShowFix();
+    % DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
+    Screen('Flip', window);
+    
+    [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
+    
+    if keyCode(downKey)
+        %record red fix thing
+        FixTask(condsorder(trialN),2) = 1;
+        disp('Down Key')
+    end
+    
      
      
      while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
@@ -2318,7 +2487,11 @@ for trialN = 1:size(experimentalconditions,1)
          %                 if keyIsDown
          %                     find(keyCode,1)
          %                 end
-         
+         if keyCode(downKey)
+             %record red fix thing
+             FixTask(condsorder(trialN),2) = 1;
+             disp('Down Key')
+         end
      end %end while. Move onto next trial
     
     
