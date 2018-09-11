@@ -43,13 +43,13 @@ togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 1; %show the debug bars at the start?
+Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% !!!!!!!!!!!!!!!!!!!!!!!!!!!  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 experiment_switcher = 2; % Illusory contours (1) or Real (solid) contours (2)
 
-response_button_counterbalance_mode = 2;
+response_button_counterbalance_mode = 1;
 
 % (1) IC - LEFT button means INSIDE (response code 1)
 %     IC - RIGHT button means OUTSIDE (response code 2)
@@ -277,7 +277,7 @@ r_fix_cord2 = [center-fix_r2 center+fix_r2] - [fp_offset 0 fp_offset 0];
 % Screen('FillOval', rightFixWin, uint8(white), l_fix_cord1);
 % Screen('FillOval', rightFixWin, uint8(black), l_fix_cord2);
 
-ShowFix()
+% ShowFix()
 
 % Two crosses in and lower
 Screen('DrawText',leftFixWin, '+', center(1), 200,white);
@@ -296,7 +296,7 @@ Screen('FrameRect',rightFixWin, [256 0 0], frameRect, 4);
 % leftFixWin = Screen('OpenOffScreenWindow',window, grey, windowRect); 
 % Screen('FillOval', leftFixWin, uint8(white), r_fix_cord1);
 % Screen('FillOval', leftFixWin, uint8(black), r_fix_cord2);
-ShowFix()
+% ShowFix()
 % 
 % Two crosses in and lower
 Screen('DrawText',leftFixWin, '+', center(1), 200,white);
@@ -320,7 +320,7 @@ try
     Screen('CopyWindow', leftFixWin, window, [], leftScreenRect);
     
     % Screen('FillRect', leftFixWin, grey) % make the whole screen grey_bkg
-    ShowFix()
+%     ShowFix()
     
     instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
     DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], 1);
@@ -331,7 +331,7 @@ try
     %    draw fixation dot
     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
     
-    ShowFix()
+%     ShowFix()
     
     instructions = 'Hello and welcome \n \n to the experiment for perceptual filling-in \n \n Press any key to continue';
     DrawFormattedText(window, instructions, 'center', 'center', textcolor, [], 1);
@@ -357,7 +357,7 @@ if ~exist('BS_diameter_h_r') || ~exist('BS_diameter_v_r') || ~exist('BS_diameter
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     %    draw fixation dot
     Screen('CopyWindow', leftFixWin, window, [], leftScreenRect);
-    ShowFix()
+%     ShowFix()
     % instructions
      Screen('TextSize', window, 20);
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Click the mouse when the flickering marker \n \n completely disappears for you \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], 1);
@@ -370,7 +370,7 @@ if ~exist('BS_diameter_h_r') || ~exist('BS_diameter_v_r') || ~exist('BS_diameter
     % instructions
       Screen('TextSize', window, 20);
     DrawFormattedText(window, 'Let''s measure the blindspot! \n \n Click the mouse when the flickering marker \n \n completely disappears for you \n \n Take your time, this step is very important! \n \n Press any key...', 'center', 'center', textcolor, [], 1);
-    ShowFix()
+%     ShowFix()
     
     
     
@@ -1794,9 +1794,9 @@ for trialN = 1:size(experimentalconditions,1)
 %                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     if experiment_switcher == 1 % IC
-                        Screen('DrawTexture', window, Periphery_Screen_RIGHT(1)) %show Stim
+                        Screen('DrawTexture', window, Periphery_Screen_RIGHT(currconvexcave)) %show Stim
                     elseif experiment_switcher == 2 % REAL
-                        Screen('DrawTexture', window, Periphery_Screen_RIGHT(2)) %show Stim
+                        Screen('DrawTexture', window, Periphery_Screen_RIGHT(currconvexcave)) %show Stim
                         oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
                         oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_r-curr_occluder_offset, BS_center_v_r); %right BS, centre on BS + (4-6) deg [random number between 4 and 6]
                         % show blind spot shaped deleter
@@ -1823,9 +1823,9 @@ for trialN = 1:size(experimentalconditions,1)
 %                     ShowFix() %blank screen
                 elseif strcmp(bs_eye, 'right')%if BS eye = right
                     if experiment_switcher == 1
-                        Screen('DrawTexture', window, Fovea_Screen_RIGHT(1)) %show Stim
+                        Screen('DrawTexture', window, Fovea_Screen_RIGHT(currconvexcave)) %show Stim
                     elseif experiment_switcher == 2
-                        Screen('DrawTexture', window, Fovea_Screen_RIGHT(2)) %show Stim
+                        Screen('DrawTexture', window, Fovea_Screen_RIGHT(currconvexcave)) %show Stim
                         oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_r]; %right BS
                         oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_R_fovea(1)-curr_occluder_offset, arc_middle_R_fovea(2)); %right centred on arc middle
                         % show blind spot shaped deleter
@@ -1893,9 +1893,9 @@ for trialN = 1:size(experimentalconditions,1)
                  %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                  if strcmp(bs_eye, 'left') %if BS eye = left
                      if experiment_switcher == 1
-                         Screen('DrawTexture', window, Periphery_Screen_LEFT(1)) %show Stim
+                         Screen('DrawTexture', window, Periphery_Screen_LEFT(currconvexcave)) %show Stim
                      elseif experiment_switcher == 2
-                         Screen('DrawTexture', window, Periphery_Screen_LEFT(2)) %show Stim
+                         Screen('DrawTexture', window, Periphery_Screen_LEFT(currconvexcave)) %show Stim
                          oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS, make a rectangle as an occluder
                          oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l+curr_occluder_offset, BS_center_v_l); %left BS
                          % show rectangular deleter
@@ -1922,9 +1922,9 @@ for trialN = 1:size(experimentalconditions,1)
                 %                 Screen('CopyWindow', leftFixWin, window, [], rightScreenRect); %always left fix fram
                 if strcmp(bs_eye, 'left') %if BS eye = left
                     if experiment_switcher == 1
-                        Screen('DrawTexture', window, Fovea_Screen_LEFT(1)) %show Stim
+                        Screen('DrawTexture', window, Fovea_Screen_LEFT(currconvexcave)) %show Stim
                     elseif experiment_switcher == 2
-                        Screen('DrawTexture', window, Fovea_Screen_LEFT(2)) %show Stim
+                        Screen('DrawTexture', window, Fovea_Screen_LEFT(currconvexcave)) %show Stim
                         oval_rect = [0 0 deg2pix_YR(13) BS_diameter_v_l]; %left BS
                         oval_rect_centred = CenterRectOnPoint(oval_rect, arc_middle_L_fovea(1)+curr_occluder_offset, arc_middle_L_fovea(2)); %left centred on arc middle
                         % show rectangular occluder
@@ -2341,11 +2341,19 @@ for trialN = 1:size(experimentalconditions,1)
         [keyIsDown,secs, keyCode] = KbCheck(-1);
         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
-        DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+        if experiment_switcher == 1
+            DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+        elseif experiment_switcher == 2
+            DrawFormattedText(window,'Was the dot on the LEFT or the RIGHT of the contour?', 'center','center',[0 0 0], [],1);
+        end
         
         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-        DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+        if experiment_switcher == 1
+            DrawFormattedText(window,'Was the dot INSIDE or OUTSIDE illusory shape?', 'center','center',[0 0 0], [],1);
+        elseif experiment_switcher == 2
+            DrawFormattedText(window,'Was the dot on the LEFT or the RIGHT of the contour?', 'center','center',[0 0 0], [],1);
+        end
         Screen('Flip', window);
         
         

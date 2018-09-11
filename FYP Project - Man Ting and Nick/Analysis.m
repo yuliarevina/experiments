@@ -1,6 +1,7 @@
 % Analysis script for Illusory Contours Expt
 
 ntrialseachcond = 6;
+convex = 2; %convex =1, concave =2; 3 to test both averaged together
 
 
 %% extract data
@@ -65,18 +66,33 @@ for i = 1:5; %conditions
                     dotpos = 4;
             end
             
+            if convex == 1 || convex == 2
+                if i == 1 % if BS; responses are normal. L screen standard is L hand side for the participant.
+                    %                 tmp1 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == cond) & subjectdata(:,3) == 1)'; %INSIDE
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & (subjectdata(:,4) == convex) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==2 % fellow. Periphery. Occluder
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & (subjectdata(:,4) == convex) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==3
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & (subjectdata(:,4) == convex) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==4
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & (subjectdata(:,4) == convex) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==5
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & (subjectdata(:,4) == convex) & subjectdata(:,5) == 2)'; %OUTSIDE
+                end
             
-            if i == 1 % if BS; responses are normal. L screen standard is L hand side for the participant.
-%                 tmp1 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == cond) & subjectdata(:,3) == 1)'; %INSIDE
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
-            elseif i==2 % fellow. Periphery. Occluder
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
-            elseif i==3
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
-            elseif i==4
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
-            elseif i==5
-                tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,4) == 2)'; %OUTSIDE
+            else %both concave and convex toegther
+                if i == 1 % if BS; responses are normal. L screen standard is L hand side for the participant.
+                    %                 tmp1 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == cond) & subjectdata(:,3) == 1)'; %INSIDE
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==2 % fellow. Periphery. Occluder
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==3
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==4
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,5) == 2)'; %OUTSIDE
+                elseif i==5
+                    tmp1 = find((subjectdata(:,2) == dotpos) & (subjectdata(:,1) == i) & subjectdata(:,5) == 2)'; %OUTSIDE
+                end
             end
         %for the mistake in counterbalancing
 %             tmp2 = find((subjectdata(:,2) == j) & (subjectdata(:,1) == i) & subjectdata(:,3) == 1)'; %standard second; check for trials where they answer 1st
