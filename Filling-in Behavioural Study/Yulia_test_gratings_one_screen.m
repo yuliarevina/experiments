@@ -1151,18 +1151,18 @@ try
             
             
             %show fix
-%             Screen('TextSize', window, 20);
-%             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
+            %             Screen('TextSize', window, 20);
+            %             Screen('DrawText',window, '+', r_fix_cord1(1), r_fix_cord1(2)-8,white);
             Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
             ShowFix();
-%             DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
+            %             DrawFormattedText(window, messagenexttrial, 'center', 'center', white,[],[]);
             Screen('Flip', window);
             disp(sprintf('Trial %d out of %d completed.', ntrials, length(condsorder)))
             
             % saving seems to slow everything down. Maybe let's only save
             % at the end, or if ESC is pressed or if catch statement is
             % executed
-%             save (filename)
+            %             save (filename)
             
             [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
             
@@ -1171,9 +1171,37 @@ try
                 RedFix(ntrials,2) = 1;
                 disp('Down Key')
             end
-            if keyIsDown
-                find(keyCode,1)
-            end
+            
+            while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
+                
+                [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+                %
+                if keyCode(escapeKey)
+                    save (filename)
+                    sca %if esc then just quit demo
+                    break;
+                end
+                %                 if keyCode(downKey)
+                %                     %record red fix thing
+                %                     RedFix(ntrials,2) = 1;
+                %                     disp('Down Key')
+                %                 end
+                %                 if keyIsDown
+                %                     find(keyCode,1)
+                %                 end
+                if keyCode(downKey)
+                    %record red fix thing
+                    RedFix(ntrials,2) = 1;
+                    disp('Down Key')
+                end
+                if keyIsDown
+                    find(keyCode,1)
+                end
+                
+            end %end while. Move onto next trial
+            
+            
+            
             
             
             if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
@@ -1185,34 +1213,42 @@ try
                 while ~keyCode(upKey)
                     [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
                 end
+                
+                
+                while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
+                    
+                    [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+                    %
+                    if keyCode(escapeKey)
+                        save (filename)
+                        sca %if esc then just quit demo
+                        if togglegoggle == 1;
+                            goggles(bs_eye, 'neither', togglegoggle,ard)
+                            ShutdownArd(ard,comPort);
+                            disp('Arduino is off')
+                        end
+                        break;
+                    end
+                    if keyCode(downKey)
+                        %record red fix thing
+                        RedFix(ntrials,2) = 1;
+                        disp('Down Key')
+                    end
+                    if keyIsDown
+                        find(keyCode,1)
+                    end
+                    
+                end %end while. Move onto next trial
+                
+                Screen('FillRect', window, grey_bkg); % make the whole screen grey_bkg
+                ShowFix()
+                
+                
             end
             
             
             
-            while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
-                
-                [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
-                %
-                if keyCode(escapeKey)
-                    save (filename)
-                    sca %if esc then just quit demo
-                    if togglegoggle == 1;
-                        goggles(bs_eye, 'neither', togglegoggle,ard)
-                        ShutdownArd(ard,comPort);
-                        disp('Arduino is off')
-                    end
-                    break;
-                end
-                if keyCode(downKey)
-                    %record red fix thing
-                    RedFix(ntrials,2) = 1;
-                    disp('Down Key')
-                end
-                if keyIsDown
-                    find(keyCode,1)
-                end
-                
-            end %end while. Move onto next trial
+            
         catch whileerr
             save (filename)
             sca
