@@ -2436,24 +2436,7 @@ for trialN = 1:size(experimentalconditions,1)
     resp2Bmade = true; %reset response logical variable
     disp(sprintf('Trial %d out of %d completed', trialN, size(experimentalconditions,1)))
     
-    if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
-        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
-        Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
-        %          Screen('FillRect', window, grey) % make the whole screen grey
-        messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
-        DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
-        
-        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
-        Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
-        messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
-        DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
-        
-        Screen('Flip', window);
-        
-        while ~keyCode(upKey)
-            [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
-        end
-    end
+  
     
     
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
@@ -2476,10 +2459,13 @@ for trialN = 1:size(experimentalconditions,1)
         disp('Down Key')
     end
     
-     
-     
-     while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
-         
+    
+   
+    
+    
+    
+    while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
+        
          [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
          %
          if keyCode(escapeKey)
@@ -2502,8 +2488,52 @@ for trialN = 1:size(experimentalconditions,1)
          end
      end %end while. Move onto next trial
     
+     
+    if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
+        Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+        Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
+        %          Screen('FillRect', window, grey) % make the whole screen grey
+        messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
+        DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+        
+        Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+        Screen('CopyWindow', rightFixWin, window, [], rightScreenRect)
+        messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial \n \n Remember to press DOWN if you see the fixation cross change', trialN, length(condsorder));
+        DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
+        
+        Screen('Flip', window);
+        
+        while ~keyCode(upKey)
+            [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+        end
+        
+        [secs, keyCode, deltaSecs] = KbStrokeWait(-1); %wait for space
+        while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
+            
+            [keyIsDown,secs, keyCode] = KbCheck(-1);% Check the keyboard to see if a button has been pressed
+            %
+            if keyCode(escapeKey)
+                save (filename)
+                sca %if esc then just quit demo
+                break;
+            end
+            %                 if keyCode(downKey)
+            %                     %record red fix thing
+            %                     RedFix(ntrials,2) = 1;
+            %                     disp('Down Key')
+            %                 end
+            %                 if keyIsDown
+            %                     find(keyCode,1)
+            %                 end
+            if keyCode(downKey)
+                %record red fix thing
+                FixTask(condsorder(trialN),2) = 1;
+                disp('Down Key')
+            end
+        end %end while. Move onto next trial
+    end
     
-    
+      
     
 end %for trial
 
