@@ -154,13 +154,12 @@ else %just open one window
 end
 
 
-
-
 load CLUT_Station3_1152x864_100Hz_20_Jun_2018.mat
 %clut = 1-clut; %for debug
 PsychColorCorrection('SetLookupTable', window, clut, 'LeftView');
 
-load CLUT_Station2_1152x864_100Hz_18_Jun_2018.mat
+load CLUT_Station3_1152x864_100Hz_18_Jun_2018.mat
+%clut = 1-clut; %for debug
 PsychColorCorrection('SetLookupTable', window, clut, 'RightView');
 
 
@@ -675,7 +674,7 @@ durationMask = 0.5; % 500ms
 
 rng('shuffle'); % randomize the random number generator. Otherwise
 
-nrepetitions = 50; %show each unique condition 50 times
+nrepetitions = 1; %show each unique condition 50 times
 
 condsvector = [zeros(1,5) ones(1,5) 2*ones(1,5)]';
 orientationvector = repmat(orientations,1,3)';
