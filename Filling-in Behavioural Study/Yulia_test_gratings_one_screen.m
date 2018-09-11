@@ -37,12 +37,12 @@ BS_measurementON = 1;
 
 %%% toggle goggles for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
      
-togglegoggle = 0; % 0 goggles off for debug; 1 =  goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 =  goggles on for real expt
  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%
 
 %%% DEMO ON/OFF %%%%   %%%%%%%%%%%%%% %%% %%%%%%%%%%%%%%%%%%%%%%%%%
-Demo = 1; %show the debug bars at the start?
+Demo = 0; %show the debug bars at the start?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  %%%%%%%%%%
 
 
@@ -53,8 +53,8 @@ distance2screen = 70; % how many centimeters from eye to screen? To make this po
 outside_BS = 5; %deg of visual angle  
 outside_BS = round(deg2pix_YR(outside_BS)); %in pixel  s for our screen
 
-% brightness = 0.1;        
-  brightness = 0.7; % fo r debugging
+brightness = 0.1;        
+  % brightness = 0.7; % fo r debugging
 textcolor = [0 0 0]; 
                 
  %              timing
@@ -303,7 +303,7 @@ if (~exist('BS_diameter_h') || ~exist('BS_diameter_v')) && BS_measurementON == 1
 %         ToggleArd(ard,'LensOn') %put goggles back on
 %     end
     ShowCursor()
-end
+end 
 
 
 %draw a blindspot oval to test its location
@@ -327,7 +327,7 @@ KbStrokeWait(-1);
 %% --------------------
 
 % Recording responses |
-% ---------------------
+% ----------------- ----
 rng('shuffle'); %randomize the random num generator
 numberofreps = 10; %how many repetitions of each type of trial?
 nTaskTrials = 5; %number of task trials with the red fixation
@@ -408,8 +408,8 @@ cyclespersecond = 3;
 
 midCS  = 3;
 % cyclesPerDeg = [ .4 .45 .5 .55 .6]; %edit this
-% cyclesPerDeg = [ .25 .30 .35 .40 .45]; %subs 1-37
-cyclesPerDeg = [ .20 .30 .40 .50 .60]; %subs 38 - 
+% cyclesPerDeg = [ .25 .30 .35 .40 .45]; 
+cyclesPerDeg = [ .20 .30 .40 .50 .60];
 
 constant_tempFreq = 1;
 
@@ -663,7 +663,7 @@ if Demo == 1
                             Screen('FillOval', window, grey_bkg, greyoccluderRectCentre_Demo, maxDiameter); %grey occluder
                         case 5
                             Screen('DrawTexture', window, maskTexture, [], fuzzyRectCentre_Demo);
-%                             Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
+                            Screen('FrameOval', window, [1 0 0], fuzzyoccluderRectCentre_Demo, 3); %plot a red oval just for reference when debugging
                     end   %switch
                 end  %if
             end %for
@@ -1147,16 +1147,7 @@ try
             
             
             
-            if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
-                Screen('FillRect', window, grey) % make the whole screen grey
-                messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
-                DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],[]);
-                Screen('Flip', window);
-                
-                while ~keyCode(upKey)
-                    [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
-                end
-            end
+            
             
             
             %show fix
@@ -1183,6 +1174,20 @@ try
             if keyIsDown
                 find(keyCode,1)
             end
+            
+            
+            if mod(ntrials,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
+                Screen('FillRect', window, grey) % make the whole screen grey
+                messagetext = sprintf('Trial %d out of %d completed. \n \n Have a break! \n \n Press UP key to continue \n \n Then Space to start a trial', ntrials, length(condsorder));
+                DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],[]);
+                Screen('Flip', window);
+                
+                while ~keyCode(upKey)
+                    [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
+                end
+            end
+            
+            
             
             while ~keyCode(space) %while something other than space was pressed, don't move on. Unless it's quit demo
                 
