@@ -18,13 +18,13 @@ for mt = 1:2*meas_trials
     Screen('CopyWindow', leftFixWin, window, [], windowRect);
     if mt <= meas_trials
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'INNER',nx,'center',black,[],[]);
+        DrawFormattedText(window,'INNER',nx,'center',black,[],1);
     elseif mt == meas_trials+1
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'OUTER',nx,'center',[1 0 0],[],[]); % red
+        DrawFormattedText(window,'OUTER',nx,'center',[1 0 0],[],1); % red
     elseif mt < meas_trials*2+1;
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'OUTER',nx,'center',black,[],[]); 
+        DrawFormattedText(window,'OUTER',nx,'center',black,[],1); 
     end
     
     Screen('SelectStereoDrawBuffer', window, 1);  %Right
@@ -32,13 +32,13 @@ for mt = 1:2*meas_trials
     Screen('CopyWindow', rightFixWin, window, [], windowRect);
     if mt <= meas_trials
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'INNER',nx,'center',black,[],[]);
+        DrawFormattedText(window,'INNER',nx,'center',black,[],1);
     elseif mt == meas_trials+1
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'OUTER',nx,'center',[1 0 0],[],[]); % red
+        DrawFormattedText(window,'OUTER',nx,'center',[1 0 0],[],1); % red
     elseif mt < meas_trials*2+1;
         Screen('TextSize', window, 30);
-        DrawFormattedText(window,'OUTER',nx,'center',black,[],[]); 
+        DrawFormattedText(window,'OUTER',nx,'center',black,[],1); 
     end
     
 %     Screen('SelectStereoDrawBuffer', window, 1);  %Right

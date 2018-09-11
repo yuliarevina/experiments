@@ -1,6 +1,6 @@
 % Analysis script
 
-ntrialseachcond = 5;
+ntrialseachcond = 10;
 
 
 %% extract data
@@ -91,7 +91,10 @@ markershape(5) = 'x';
 
 disp ('Palamedes...')
 %Stimulus intensities
-StimLevels = [35 40 45 50 55]; 
+% StimLevels = [35 40 45 50 55]; %hardtask
+% StimLevels = [25 35 45 55 65]; %easytask
+StimLevels = [30 37.5 45 52.5 60]; %mediumtask
+
 figure('name','Maximum Likelihood Psychometric Function Fitting');
     axes
     hold on
