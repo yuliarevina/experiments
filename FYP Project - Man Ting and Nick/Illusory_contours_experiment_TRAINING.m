@@ -2547,8 +2547,8 @@ for trialN = 1:size(experimentalconditions,1)
          end
      end %end while. Move onto next trial
     
-     
-    if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
+      %cut off after 25 trials
+    if mod(trialN,25) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect)
         %          Screen('FillRect', window, grey) % make the whole screen grey
@@ -2561,6 +2561,11 @@ for trialN = 1:size(experimentalconditions,1)
         DrawFormattedText(window, messagetext, 'center', 'center', [0.2 0.2 0.2],[],1);
         
         Screen('Flip', window);
+        
+        %perform quitting procedure
+        save (filename)
+        sca
+        break
         
         while ~keyCode(upKey)
             [keyIsDown,secs, keyCode] = KbCheck;% Check the keyboard to see if a button has been pressed
