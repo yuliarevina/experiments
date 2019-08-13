@@ -194,9 +194,10 @@ for condition = 1:5 %conditions
     %Parameter grid defining parameter space through which to perform a
     %brute-force search for values to be used as initial guesses in iterative
     %parameter search.
-    searchGrid.alpha = 0.20:.001:.65; %PSE
+%     searchGrid.alpha = 0.25:.001:.45; %PSE
+    searchGrid.alpha = 0.20:.001:.60; %PSE
     searchGrid.beta = logspace(0,1,101); %slope
-    searchGrid.gamma = 0.0;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
+    searchGrid.gamma = 0.02;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
     searchGrid.lambda = 0.02;  %ditto % lapse rate, finger error, upper asympt
     
     %Perform fit
@@ -290,6 +291,14 @@ subplot(2,3, 2); hist(RT(:,2)); xlabel ('BS')
 subplot(2,3, 3); hist(RT(:,3)); xlabel ('Occluded')
 subplot(2,3, 4); hist(RT(:,4)); xlabel ('Del Sharp')
 subplot(2,3, 5); hist(RT(:,5)); xlabel ('Del Fuzzy')
+
+
+mean_intact = mean(RT(:,1))
+mean_BS = mean(RT(:,2))
+mean_Occ = mean(RT(:,3))
+mean_Deleted_Sharp = mean(RT(:,4))
+mean_Deleted_Fuzzy = mean(RT(:,5))
+
 
 median_intact = median(RT(:,1));
 median_BS = median(RT(:,2));
