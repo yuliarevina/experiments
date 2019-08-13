@@ -1,19 +1,27 @@
 % analysis all subjects
 
-nSubs = 37
-nSubs = 5
+% nSubs = 37 %for 25-45
+nSubs = 23 %for 20-60
 
-ntrialseachcond = 1460; % nsubs x how many conds each one had (either 30 or 40, check the list)
-ntrialseachcond = 200; % nsubs x how many conds each one had (either 30 or 40, check the list)
+% ntrialseachcond = 1440; % nsubs x how many conds each one had (either 30 or 40, check the list)
+ntrialseachcond = 900; % nsubs x how many conds each one had (either 30 or 40, check the list)
+% ntrialseachcond = 200; % nsubs x how many conds each one had (either 30 or 40, check the list)
 results = [];
 
 % subs = [11 12 14:22 24 26 27 29 30 33:36]; %good red fix subs
 % subs = [10 13 23 25 28 31 32 37]; %bad red fix subs
-subs = [1:nSubs]; %all subs
-subs = [39:43]; % subs with high SF
+% subs = [2:38]; %all good subs for 25-45
+subs = [38:43,45:55,58,60:64]; %all good subs for 20-60
+% subs = [39:43]; % subs with high SF
 
+
+%% for 25 - 45
 for i = subs
-    filename = sprintf('Results%d.mat',i);
+    if i == 38
+        filename = sprintf('Results381.mat'); %381 for 25-45 or 382 for 20-60
+    else
+        filename = sprintf('Results%d.mat',i);
+    end
     load(filename)
     if i == (subs(1))
         results = eval(sprintf('results%d',i));
@@ -21,10 +29,35 @@ for i = subs
 end
 
 for i = subs(2:end)
-    results = results + eval(sprintf('results%d',i));
+    if i == 38
+        results = results + eval(sprintf('results%d1',i)); %%d1 for 25-45, or %d2 for 20-60
+    else
+        results = results + eval(sprintf('results%d',i));
+    end
 end
 
-%%
+%% for 20 - 60
+for i = subs
+    if i == 38
+        filename = sprintf('Results382.mat'); %381 for 25-45 or 382 for 20-60
+    else
+        filename = sprintf('Results%d.mat',i);
+    end
+    load(filename)
+    if i == (subs(1))
+        results = eval(sprintf('results%d2',i));
+    end
+end
+
+for i = subs(2:end)
+    if i == 38
+        results = results + eval(sprintf('results%d2',i)); %%d1 for 25-45, or %d2 for 20-60
+    else
+        results = results + eval(sprintf('results%d',i));
+    end
+end
+
+%% old analysis
 %extract RTs
 
 % 7th column of the matrix (also 6th but we can just use either so let's do
@@ -193,6 +226,111 @@ disp('Occ vs Del Fuzz')
 disp('Del Sh vs Del Fuzz')
 [p,h,stats] = signrank(RT_medians(:,4),RT_medians(:,5)) %paired samples
 
+
+
+%% RTs
+
+%analyse for all subjects except those excluded from all analyses for BS
+%size and RedFix performance
+
+excludedsubs = [1, 44, 56, 57, 59];
+allsubs = [1:64];
+goodsubs = setdiff(allsubs,excludedsubs);
+
+% mean_RT_good = mean(mean_RT(goodsubs,:), 1)
+
+individdataRT = {mean_RT(goodsubs,1), mean_RT(goodsubs,2), mean_RT(goodsubs,3), mean_RT(goodsubs,4), mean_RT(goodsubs,5)}
+
+figure; hist(mean_RT(goodsubs, :))
+
+figure; bar(mean(mean_RT(goodsubs,:),1), 'y')
+hold on
+stderror = std(mean_RT(goodsubs,:)) / sqrt( length( goodsubs ))
+errorbar(mean(mean_RT(goodsubs, :),1),stderror, 'LineStyle', 'none', 'Color', 'k', 'LineWidth', 3)
+
+
+plotspreadhandles = plotSpread(individdataRT,'distributionMarkers', 'o', 'distributionColors', 'r','spreadWidth', 0.5);
+set(plotspreadhandles{1},'MarkerFaceColor','r', 'MarkerSize',2);
+
+set(gca, 'fontsize',16);
+set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
+% set(gca, 'fontsize',10);
+set(gca, 'TickDir', 'out')
+ylabel('Mean Reaction Time (s)')
+axis ([0 6 0.0 1.5])
+
+disp('Intact vs BS')
+[H,P,~,STATS] = ttest(individdataRT{1}, individdataRT{2})
+%for bayes
+raweffect = mean(individdataRT{1} - individdataRT{2})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+disp('Intact vs Occ')
+[H,P,~,STATS] = ttest(individdataRT{1}, individdataRT{3})
+%for bayes
+raweffect = mean(individdataRT{1} - individdataRT{3})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Intact vs DelSh')
+[H,P,~,STATS] = ttest(individdataRT{1}, individdataRT{4})
+%for bayes
+raweffect = mean(individdataRT{1} - individdataRT{4})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Intact vs DelFuzz')
+[H,P,~,STATS] = ttest(individdataRT{1}, individdataRT{5})
+%for bayes
+raweffect = mean(individdataRT{1} - individdataRT{5})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs Occ')
+[H,P,~,STATS] = ttest(individdataRT{2}, individdataRT{3})
+%for bayes
+raweffect = mean(individdataRT{2} - individdataRT{3})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs DelSh')
+[H,P,~,STATS] = ttest(individdataRT{2}, individdataRT{4})
+%for bayes
+raweffect = mean(individdataRT{2} - individdataRT{4})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs DelFuzz')
+[H,P,~,STATS] = ttest(individdataRT{2}, individdataRT{5})
+%for bayes
+raweffect = mean(individdataRT{2} - individdataRT{5})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occ vs DelSh')
+[H,P,~,STATS] = ttest(individdataRT{3}, individdataRT{4})
+%for bayes
+raweffect = mean(individdataRT{3} - individdataRT{4})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occ vs DelFuzz')
+[H,P,~,STATS] = ttest(individdataRT{3}, individdataRT{5})
+%for bayes
+raweffect = mean(individdataRT{3} - individdataRT{5})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('DelSh vs DelFuzz')
+[H,P,~,STATS] = ttest(individdataRT{4}, individdataRT{5})
+%for bayes
+raweffect = mean(individdataRT{4} - individdataRT{5})
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
 %% figure
 figure; plot(1:5, results(1:5,1,1), 'ro-') %intact
 hold on;
@@ -213,10 +351,10 @@ colorpoints(4) = 'k';
 colorpoints(5) = 'c';
 
 markershape(1) = 's';
-markershape(2) = 's';
+markershape(2) = 'd';
 markershape(3) = 'o';
 markershape(4) = 'x';
-markershape(5) = 'x';
+markershape(5) = '*';
 
 %% psignifit stuff
 psignifitdata = zeros(5,3,5);
@@ -308,7 +446,7 @@ hold off;
 
 disp ('Palamedes...')
 %Stimulus intensities
-StimLevels = [0.25 0.30 0.35 0.40 0.45]; 
+% StimLevels = [0.25 0.30 0.35 0.40 0.45]; 
 StimLevels = [0.20 0.30 0.40 0.50 0.60]; 
 figure('name','Maximum Likelihood Psychometric Function Fitting');
     axes
@@ -350,9 +488,10 @@ for condition = 1:5 %conditions
     %Parameter grid defining parameter space through which to perform a
     %brute-force search for values to be used as initial guesses in iterative
     %parameter search.
+%     searchGrid.alpha = 0.25:.001:.45; %PSE
     searchGrid.alpha = 0.20:.001:.60; %PSE
     searchGrid.beta = logspace(0,1,101); %slope
-    searchGrid.gamma = 0.0;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
+    searchGrid.gamma = 0.02;  %scalar here (since fixed) but may be vector %guess rate (lower asymptote)
     searchGrid.lambda = 0.02;  %ditto % lapse rate, finger error, upper asympt
     
     %Perform fit
@@ -371,14 +510,14 @@ for condition = 1:5 %conditions
     StimLevelsFineGrain=[min(StimLevels-0.05):max(StimLevels+0.05)./1000:max(StimLevels+0.05)];
     ProportionCorrectModel(condition,:) = PF(paramsValues,StimLevelsFineGrain);
     
-    disp('Goodness of Fit')
-    B = 1000;
-    [Dev pDev DevSim converged] = PAL_PFML_GoodnessOfFit(StimLevels, NumPos, OutOfNum, paramsValues, paramsFree, B, PF,'searchGrid', searchGrid);
-  
-    disp(sprintf('Dev: %6.4f',Dev))
-    disp(sprintf('pDev: %6.4f',pDev))
-    disp(sprintf('N converged: %6.4f',sum(converged==1)))
-    disp('--') %empty line
+%     disp('Goodness of Fit')
+%     B = 1000;
+%     [Dev pDev DevSim converged] = PAL_PFML_GoodnessOfFit(StimLevels, NumPos, OutOfNum, paramsValues, paramsFree, B, PF,'searchGrid', searchGrid);
+%   
+%     disp(sprintf('Dev: %6.4f',Dev))
+%     disp(sprintf('pDev: %6.4f',pDev))
+%     disp(sprintf('N converged: %6.4f',sum(converged==1)))
+%     disp('--') %empty line
     
     
     plot(StimLevels,ProportionCorrectObserved,'LineStyle', 'None','Color', colorpoints(condition),'Marker',markershape(condition),'MarkerFaceColor', 'None','markersize',10);  
@@ -393,12 +532,14 @@ end
 
 
 set(gca, 'fontsize',14);
-set(gca, 'Xtick',StimLevels);
+% set(gca, 'Xtick',StimLevels);
+set(gca, 'Xtick',[0.20 0.30 0.40 0.50 0.60]);
 axis([min(StimLevels-0.05) max(StimLevels+0.05) 0 1]);
 xlabel('Stimulus Intensity - cycles per deg SF');
 ylabel('Proportion "Comparison More Stripes"');
 plot([0 5],[0.5 0.5])
 plot([0.3 0.3], [0 1], 'LineStyle', '--')
+plot([0.489 0.489], [0 1], 'LineStyle', '--')
 
 
 %% all results, stats
@@ -409,52 +550,186 @@ plot([0.3 0.3], [0 1], 'LineStyle', '--')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 removeoutliers = 1;
 
+% 25-45 or 20-60 analysis?
+analysis_group = 25; %25 or 20
 
-% %outliers
-subjectsIntactOutliers = [];
-subjectsBSOutliers = [19 26, 29, 32];
-subjectsOccOutliers = [1 6 17 19 20 27, 29, 32, 36, 37];
-subjectsDelShOutliers = [1 6 9 19 20 27, 29, 32, 37];
-subjectsDelFuzzOutliers = [1 19 20 27, 29, 37];
-
-% everything 
-subjectsIntact = [subs];
-subjectsBS = [subs];
-subjectsOcc = [subs];
-subjectsDelSh = [subs];
-subjectsDelFuzz = [subs];
-
-if removeoutliers %overwrite the sublists
-    subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
-    subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
-    subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
-    subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
-    subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+if analysis_group == 25
+    allsubs = [1:38]; %all good subs for 25-45
+elseif analysis_group == 20
+    allsubs = [38:64]; %all good subs for 20-60
 end
 
-%means
-meanIntactPSE = mean(Intact(:,1));
-meanBSPSE = mean(BS(:,1));
-meanOccludedPSE = mean(Occluded(:,1));
-meanDelShPSE = mean(DeletedSharp(:,1));
-meanDelFuzPSE = mean(DeletedFuzzy(:,1));
+% 
+% % %outliers (all bad subs for both 25-45 and 20-60) *old analysis prior to
+% % 18/07/2019
+% subjectsIntactOutliers = [1, 3, 13, 44, 47, 56, 57, 59];
+% subjectsBSOutliers = [1, 3, 19, 26, 29, 32, 36, 41, 44, 48, 50, 56, 57, 59];
+% subjectsOccOutliers = [1, 8, 12, 13, 17, 19, 20, 22, 27, 29, 32, 36, 37, 38, 40, 44, 45, 48, 50, 52, 56, 57, 59, 64];
+% subjectsDelShOutliers = [1, 16, 19, 20, 26, 27, 29, 32, 37, 38, 40, 41, 42, 44, 45, 46, 48, 56, 57, 59, 64];
+% subjectsDelFuzzOutliers = [1, 18, 19, 20, 27, 29, 31, 32, 37, 38, 40, 44, 45, 50, 53, 56, 57, 59, 64];
 
-%medians
-medianIntactPSE = median(Intact(:,1));
-medianBSPSE = median(BS(:,1));
-medianOccludedPSE = median(Occluded(:,1));
-medianDelShPSE = median(DeletedSharp(:,1));
-medianDelFuzPSE = median(DeletedFuzzy(:,1));
 
-%group data for boxplot
-Alldatatoplot = [Intact(subjectsIntact,1); BS(subjectsBS,1); Occluded(subjectsOcc,1); DeletedSharp(subjectsDelSh,1); DeletedFuzzy(subjectsDelFuzz,1)];
+% %outliers (all bad subs for both 25-45 and 20-60) *new analysis after
+% 18/07/2019, when spotted mistake with sub48 & mistake in IntactOutlier
+% (was removing 3 instead of 4
+subjectsIntactOutliers = [1, 4, 13, 44, 47, 56, 57, 59];
+subjectsBSOutliers = [1, 3, 19, 26, 29, 32, 36, 41, 44, 48, 50, 56, 57, 59];
+subjectsOccOutliers = [1, 8, 12, 13, 17, 19, 20, 22, 27, 29, 32, 36, 37, 38, 40, 44, 45, 48, 50, 52, 56, 57, 59, 64];
+subjectsDelShOutliers = [1, 16, 19, 20, 26, 27, 29, 32, 37, 38, 40, 41, 42, 44, 45, 46, 56, 57, 59, 64];
+subjectsDelFuzzOutliers = [1, 18, 19, 20, 27, 29, 31, 32, 37, 38, 40, 44, 45, 48, 50, 53, 56, 57, 59, 64];
+
+
+if removeoutliers %overwrite the sublists
+    
+    
+    if analysis_group == 20
+        
+        % everything
+        subjectsIntact20_60 = [allsubs];
+        subjectsBS20_60 = [allsubs];
+        subjectsOcc20_60 = [allsubs];
+        subjectsDelSh20_60 = [allsubs];
+        subjectsDelFuzz20_60 = [allsubs];
+        
+        
+        subjectsIntact20_60 = setdiff(subjectsIntact20_60, subjectsIntactOutliers);
+        subjectsBS20_60 = setdiff(subjectsBS20_60,subjectsBSOutliers);
+        subjectsOcc20_60 = setdiff(subjectsOcc20_60, subjectsOccOutliers);
+        subjectsDelSh20_60 = setdiff(subjectsDelSh20_60,subjectsDelShOutliers);
+        subjectsDelFuzz20_60 = setdiff(subjectsDelFuzz20_60, subjectsDelFuzzOutliers);
+    else
+        
+        
+        % everything
+        subjectsIntact = [allsubs];
+        subjectsBS = [allsubs];
+        subjectsOcc = [allsubs];
+        subjectsDelSh = [allsubs];
+        subjectsDelFuzz = [allsubs];
+        
+        subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
+        subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
+        subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
+        subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
+        subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+        
+    end
+end
+
+
+if analysis_group == 20
+    %means for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    meanIntactPSE20_60 = nanmean(Data_20_60.PSE.Intact);
+    meanBSPSE20_60 = nanmean(Data_20_60.PSE.BS);
+    meanOccludedPSE20_60 = nanmean(Data_20_60.PSE.Occluded);
+    meanDelShPSE20_60 = nanmean(Data_20_60.PSE.DeletedSharp);
+    meanDelFuzPSE20_60 = nanmean(Data_20_60.PSE.DeletedFuzzy);
+else
+    %means for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    meanIntactPSE25_45 = nanmean(Data_25_45.PSE.Intact);
+    meanBSPSE25_45 = nanmean(Data_25_45.PSE.BS);
+    meanOccludedPSE25_45 = nanmean(Data_25_45.PSE.Occluded);
+    meanDelShPSE25_45 = nanmean(Data_25_45.PSE.DeletedSharp);
+    meanDelFuzPSE25_45 = nanmean(Data_25_45.PSE.DeletedFuzzy);
+end
+
+if analysis_group == 20
+    %means for good subs only
+    meanIntactPSE20_60_good = nanmean(Data_20_60.PSE.Intact(subjectsIntact20_60-37));
+    meanBSPSE20_60_good = nanmean(Data_20_60.PSE.BS(subjectsBS20_60-37));
+    meanOccludedPSE20_60_good = nanmean(Data_20_60.PSE.Occluded(subjectsOcc20_60-37));
+    meanDelShPSE20_60_good = nanmean(Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37));
+    meanDelFuzPSE20_60_good = nanmean(Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37));
+else
+    %means for good subs only
+    meanIntactPSE25_45_good = nanmean(Data_25_45.PSE.Intact(subjectsIntact));
+    meanBSPSE25_45_good = nanmean(Data_25_45.PSE.BS(subjectsBS));
+    meanOccludedPSE25_45_good = nanmean(Data_25_45.PSE.Occluded(subjectsOcc));
+    meanDelShPSE25_45_good = nanmean(Data_25_45.PSE.DeletedSharp(subjectsDelSh));
+    meanDelFuzPSE25_45_good = nanmean(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz));
+end
+
+if analysis_group == 20
+    %medians for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    medianIntactPSE20_60 = nanmedian(Data_20_60.PSE.Intact);
+    medianBSPSE20_60 = nanmedian(Data_20_60.PSE.BS);
+    medianOccludedPSE20_60 = nanmedian(Data_20_60.PSE.Occluded);
+    medianDelShPSE20_60 = nanmedian(Data_20_60.PSE.DeletedSharp);
+    medianDelFuzPSE20_60 = nanmedian(Data_20_60.PSE.DeletedFuzzy);
+else
+    %medians for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    medianIntactPSE25_45 = nanmedian(Data_25_45.PSE.Intact);
+    medianBSPSE25_45 = nanmedian(Data_25_45.PSE.BS);
+    medianOccludedPSE25_45 = nanmedian(Data_25_45.PSE.Occluded);
+    medianDelShPSE25_45 = nanmedian(Data_25_45.PSE.DeletedSharp);
+    medianDelFuzPSE25_45 = nanmedian(Data_25_45.PSE.DeletedFuzzy);
+end
+
+if analysis_group == 20
+    %medians for good subs only
+    medianIntactPSE20_60_good = nanmedian(Data_20_60.PSE.Intact(subjectsIntact20_60-37));
+    medianBSPSE20_60_good = nanmedian(Data_20_60.PSE.BS(subjectsBS20_60-37));
+    medianOccludedPSE20_60_good = nanmedian(Data_20_60.PSE.Occluded(subjectsOcc20_60-37));
+    medianDelShPSE20_60_good = nanmedian(Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37));
+    medianDelFuzPSE20_60_good = nanmedian(Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37));
+else
+    %medians for good subs only
+    medianIntactPSE25_45_good = nanmedian(Data_25_45.PSE.Intact(subjectsIntact));
+    medianBSPSE25_45_good = nanmedian(Data_25_45.PSE.BS(subjectsBS));
+    medianOccludedPSE25_45_good = nanmedian(Data_25_45.PSE.Occluded(subjectsOcc));
+    medianDelShPSE25_45_good = nanmedian(Data_25_45.PSE.DeletedSharp(subjectsDelSh));
+    medianDelFuzPSE25_45_good = nanmedian(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz));
+end
+
+%% 25-45
+Alldatatoplot25_45 = [];
+individdata25_45= [];
+%group data for boxplot 0.25 - 0.45
+
+Alldatatoplot25_45 = [Data_25_45.PSE.Intact(subjectsIntact); Data_25_45.PSE.BS(subjectsBS); Data_25_45.PSE.Occluded(subjectsOcc); Data_25_45.PSE.DeletedSharp(subjectsDelSh); Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz)];
 groups = [ones(1,length(subjectsIntact))';2*ones(1,length(subjectsBS))'; 3*ones(1,length(subjectsOcc))'; 4*ones(1,length(subjectsDelSh))';5*ones(1,length(subjectsDelFuzz))'];
 
-individdata = {Intact(subjectsIntact,1), BS(subjectsBS,1), Occluded(subjectsOcc,1), DeletedSharp(subjectsDelSh,1), DeletedFuzzy(subjectsDelFuzz,1)};
+individdata25_45 = {Data_25_45.PSE.Intact(subjectsIntact); Data_25_45.PSE.BS(subjectsBS); Data_25_45.PSE.Occluded(subjectsOcc); Data_25_45.PSE.DeletedSharp(subjectsDelSh); Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz)};
 
 
+%% 20-60
+Alldatatoplot20_60 = [];
+individdata20_60 =[];
+%group data for boxplot 0.20 - 0.60
+% -37 cos we are using subs 38-64 but the vector is row 1 to row 27
+Alldatatoplot20_60 = [Data_20_60.PSE.Intact(subjectsIntact20_60-37); Data_20_60.PSE.BS(subjectsBS20_60-37); Data_20_60.PSE.Occluded(subjectsOcc20_60-37); Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37)];
+groups = [ones(1,length(subjectsIntact20_60))';2*ones(1,length(subjectsBS20_60))'; 3*ones(1,length(subjectsOcc20_60))'; 4*ones(1,length(subjectsDelSh20_60))';5*ones(1,length(subjectsDelFuzz20_60))'];
+
+individdata20_60 = {Data_20_60.PSE.Intact(subjectsIntact20_60-37); Data_20_60.PSE.BS(subjectsBS20_60-37); Data_20_60.PSE.Occluded(subjectsOcc20_60-37); Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37)};
+
+% 
+% %group data for boxplot
+% Alldatatoplot = [Intact(subjectsIntact,1); BS(subjectsBS,1); Occluded(subjectsOcc,1); DeletedSharp(subjectsDelSh,1); DeletedFuzzy(subjectsDelFuzz,1)];
+% groups = [ones(1,length(subjectsIntact))';2*ones(1,length(subjectsBS))'; 3*ones(1,length(subjectsOcc))'; 4*ones(1,length(subjectsDelSh))';5*ones(1,length(subjectsDelFuzz))'];
+
+% individdata = {Intact(subjectsIntact,1), BS(subjectsBS,1), Occluded(subjectsOcc,1), DeletedSharp(subjectsDelSh,1), DeletedFuzzy(subjectsDelFuzz,1)};
+
+%% combined for all subs
+
+Alldatatoplot_combined = [Data_25_45.PSE.Intact(subjectsIntact); Data_20_60.PSE.Intact(subjectsIntact20_60-37); Data_25_45.PSE.BS(subjectsBS); Data_20_60.PSE.BS(subjectsBS20_60-37); ...
+    Data_25_45.PSE.Occluded(subjectsOcc); Data_20_60.PSE.Occluded(subjectsOcc20_60-37); Data_25_45.PSE.DeletedSharp(subjectsDelSh);Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); ...
+    Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz); Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37)];
+
+groups = [ones(1,length(subjectsIntact)+length(subjectsIntact20_60))';2*ones(1,length(subjectsBS)+length(subjectsBS20_60))';...
+    3*ones(1,length(subjectsOcc)+length(subjectsOcc20_60))'; 4*ones(1,length(subjectsDelSh)+length(subjectsDelSh20_60))';...
+    5*ones(1,length(subjectsDelFuzz)+length(subjectsDelFuzz20_60))'];
+
+individdata_combined = {[Data_25_45.PSE.Intact(subjectsIntact); Data_20_60.PSE.Intact(subjectsIntact20_60-37)]; [Data_25_45.PSE.BS(subjectsBS); Data_20_60.PSE.BS(subjectsBS20_60-37)]; ...
+    [Data_25_45.PSE.Occluded(subjectsOcc); Data_20_60.PSE.Occluded(subjectsOcc20_60-37)]; [Data_25_45.PSE.DeletedSharp(subjectsDelSh);Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37)]; ...
+    [Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz); Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37)]};
 %% make boxplot for PSEs
-figure; bx = boxplot(Alldatatoplot,groups,'Notch','on', 'MedianStyle', 'line');
+
+% 0.25 - 0.45
+figure; bx = boxplot(Alldatatoplot25_45,groups,'Notch','off', 'MedianStyle', 'line');
 ax = gca;
 
 h = get(bx(5,:),{'XData','YData'});
@@ -479,60 +754,754 @@ set(lines,'linewidth',3)
 % patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
 hold on
 plot([0 6],[0.3 0.3], 'g--')
-plot([0 6],[0.491 0.491], 'k--')
-plotspreadhandles = plotSpread(individdata,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+plot([0 6],[0.489 0.489], 'k--')
+plotspreadhandles = plotSpread(individdata25_45,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
 set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
 
 % set(findall(3,'type','line','color','k'),'markerSize',16)
 set(gca, 'fontsize',16);
 set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
 set(gca, 'TickDir', 'out')
-ylabel('PSE')
-axis([0 6 0.25 0.7])
+ylabel('PSE for 0.25 - 0.45 group')
+axis([0 6 0.25 0.9])
 set(gcf, 'Position', [200, 200, 1600, 900])
 
-%% significant diffs for PSEs medians
+
+%% make boxplot for PSEs
+
+%0.20 - 0.60
+figure; bx = boxplot(Alldatatoplot20_60,groups,'Notch','off', 'MedianStyle', 'line');
+ax = gca;
+
+h = get(bx(5,:),{'XData','YData'});
+for k=1:size(h,1)
+   patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+   patch(h{k,1},h{k,2},'y');
+end
+ax.Children = ax.Children([end 1:end-1]);
+
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+% set(lines,'linewidth',1, 'Color', 'r');
+set(lines,'linewidth',3)
+
+% h = findobj(gca,'Tag','Box');
+% for j=1:length(h)
+%    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+% end
+% boxplot(Alldatatoplot,groups,'Notch','on')
+
+% patch(get(h,'XData'),get(h,'YData'),'r')
+% patch(groups,Alldatatoplot,'r')
+% patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+hold on
+plot([0 6],[0.3 0.3], 'g--')
+plot([0 6],[0.489 0.489], 'k--')
+plotspreadhandles = plotSpread(individdata20_60,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+
+% set(findall(3,'type','line','color','k'),'markerSize',16)
+set(gca, 'fontsize',16);
+set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
+set(gca, 'TickDir', 'out')
+ylabel('PSE for 0.20 - 0.60 group')
+axis([0 6 0.25 0.9])
+set(gcf, 'Position', [200, 200, 1600, 900])
+
+
+%% make boxplot for PSEs
+
+%combined
+figure; bx = boxplot(Alldatatoplot_combined,groups,'Notch','off', 'MedianStyle', 'line');
+ax = gca;
+
+h = get(bx(5,:),{'XData','YData'});
+for k=1:size(h,1)
+   patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+   patch(h{k,1},h{k,2},'y');
+end
+ax.Children = ax.Children([end 1:end-1]);
+
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+% set(lines,'linewidth',1, 'Color', 'r');
+set(lines,'linewidth',3)
+
+% h = findobj(gca,'Tag','Box');
+% for j=1:length(h)
+%    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+% end
+% boxplot(Alldatatoplot,groups,'Notch','on')
+
+% patch(get(h,'XData'),get(h,'YData'),'r')
+% patch(groups,Alldatatoplot,'r')
+% patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+hold on
+plot([0 6],[0.3 0.3], 'g--')
+plot([0 6],[0.489 0.489], 'k--')
+plotspreadhandles = plotSpread(individdata_combined,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+
+% set(findall(3,'type','line','color','k'),'markerSize',16)
+set(gca, 'fontsize',16);
+set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
+set(gca, 'TickDir', 'out')
+ylabel('PSE for both groups')
+axis([0 6 0.25 0.9])
+set(gcf, 'Position', [200, 200, 1600, 900])
+
+%% significant diffs for PSEs medians for 0.25 - 0.45
 
 disp('Intact vs BS')
-[p,h,stats] = ranksum(Intact(subjectsIntact,1),BS(subjectsBS,1)) %independent samples
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsBS),1),BS(intersect(subjectsIntact,subjectsBS),1)) %paired samples
+% [p,h,stats] = ranksum(Data_25_45.PSE.Intact(subjectsIntact,1),Data_25_45.PSE.BS(subjectsBS,1)) %independent samples
+[p,h,stats] = signrank(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsBS),1),Data_25_45.PSE.BS(intersect(subjectsIntact,subjectsBS),1), 'method','approximate') %paired samples
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsBS),1),Data_25_45.PSE.BS(intersect(subjectsIntact,subjectsBS),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsBS),1)) - mean(Data_25_45.PSE.BS(intersect(subjectsIntact,subjectsBS),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
        
 disp('Intact vs Occ')
-[p,h,stats] = ranksum(Intact(subjectsIntact,1),Occluded(subjectsOcc,1)) 
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsOcc),1),Occluded(intersect(subjectsIntact,subjectsOcc),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.Intact(subjectsIntact,1),Data_25_45.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsOcc),1),Data_25_45.PSE.Occluded(intersect(subjectsIntact,subjectsOcc),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsOcc),1),Data_25_45.PSE.Occluded(intersect(subjectsIntact,subjectsOcc),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsOcc),1)) - mean(Data_25_45.PSE.Occluded(intersect(subjectsIntact,subjectsOcc),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Intact vs DelSh')
-[p,h,stats] = ranksum(Intact(subjectsIntact,1),DeletedSharp(subjectsDelSh,1))
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsDelSh),1),DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1))
+% [p,h,stats] = ranksum(Data_25_45.PSE.Intact(subjectsIntact,1),Data_25_45.PSE.DeletedSharp(subjectsDelSh,1))
+[p,h,stats] = signrank(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelSh),1),Data_25_45.PSE.DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1),'method','approximate')
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelSh),1),Data_25_45.PSE.DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelSh),1))  -  mean(Data_25_45.PSE.DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Intact vs DelFuzz')
-[p,h,stats] = ranksum(Intact(subjectsIntact,1),DeletedFuzzy(subjectsDelFuzz,1))
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsDelFuzz),1),DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1))
+% [p,h,stats] = ranksum(Data_25_45.PSE.Intact(subjectsIntact,1),Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1),'method','approximate')
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelFuzz),1)) - mean(Data_25_45.PSE.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('BS vs Occ')
-[p,h,stats] = ranksum(BS(subjectsBS,1),Occluded(subjectsOcc,1)) 
-[p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsOcc),1),Occluded(intersect(subjectsBS,subjectsOcc),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.BS(subjectsBS,1),Data_25_45.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsOcc),1),Data_25_45.PSE.Occluded(intersect(subjectsBS,subjectsOcc),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsOcc),1),Data_25_45.PSE.Occluded(intersect(subjectsBS,subjectsOcc),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsOcc),1)) - mean(Data_25_45.PSE.Occluded(intersect(subjectsBS,subjectsOcc),1))
+%for bayes
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('BS vs DelSh')
-[p,h,stats] = ranksum(BS(subjectsBS,1),DeletedSharp(subjectsDelSh,1)) 
-[p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsDelSh),1),DeletedSharp(intersect(subjectsBS,subjectsDelSh),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.BS(subjectsBS,1),Data_25_45.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelSh),1),Data_25_45.PSE.DeletedSharp(intersect(subjectsBS,subjectsDelSh),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelSh),1),Data_25_45.PSE.DeletedSharp(intersect(subjectsBS,subjectsDelSh),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelSh),1)) - mean(Data_25_45.PSE.DeletedSharp(intersect(subjectsBS,subjectsDelSh),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('BS vs DelFuzz')
-[p,h,stats] = ranksum(BS(subjectsBS,1),DeletedFuzzy(subjectsDelFuzz,1))
-[p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsDelFuzz),1),DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.BS(subjectsBS,1),Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelFuzz),1)) - mean(Data_25_45.PSE.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Occ vs DelSh')
-[p,h,stats] = ranksum(Occluded(subjectsOcc,1),DeletedSharp(subjectsDelSh,1)) 
-[p,h,stats] = signrank(Occluded(intersect(subjectsOcc,subjectsDelSh),1),DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.Occluded(subjectsOcc,1),Data_25_45.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelSh),1),Data_25_45.PSE.DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelSh),1),Data_25_45.PSE.DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelSh),1)) - mean(Data_25_45.PSE.DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Occ vs DelFuzz')
-[p,h,stats] = ranksum(Occluded(subjectsOcc,1),DeletedFuzzy(subjectsDelFuzz,1)) 
-[p,h,stats] = signrank(Occluded(intersect(subjectsOcc,subjectsDelFuzz),1),DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.Occluded(subjectsOcc,1),Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelFuzz),1)) - mean(Data_25_45.PSE.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('DelSh vs DelFuzz')
-[p,h,stats] = ranksum(DeletedSharp(subjectsDelSh,1),DeletedFuzzy(subjectsDelFuzz,1)) 
-[p,h,stats] = signrank(DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1),DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1)) 
+% [p,h,stats] = ranksum(Data_25_45.PSE.DeletedSharp(subjectsDelSh,1),Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_25_45.PSE.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.PSE.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1),Data_25_45.PSE.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.PSE.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1)) - mean(Data_25_45.PSE.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
+%% significant diffs for PSEs medians for 0.20 - 0.60
+
+disp('Intact vs BS')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.BS(subjectsBS,1)) %independent samples
+[p,h,stats] = signrank(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1),Data_20_60.PSE.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1),'method','approximate') %paired samples
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1),Data_20_60.PSE.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1))- mean(Data_20_60.PSE.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+       
+disp('Intact vs Occ')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1),Data_20_60.PSE.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1),Data_20_60.PSE.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1))- mean(Data_20_60.PSE.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+disp('Intact vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1))
+[p,h,stats] = signrank(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1),Data_20_60.PSE.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1),'method','approximate')
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1),Data_20_60.PSE.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1))- mean(Data_20_60.PSE.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Intact vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1),'method','approximate')
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.PSE.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs Occ')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1),Data_20_60.PSE.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1),Data_20_60.PSE.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1))- mean(Data_20_60.PSE.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1),Data_20_60.PSE.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1),Data_20_60.PSE.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1))- mean(Data_20_60.PSE.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.PSE.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occ vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Occluded(subjectsOcc,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1),Data_20_60.PSE.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1),Data_20_60.PSE.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1))- mean(Data_20_60.PSE.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occ vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Occluded(subjectsOcc,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.PSE.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('DelSh vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.DeletedSharp(subjectsDelSh,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_20_60.PSE.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.PSE.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.PSE.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.PSE.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.PSE.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+
+%% significant diffs for PSEs medians for combined groups
+
+%  data structures are getting a bit complicated, extract data first and then perform stats, for better readability
+
+Intact_for_IntvsBS = [Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsBS)); Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37))];
+BS_for_IntvsBS = [Data_25_45.PSE.BS(intersect(subjectsIntact,subjectsBS)); Data_20_60.PSE.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37))];
+
+Intact_for_IntvsOcc = [Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsOcc)); Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37))];
+Occ_for_IntvsOcc = [Data_25_45.PSE.Occluded(intersect(subjectsIntact,subjectsOcc)); Data_20_60.PSE.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37))];
+
+Intact_for_IntvsDelSh = [Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelSh)); Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37))];
+DelSh_forIntvsDelSh = [Data_25_45.PSE.DeletedSharp(intersect(subjectsIntact,subjectsDelSh)); Data_20_60.PSE.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37))];
+
+Intact_for_IntvsDelFuzz = [Data_25_45.PSE.Intact(intersect(subjectsIntact,subjectsDelFuzz)); Data_20_60.PSE.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_IntvsDelFuzz = [Data_25_45.PSE.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz)); Data_20_60.PSE.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37))];
+
+BS_for_BSvsOcc = [Data_25_45.PSE.BS(intersect(subjectsBS,subjectsOcc)); Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37))];
+Occ_for_BSvsOcc = [Data_25_45.PSE.Occluded(intersect(subjectsBS,subjectsOcc)); Data_20_60.PSE.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37))];
+
+BS_for_BSvsDelSh = [Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelSh)); Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37))];
+DelSh_for_BSvsDelSh = [Data_25_45.PSE.DeletedSharp(intersect(subjectsBS,subjectsDelSh)); Data_20_60.PSE.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37))];
+
+BS_for_BSvsDelFuzz = [Data_25_45.PSE.BS(intersect(subjectsBS,subjectsDelFuzz)); Data_20_60.PSE.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_BSvsDelFuzz = [Data_25_45.PSE.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz)); Data_20_60.PSE.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37))];
+
+Occ_for_OccvsDelSh = [Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelSh)); Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37))];
+DelSh_OccvsDelSh = [Data_25_45.PSE.DeletedSharp(intersect(subjectsOcc,subjectsDelSh)); Data_20_60.PSE.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37))];
+
+Occ_for_OccvsDelFuzz = [Data_25_45.PSE.Occluded(intersect(subjectsOcc,subjectsDelFuzz)); Data_20_60.PSE.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_OccvsDelFuzz = [Data_25_45.PSE.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz)); Data_20_60.PSE.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37))];
+
+DelSh_for_DelShvsDelFuzz = [Data_25_45.PSE.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz)); Data_20_60.PSE.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_DelShvsDelFuzz = [Data_25_45.PSE.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz)); Data_20_60.PSE.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37))];
+
+
+disp('Intact vs BS')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.BS(subjectsBS,1)) %independent samples
+[p,h,stats] = signrank(Intact_for_IntvsBS, BS_for_IntvsBS) %paired samples
+       
+disp('Intact vs Occ')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Intact_for_IntvsOcc, Occ_for_IntvsOcc) 
+
+disp('Intact vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1))
+[p,h,stats] = signrank(Intact_for_IntvsDelSh, DelSh_forIntvsDelSh)
+
+disp('Intact vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Intact_for_IntvsDelFuzz, DelFuzz_for_IntvsDelFuzz)
+
+disp('BS vs Occ')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(BS_for_BSvsOcc,Occ_for_BSvsOcc) 
+
+disp('BS vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(BS_for_BSvsDelSh, DelSh_for_BSvsDelSh) 
+
+disp('BS vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(BS_for_BSvsDelFuzz, DelFuzz_for_BSvsDelFuzz) 
+
+disp('Occ vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Occluded(subjectsOcc,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Occ_for_OccvsDelSh, DelSh_OccvsDelSh) 
+
+disp('Occ vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Occluded(subjectsOcc,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Occ_for_OccvsDelFuzz, DelFuzz_for_OccvsDelFuzz) 
+
+disp('DelSh vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.DeletedSharp(subjectsDelSh,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(DelSh_for_DelShvsDelFuzz, DelFuzz_for_DelShvsDelFuzz) 
+
+
+%% BS sizes, perceived cpd vs actual cpd in gap conditions
+
+
+removeoutliers = 1;
+
+% % %outliers
+% subjectsIntactOutliers = [];
+% subjectsBSOutliers = [19 26];
+% subjectsOccOutliers = [1 6 17 19 20 27];
+% subjectsDelShOutliers = [1 6 9 19 20 27];
+% % subjectsDelFuzzOutliers = [1 19 20 27];
+% % 
+% % everything 
+% subjectsIntact = [1:nSubs];
+% subjectsBS = [1:nSubs];
+% subjectsOcc = [1:nSubs];
+% subjectsDelSh = [1:nSubs];
+% subjectsDelFuzz = [1:nSubs];
+% 
+% if removeoutliers %overwrite the sublists
+%     subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
+%     subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
+%     subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
+%     subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
+%     subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+% end
+
+
+%% old calculatations, now have PTE already saved as a variable in the struct
+% BS size
+BS_Size(:,1);
+
+Barlength = BS_Size(:,1) + 10; %in deg, 10 deg of visible bar outside BS
+
+NcyclesControl = Barlength * 0.3; %control was always 0.3 cpd
+
+Perceived_cpd_BS = BS(subjectsBS,1);
+
+Perceived_cpd_Occ = Occluded(subjectsOcc,1);
+
+Perceived_cpd_DelSh = DeletedSharp(subjectsDelSh,1);
+
+Perceived_cpd_DelFuzz = DeletedFuzzy(subjectsDelFuzz,1);
+
+cpd_veridical = NcyclesControl/10; %10 deg of visible bar
+
+%% BIAS for 0.25-0.45 group
+bias_BS =  Data_25_45.PSE.BS(subjectsBS) - Data_25_45.PTE(subjectsBS);
+bias_Occ = Data_25_45.PSE.Occluded(subjectsOcc) - Data_25_45.PTE(subjectsOcc);
+bias_DelSh =  Data_25_45.PSE.DeletedSharp(subjectsDelSh) - Data_25_45.PTE(subjectsDelSh);
+bias_DelFuzz = Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz) - Data_25_45.PTE(subjectsDelFuzz);
+
+
+medianbias_BS = median(bias_BS)
+medianbias_Occ = median(bias_Occ)
+medianbias_DelSh = median(bias_DelSh)
+medianbias_DelFuzz = median(bias_DelFuzz)
+
+
+disp('BS')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS))
+[P,H,STATS] = signrank(Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS))
+[H,P,~,STATS] = ttest(Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS))
+%for bayes
+raweffect = mean(bias_BS)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+[H,P,~,STATS] = ttest(bias_BS)
+
+disp('Occluded')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc))
+[P,H,STATS] = signrank(Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc))
+[H,P,~,STATS] = ttest(Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc))
+%for bayes
+raweffect = mean(bias_Occ)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+disp('DelSharp')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh))
+[P,H,STATS] = signrank(Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh))
+[H,P,~,STATS] = ttest(Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh))
+%for bayes
+raweffect = mean(bias_DelSh)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+disp('DelFuzzy')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz))
+[P,H,STATS] = signrank(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz))
+[H,P,~,STATS] = ttest(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz))
+%for bayes
+raweffect = mean(bias_DelFuzz)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+
+
+% figure; plot([1 2], [Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS)])
+% axis([0.5 2.5 0.2 1])
+% ylabel('CPD')
+% % xlabel('VVIQ')
+% set(gca,'XTickLabel', {'', 'Perceived cpd BS','', 'cpd veridical',''}) 
+% 
+% figure; plot([1 2], [Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc)])
+% axis([0.5 2.5 0.2 1])
+% ylabel('CPD')
+% % xlabel('VVIQ')
+% set(gca,'XTickLabel', {'','Perceived cpd Occ', '','cpd veridical'}) 
+% 
+% figure; plot([1 2], [Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh)])
+% axis([0.5 2.5 0.2 1])
+% ylabel('CPD')
+% % xlabel('VVIQ')
+% set(gca,'XTickLabel', {'','Perceived cpd DelSh','', 'cpd veridical'}) 
+% 
+% figure; plot([1 2], [Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz)])
+% axis([0.5 2.5 0.2 1])
+% ylabel('CPD')
+% % xlabel('VVIQ')
+% set(gca,'XTickLabel', {'','Perceived cpd DelFuzz', '','cpd veridical'}) 
+
+
+% boxplot figures
+
+for i = 1:4
+    switch i
+        case 1
+            X = [Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS)];
+            Label = {'PSE BS', 'PTE BS'};
+        case 2
+            X = [Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc)];
+            Label = {'PSE Occ', 'PTE Occ'};
+        case 3
+            X = [Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh)];
+            Label = {'PSE DelSh', 'PTE DelSh'};
+        case 4
+            X = [Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz)];
+            Label = {'PSE DelFuzz', 'PTE DelFuzz'};
+    end
+        
+        
+    figure; bx = boxplot(X,'Notch','off', 'MedianStyle', 'line');
+    ax = gca;
+    
+    h = get(bx(5,:),{'XData','YData'});
+    for k=1:size(h,1)
+        patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+        patch(h{k,1},h{k,2},'y');
+    end
+    ax.Children = ax.Children([end 1:end-1]);
+    
+    lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+    % set(lines,'linewidth',1, 'Color', 'r');
+    set(lines,'linewidth',3)
+    
+    % h = findobj(gca,'Tag','Box');
+    % for j=1:length(h)
+    %    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+    % end
+    % boxplot(Alldatatoplot,groups,'Notch','on')
+    
+    % patch(get(h,'XData'),get(h,'YData'),'r')
+    % patch(groups,Alldatatoplot,'r')
+    % patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+    hold on
+    plot([0 3],[0.3 0.3], 'g--')
+%     plot([0 3],[0.489 0.489], 'g--')
+    plotspreadhandles = plotSpread(X,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+    set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+    
+    
+    plot([1 2], X)
+    
+    
+    % set(findall(3,'type','line','color','k'),'markerSize',16)
+    set(gca, 'fontsize',16);
+    set(gca,'XTickLabel', Label)
+    set(gca, 'TickDir', 'out')
+    ylabel('PSE')
+    axis([0.7 2.3 0.25 0.9])
+    set(gcf, 'Position', [200, 200, 900, 900])
+    
+end
+
+%% BIAS for 0.20-0.60 group
+bias_BS =  Data_20_60.PSE.BS(subjectsBS20_60-37) - Data_20_60.PTE(subjectsBS20_60-37);
+bias_Occ = Data_20_60.PSE.Occluded(subjectsOcc20_60-37) - Data_20_60.PTE(subjectsOcc20_60-37);
+bias_DelSh =  Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37) - Data_20_60.PTE(subjectsDelSh20_60-37);
+bias_DelFuzz = Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37) - Data_20_60.PTE(subjectsDelFuzz20_60-37);
+
+
+medianbias_BS = median(bias_BS)
+medianbias_Occ = median(bias_Occ)
+medianbias_DelSh = median(bias_DelSh)
+medianbias_DelFuzz = median(bias_DelFuzz)
+
+
+disp('BS')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS))
+[P,H,STATS] = signrank(Data_20_60.PSE.BS(subjectsBS20_60-37), Data_20_60.PTE(subjectsBS20_60-37))
+[H,P,~,STATS] = ttest(Data_20_60.PSE.BS(subjectsBS20_60-37), Data_20_60.PTE(subjectsBS20_60-37))
+%for bayes
+raweffect = mean(bias_BS)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occluded')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc))
+[P,H,STATS] = signrank(Data_20_60.PSE.Occluded(subjectsOcc20_60-37), Data_20_60.PTE(subjectsOcc20_60-37))
+[H,P,~,STATS] = ttest(Data_20_60.PSE.Occluded(subjectsOcc20_60-37), Data_20_60.PTE(subjectsOcc20_60-37))
+%for bayes
+raweffect = mean(bias_Occ)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('DelSharp')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh))
+[P,H,STATS] = signrank(Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37), Data_20_60.PTE(subjectsDelSh20_60-37), 'method', 'approximate')
+[H,P,~,STATS] = ttest(Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37), Data_20_60.PTE(subjectsDelSh20_60-37))
+%for bayes
+raweffect = mean(bias_DelSh)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+disp('DelFuzzy')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz))
+[P,H,STATS] = signrank(Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37), Data_20_60.PTE(subjectsDelFuzz20_60-37))
+[H,P,~,STATS] = ttest(Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37), Data_20_60.PTE(subjectsDelFuzz20_60-37))
+%for bayes
+raweffect = mean(bias_DelFuzz)
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+
+% boxplot figures
+
+for i = 1:4
+    switch i
+        case 1
+            X = [Data_20_60.PSE.BS(subjectsBS20_60-37), Data_20_60.PTE(subjectsBS20_60-37)];
+            Label = {'PSE BS', 'PTE BS'};
+        case 2
+            X = [Data_20_60.PSE.Occluded(subjectsOcc20_60-37), Data_20_60.PTE(subjectsOcc20_60-37)];
+            Label = {'PSE Occ', 'PTE Occ'};
+        case 3
+            X = [Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37), Data_20_60.PTE(subjectsDelSh20_60-37)];
+            Label = {'PSE DelSh', 'PTE DelSh'};
+        case 4
+            X = [Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37), Data_20_60.PTE(subjectsDelFuzz20_60-37)];
+            Label = {'PSE DelFuzz', 'PTE DelFuzz'};
+    end
+        
+        
+    figure; bx = boxplot(X,'Notch','off', 'MedianStyle', 'line');
+    ax = gca;
+    
+    h = get(bx(5,:),{'XData','YData'});
+    for k=1:size(h,1)
+        patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+        patch(h{k,1},h{k,2},'y');
+    end
+    ax.Children = ax.Children([end 1:end-1]);
+    
+    lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+    % set(lines,'linewidth',1, 'Color', 'r');
+    set(lines,'linewidth',3)
+    
+    % h = findobj(gca,'Tag','Box');
+    % for j=1:length(h)
+    %    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+    % end
+    % boxplot(Alldatatoplot,groups,'Notch','on')
+    
+    % patch(get(h,'XData'),get(h,'YData'),'r')
+    % patch(groups,Alldatatoplot,'r')
+    % patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+    hold on
+    plot([0 3],[0.3 0.3], 'g--')
+    plotspreadhandles = plotSpread(X,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+    set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+    
+    
+    plot([1 2], X)
+    
+    
+    % set(findall(3,'type','line','color','k'),'markerSize',16)
+    set(gca, 'fontsize',16);
+    set(gca,'XTickLabel', Label)
+    set(gca, 'TickDir', 'out')
+    ylabel('PSE')
+    axis([0.7 2.3 0.25 0.9])
+    set(gcf, 'Position', [200, 200, 900, 900])
+    
+end
+
+%% BIAS for combined
+bias_BS =  [Data_20_60.PSE.BS(subjectsBS20_60-37); Data_25_45.PSE.BS(subjectsBS)] - [Data_20_60.PTE(subjectsBS20_60-37); Data_25_45.PTE(subjectsBS)];
+bias_Occ = [Data_20_60.PSE.Occluded(subjectsOcc20_60-37);Data_25_45.PSE.Occluded(subjectsOcc)] - [Data_20_60.PTE(subjectsOcc20_60-37);Data_25_45.PTE(subjectsOcc)];
+bias_DelSh =  [Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); Data_25_45.PSE.DeletedSharp(subjectsDelSh)] - [Data_20_60.PTE(subjectsDelSh20_60-37);Data_25_45.PTE(subjectsDelSh)];
+bias_DelFuzz = [Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37); Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz)] - [Data_20_60.PTE(subjectsDelFuzz20_60-37);Data_25_45.PTE(subjectsDelFuzz)];
+
+
+medianbias_BS = median(bias_BS)
+medianbias_Occ = median(bias_Occ)
+medianbias_DelSh = median(bias_DelSh)
+medianbias_DelFuzz = median(bias_DelFuzz)
+
+
+disp('BS')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.BS(subjectsBS), Data_25_45.PTE(subjectsBS))
+[P,H,STATS] = signrank([Data_20_60.PSE.BS(subjectsBS20_60-37); Data_25_45.PSE.BS(subjectsBS)] , [Data_20_60.PTE(subjectsBS20_60-37); Data_25_45.PTE(subjectsBS)])
+disp('Occluded')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.Occluded(subjectsOcc), Data_25_45.PTE(subjectsOcc))
+[P,H,STATS] = signrank([Data_20_60.PSE.Occluded(subjectsOcc20_60-37);Data_25_45.PSE.Occluded(subjectsOcc)] , [Data_20_60.PTE(subjectsOcc20_60-37);Data_25_45.PTE(subjectsOcc)])
+disp('DelSharp')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.DeletedSharp(subjectsDelSh), Data_25_45.PTE(subjectsDelSh))
+[P,H,STATS] = signrank([Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); Data_25_45.PSE.DeletedSharp(subjectsDelSh)] , [Data_20_60.PTE(subjectsDelSh20_60-37);Data_25_45.PTE(subjectsDelSh)])
+disp('DelFuzzy')
+% [P,H,STATS] = ranksum(Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz), Data_25_45.PTE(subjectsDelFuzz))
+[P,H,STATS] = signrank([Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37); Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz)] , [Data_20_60.PTE(subjectsDelFuzz20_60-37);Data_25_45.PTE(subjectsDelFuzz)])
+
+
+
+% boxplot figures
+
+for i = 1:4
+    switch i
+        case 1
+            X = [[Data_20_60.PSE.BS(subjectsBS20_60-37); Data_25_45.PSE.BS(subjectsBS)] , [Data_20_60.PTE(subjectsBS20_60-37); Data_25_45.PTE(subjectsBS)]];
+            Label = {'PSE BS', 'PTE BS'};
+        case 2
+            X = [[Data_20_60.PSE.Occluded(subjectsOcc20_60-37);Data_25_45.PSE.Occluded(subjectsOcc)] , [Data_20_60.PTE(subjectsOcc20_60-37);Data_25_45.PTE(subjectsOcc)]];
+            Label = {'PSE Occ', 'PTE Occ'};
+        case 3
+            X = [[Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); Data_25_45.PSE.DeletedSharp(subjectsDelSh)] , [Data_20_60.PTE(subjectsDelSh20_60-37);Data_25_45.PTE(subjectsDelSh)]];
+            Label = {'PSE DelSh', 'PTE DelSh'};
+        case 4
+            X = [[Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37); Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz)] , [Data_20_60.PTE(subjectsDelFuzz20_60-37);Data_25_45.PTE(subjectsDelFuzz)]];
+            Label = {'PSE DelFuzz', 'PTE DelFuzz'};
+    end
+        
+        
+    figure; bx = boxplot(X,'Notch','off', 'MedianStyle', 'line');
+    ax = gca;
+    
+    h = get(bx(5,:),{'XData','YData'});
+    for k=1:size(h,1)
+        patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+        patch(h{k,1},h{k,2},'y');
+    end
+    ax.Children = ax.Children([end 1:end-1]);
+    
+    lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+    % set(lines,'linewidth',1, 'Color', 'r');
+    set(lines,'linewidth',3)
+    
+    % h = findobj(gca,'Tag','Box');
+    % for j=1:length(h)
+    %    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+    % end
+    % boxplot(Alldatatoplot,groups,'Notch','on')
+    
+    % patch(get(h,'XData'),get(h,'YData'),'r')
+    % patch(groups,Alldatatoplot,'r')
+    % patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+    hold on
+    plot([0 3],[0.3 0.3], 'g--')
+    plotspreadhandles = plotSpread(X,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+    set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+    
+    
+    plot([1 2], X)
+    
+    
+    % set(findall(3,'type','line','color','k'),'markerSize',16)
+    set(gca, 'fontsize',16);
+    set(gca,'XTickLabel', Label)
+    set(gca, 'TickDir', 'out')
+    ylabel('PSE')
+    axis([0.7 2.3 0.25 0.9])
+    set(gcf, 'Position', [200, 200, 900, 900])
+    
+end
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%
@@ -541,110 +1510,556 @@ disp('DelSh vs DelFuzz')
 
 removeoutliers = 1;
 
-% % %outliers based on non- convergence
-% subjectsIntactOutliers = [];
-% subjectsBSOutliers = [19 26];
-% subjectsOccOutliers = [1 6 17 19 20 27];
-% subjectsDelShOutliers = [1 6 9 19 20 27];
-% subjectsDelFuzzOutliers = [1 19 20 27];
+% 25-45 or 20-60 analysis?
+analysis_group = 20; %25 or 20
 
-
-% %outliers based on non convergence, remove only slopes higher than median
-subjectsIntactOutliers = [];
-subjectsBSOutliers = [];
-subjectsOccOutliers = [1 6];
-subjectsDelShOutliers = [6 9];
-subjectsDelFuzzOutliers = [];
-
-
+if analysis_group == 25
+    allsubs = [1:38]; %all good subs for 25-45
+elseif analysis_group == 20
+    allsubs = [38:64]; %all good subs for 20-60
+end
 
 % 
-% or keep everything 
-subjectsIntact = [1:nSubs];
-subjectsBS = [1:nSubs];
-subjectsOcc = [1:nSubs];
-subjectsDelSh = [1:nSubs];
-subjectsDelFuzz = [1:nSubs];
+% % %outliers (all bad subs for both 25-45 and 20-60) * old analysis prior
+% % to fixing sub48 on 18/07/2019
+% subjectsIntactOutliers = [1, 4, 13, 44, 47, 56, 57, 59];
+% subjectsBSOutliers = [1, 3, 41, 44, 48, 56, 57, 59];
+% subjectsOccOutliers = [1, 8, 22, 44, 48, 52, 56, 57, 59, 64];
+% subjectsDelShOutliers = [1, 16, 26, 41, 42, 44, 46, 48, 56, 57, 59, 64];
+% subjectsDelFuzzOutliers = [1, 18, 20, 31, 44, 53, 56, 57, 59, 64];
 
+% %outliers (all bad subs for both 25-45 and 20-60) *new analysis after
+% fixing sub48 *
+subjectsIntactOutliers = [1, 4, 13, 44, 47, 56, 57, 59];
+subjectsBSOutliers = [1, 3, 41, 44, 48, 56, 57, 59];
+subjectsOccOutliers = [1, 8, 22, 44, 48, 52, 56, 57, 59, 64];
+subjectsDelShOutliers = [1, 16, 26, 41, 42, 44, 46, 56, 57, 59, 64];
+subjectsDelFuzzOutliers = [1, 18, 20, 31, 44, 48, 53, 56, 57, 59, 64];
+
+% 
+% % %outliers (all bad subs for both 25-45 and 20-60) *new analysis after
+% % fixing sub48 * very stringent, remove any slopes where PSE is not
+% % converged and outside range, even if slope value is "good"
+% subjectsIntactOutliers = [1, 4, 13, 44, 47, 56, 57, 59];
+% subjectsBSOutliers = [1, 3, 19, 26, 29, 32, 36, 41, 44, 48, 50, 56, 57, 59];
+% subjectsOccOutliers = [1, 8, 12, 13, 17, 19, 20, 22, 27, 29, 32, 36, 37, 38, 40, 44, 45, 48, 50, 52, 56, 57, 59, 64];
+% subjectsDelShOutliers = [1, 16, 19, 20, 26, 27, 29, 32, 37, 38, 40, 41, 42, 44, 45, 46, 56, 57, 59, 64];
+% subjectsDelFuzzOutliers = [1, 18, 19, 20, 27, 29, 31, 32, 37, 38, 40, 44, 45, 48, 50, 53, 56, 57, 59, 64];
 
 if removeoutliers %overwrite the sublists
-    subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
-    subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
-    subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
-    subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
-    subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+    
+    
+    if analysis_group == 20
+        
+        % everything
+        subjectsIntact20_60 = [allsubs];
+        subjectsBS20_60 = [allsubs];
+        subjectsOcc20_60 = [allsubs];
+        subjectsDelSh20_60 = [allsubs];
+        subjectsDelFuzz20_60 = [allsubs];
+        
+        subjectsIntact20_60 = setdiff(subjectsIntact20_60, subjectsIntactOutliers);
+        subjectsBS20_60 = setdiff(subjectsBS20_60,subjectsBSOutliers);
+        subjectsOcc20_60 = setdiff(subjectsOcc20_60, subjectsOccOutliers);
+        subjectsDelSh20_60 = setdiff(subjectsDelSh20_60,subjectsDelShOutliers);
+        subjectsDelFuzz20_60 = setdiff(subjectsDelFuzz20_60, subjectsDelFuzzOutliers);
+    else
+        % everything
+        subjectsIntact = [allsubs];
+        subjectsBS = [allsubs];
+        subjectsOcc = [allsubs];
+        subjectsDelSh = [allsubs];
+        subjectsDelFuzz = [allsubs];
+        
+        subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
+        subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
+        subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
+        subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
+        subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+        
+    end
+end
+% 
+% if analysis_group == 20
+%     %means for all subs (except bad BS and RedFIX task, which are replaced with
+%     %NaNs already
+%     meanIntactSlope20_60 = nanmean(Data_20_60.Slope.Intact);
+%     meanBSSlope20_60 = nanmean(Data_20_60.Slope.BS);
+%     meanOccludedSlope20_60 = nanmean(Data_20_60.Slope.Occluded);
+%     meanDelShSlope20_60 = nanmean(Data_20_60.Slope.DeletedSharp);
+%     meanDelFuzSlope20_60 = nanmean(Data_20_60.Slope.DeletedFuzzy);    
+% else
+%     %means for all subs (except bad BS and RedFIX task, which are replaced with
+%     %NaNs already
+%     meanIntactSlope25_45 = nanmean(Data_25_45.Slope.Intact);
+%     meanBSSlope25_45 = nanmean(Data_25_45.Slope.BS);
+%     meanOccludedSlope25_45 = nanmean(Data_25_45.Slope.Occluded);
+%     meanDelShSlope25_45 = nanmean(Data_25_45.Slope.DeletedSharp);
+%     meanDelFuzSlope25_45 = nanmean(Data_25_45.Slope.DeletedFuzzy);
+% end
+% 
+% %medians for all subs (except bad BS and RedFIX task, which are replaced with
+% %NaNs already
+% medianIntactSlope25_45 = nanmedian(Data_25_45.Slope.Intact);
+% medianBSSlope25_45 = nanmedian(Data_25_45.Slope.BS);
+% medianOccludedSlope25_45 = nanmedian(Data_25_45.Slope.Occluded);
+% medianDelShSlope25_45 = nanmedian(Data_25_45.Slope.DeletedSharp);
+% medianDelFuzSlope25_45 = nanmedian(Data_25_45.Slope.DeletedFuzzy);
+% 
+% 
+% %medians for all subs (except bad BS and RedFIX task, which are replaced with
+% %NaNs already
+% medianIntactSlope20_60 = nanmedian(Data_20_60.Slope.Intact);
+% medianBSSlope20_60 = nanmedian(Data_20_60.Slope.BS);
+% medianOccludedSlope20_60 = nanmedian(Data_20_60.Slope.Occluded);
+% medianDelShSlope20_60 = nanmedian(Data_20_60.Slope.DeletedSharp);
+% medianDelFuzSlope20_60 = nanmedian(Data_20_60.Slope.DeletedFuzzy);
+
+if analysis_group == 20
+    %means for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    meanIntactSlope20_60 = nanmean(Data_20_60.Slope.Intact);
+    meanBSSlope20_60 = nanmean(Data_20_60.Slope.BS);
+    meanOccludedSlope20_60 = nanmean(Data_20_60.Slope.Occluded);
+    meanDelShSlope20_60 = nanmean(Data_20_60.Slope.DeletedSharp);
+    meanDelFuzSlope20_60 = nanmean(Data_20_60.Slope.DeletedFuzzy);
+else
+    %means for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    meanIntactSlope25_45 = nanmean(Data_25_45.Slope.Intact);
+    meanBSSlope25_45 = nanmean(Data_25_45.Slope.BS);
+    meanOccludedSlope25_45 = nanmean(Data_25_45.Slope.Occluded);
+    meanDelShSlope25_45 = nanmean(Data_25_45.Slope.DeletedSharp);
+    meanDelFuzSlope25_45 = nanmean(Data_25_45.Slope.DeletedFuzzy);
+end
+
+if analysis_group == 20
+    %means for good subs only
+    meanIntactSlope20_60_good = nanmean(Data_20_60.Slope.Intact(subjectsIntact20_60-37));
+    meanBSSlope20_60_good = nanmean(Data_20_60.Slope.BS(subjectsBS20_60-37));
+    meanOccludedSlope20_60_good = nanmean(Data_20_60.Slope.Occluded(subjectsOcc20_60-37));
+    meanDelShSlope20_60_good = nanmean(Data_20_60.Slope.DeletedSharp(subjectsDelSh20_60-37));
+    meanDelFuzSlope20_60_good = nanmean(Data_20_60.Slope.DeletedFuzzy(subjectsDelFuzz20_60-37));
+else
+    %means for good subs only
+    meanIntactSlope25_45_good = nanmean(Data_25_45.Slope.Intact(subjectsIntact));
+    meanBSSlope25_45_good = nanmean(Data_25_45.Slope.BS(subjectsBS));
+    meanOccludedSlope25_45_good = nanmean(Data_25_45.Slope.Occluded(subjectsOcc));
+    meanDelShSlope25_45_good = nanmean(Data_25_45.Slope.DeletedSharp(subjectsDelSh));
+    meanDelFuzSlope25_45_good = nanmean(Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz));
+end
+
+if analysis_group == 20
+    %medians for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    medianIntactSlope20_60 = nanmedian(Data_20_60.Slope.Intact);
+    medianBSSlope20_60 = nanmedian(Data_20_60.Slope.BS);
+    medianOccludedSlope20_60 = nanmedian(Data_20_60.Slope.Occluded);
+    medianDelShSlope20_60 = nanmedian(Data_20_60.Slope.DeletedSharp);
+    medianDelFuzSlope20_60 = nanmedian(Data_20_60.Slope.DeletedFuzzy);
+else
+    %medians for all subs (except bad BS and RedFIX task, which are replaced with
+    %NaNs already
+    medianIntactSlope25_45 = nanmedian(Data_25_45.Slope.Intact);
+    medianBSSlope25_45 = nanmedian(Data_25_45.Slope.BS);
+    medianOccludedSlope25_45 = nanmedian(Data_25_45.Slope.Occluded);
+    medianDelShSlope25_45 = nanmedian(Data_25_45.Slope.DeletedSharp);
+    medianDelFuzSlope25_45 = nanmedian(Data_25_45.Slope.DeletedFuzzy);
+end
+
+if analysis_group == 20
+    %medians for good subs only
+    medianIntactSlope20_60_good = nanmedian(Data_20_60.Slope.Intact(subjectsIntact20_60-37));
+    medianBSSlope20_60_good = nanmedian(Data_20_60.Slope.BS(subjectsBS20_60-37));
+    medianOccludedSlope20_60_good = nanmedian(Data_20_60.Slope.Occluded(subjectsOcc20_60-37));
+    medianDelShSlope20_60_good = nanmedian(Data_20_60.Slope.DeletedSharp(subjectsDelSh20_60-37));
+    medianDelFuzSlope20_60_good = nanmedian(Data_20_60.Slope.DeletedFuzzy(subjectsDelFuzz20_60-37));
+else
+    %medians for good subs only
+    medianIntactSlope25_45_good = nanmedian(Data_25_45.Slope.Intact(subjectsIntact));
+    medianBSSlope25_45_good = nanmedian(Data_25_45.Slope.BS(subjectsBS));
+    medianOccludedSlope25_45_good = nanmedian(Data_25_45.Slope.Occluded(subjectsOcc));
+    medianDelShSlope25_45_good = nanmedian(Data_25_45.Slope.DeletedSharp(subjectsDelSh));
+    medianDelFuzSlope25_45_good = nanmedian(Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz));
 end
 
 
-%means
-meanIntactSlope = mean(Intact(subjectsIntact,2));
-meanBSSlope = mean(BS(subjectsBS,2));
-meanOccludedSlope = mean(Occluded(subjectsOcc,2));
-meanDelShSlope = mean(DeletedSharp(subjectsDelSh,2));
-meanDelFuzSlope = mean(DeletedFuzzy(subjectsDelFuzz,2));
+% 
+% %means
+% meanIntactSlope = mean(Intact(subjectsIntact,2));
+% meanBSSlope = mean(BS(subjectsBS,2));
+% meanOccludedSlope = mean(Occluded(subjectsOcc,2));
+% meanDelShSlope = mean(DeletedSharp(subjectsDelSh,2));
+% meanDelFuzSlope = mean(DeletedFuzzy(subjectsDelFuzz,2));
+% 
+% %medians
+% medianIntactSlope = median(Intact(subjectsIntact,2));
+% medianBSSlope = median(BS(subjectsBS,2));
+% medianOccludedSlope = median(Occluded(subjectsOcc,2));
+% medianDelShSlope = median(DeletedSharp(subjectsDelSh,2));
+% medianDelFuzSlope = median(DeletedFuzzy(subjectsDelFuzz,2));
 
-%medians
-medianIntactSlope = median(Intact(subjectsIntact,2));
-medianBSSlope = median(BS(subjectsBS,2));
-medianOccludedSlope = median(Occluded(subjectsOcc,2));
-medianDelShSlope = median(DeletedSharp(subjectsDelSh,2));
-medianDelFuzSlope = median(DeletedFuzzy(subjectsDelFuzz,2));
 
+%% 25-45
+Alldatatoplot25_45 = [];
+individdata25_45= [];
+%group data for boxplot 0.25 - 0.45
 
-%group data for boxplot
-Alldatatoplot = [Intact(subjectsIntact,2); BS(subjectsBS,2); Occluded(subjectsOcc,2); DeletedSharp(subjectsDelSh,2); DeletedFuzzy(subjectsDelFuzz,2)];
+Alldatatoplot25_45 = [Data_25_45.Slope.Intact(subjectsIntact); Data_25_45.Slope.BS(subjectsBS); Data_25_45.Slope.Occluded(subjectsOcc); Data_25_45.Slope.DeletedSharp(subjectsDelSh); Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz)];
 groups = [ones(1,length(subjectsIntact))';2*ones(1,length(subjectsBS))'; 3*ones(1,length(subjectsOcc))'; 4*ones(1,length(subjectsDelSh))';5*ones(1,length(subjectsDelFuzz))'];
 
-individdata = {Intact(subjectsIntact,2), BS(subjectsBS,2), Occluded(subjectsOcc,2), DeletedSharp(subjectsDelSh,2), DeletedFuzzy(subjectsDelFuzz,2)};
+individdata25_45 = {Data_25_45.Slope.Intact(subjectsIntact); Data_25_45.Slope.BS(subjectsBS); Data_25_45.Slope.Occluded(subjectsOcc); Data_25_45.Slope.DeletedSharp(subjectsDelSh); Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz)};
+
+
+%% 20-60
+Alldatatoplot20_60 = [];
+individdata20_60 =[];
+%group data for boxplot 0.20 - 0.60
+% -37 cos we are using subs 38-64 but the vector is row 1 to row 27
+Alldatatoplot20_60 = [Data_20_60.Slope.Intact(subjectsIntact20_60-37); Data_20_60.Slope.BS(subjectsBS20_60-37); Data_20_60.Slope.Occluded(subjectsOcc20_60-37); Data_20_60.Slope.DeletedSharp(subjectsDelSh20_60-37); Data_20_60.Slope.DeletedFuzzy(subjectsDelFuzz20_60-37)];
+groups = [ones(1,length(subjectsIntact20_60))';2*ones(1,length(subjectsBS20_60))'; 3*ones(1,length(subjectsOcc20_60))'; 4*ones(1,length(subjectsDelSh20_60))';5*ones(1,length(subjectsDelFuzz20_60))'];
+
+individdata20_60 = {Data_20_60.Slope.Intact(subjectsIntact20_60-37); Data_20_60.Slope.BS(subjectsBS20_60-37); Data_20_60.Slope.Occluded(subjectsOcc20_60-37); Data_20_60.Slope.DeletedSharp(subjectsDelSh20_60-37); Data_20_60.Slope.DeletedFuzzy(subjectsDelFuzz20_60-37)};
+
+
+%% combined for all subs
+
+Alldatatoplot_combined = [Data_25_45.Slope.Intact(subjectsIntact); Data_20_60.Slope.Intact(subjectsIntact20_60-37); Data_25_45.Slope.BS(subjectsBS); Data_20_60.Slope.BS(subjectsBS20_60-37); ...
+    Data_25_45.Slope.Occluded(subjectsOcc); Data_20_60.Slope.Occluded(subjectsOcc20_60-37); Data_25_45.Slope.DeletedSharp(subjectsDelSh);Data_20_60.Slope.DeletedSharp(subjectsDelSh20_60-37); ...
+    Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz); Data_20_60.Slope.DeletedFuzzy(subjectsDelFuzz20_60-37)];
+
+groups = [ones(1,length(subjectsIntact)+length(subjectsIntact20_60))';2*ones(1,length(subjectsBS)+length(subjectsBS20_60))';...
+    3*ones(1,length(subjectsOcc)+length(subjectsOcc20_60))'; 4*ones(1,length(subjectsDelSh)+length(subjectsDelSh20_60))';...
+    5*ones(1,length(subjectsDelFuzz)+length(subjectsDelFuzz20_60))'];
+
+individdata_combined = {[Data_25_45.Slope.Intact(subjectsIntact); Data_20_60.Slope.Intact(subjectsIntact20_60-37)]; [Data_25_45.Slope.BS(subjectsBS); Data_20_60.Slope.BS(subjectsBS20_60-37)]; ...
+    [Data_25_45.Slope.Occluded(subjectsOcc); Data_20_60.Slope.Occluded(subjectsOcc20_60-37)]; [Data_25_45.Slope.DeletedSharp(subjectsDelSh);Data_20_60.Slope.DeletedSharp(subjectsDelSh20_60-37)]; ...
+    [Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz); Data_20_60.Slope.DeletedFuzzy(subjectsDelFuzz20_60-37)]};
+
+
+% 
+% %group data for boxplot
+% Alldatatoplot = [Intact(subjectsIntact,2); BS(subjectsBS,2); Occluded(subjectsOcc,2); DeletedSharp(subjectsDelSh,2); DeletedFuzzy(subjectsDelFuzz,2)];
+% groups = [ones(1,length(subjectsIntact))';2*ones(1,length(subjectsBS))'; 3*ones(1,length(subjectsOcc))'; 4*ones(1,length(subjectsDelSh))';5*ones(1,length(subjectsDelFuzz))'];
+% 
+% individdata = {Intact(subjectsIntact,2), BS(subjectsBS,2), Occluded(subjectsOcc,2), DeletedSharp(subjectsDelSh,2), DeletedFuzzy(subjectsDelFuzz,2)};
 
 
 
 %% significant diffs for slopes
 
+%% significant diffs for PSEs medians for 0.25 - 0.45
+
 disp('Intact vs BS')
-[p,h,stats] = ranksum(Intact(subjectsIntact,2),BS(subjectsBS,2))
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsBS),2),BS(intersect(subjectsIntact,subjectsBS),2))
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.BS(subjectsBS,1)) %independent samples
+[p,h,stats] = signrank(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsBS),1),Data_25_45.Slope.BS(intersect(subjectsIntact,subjectsBS),1),'method','approximate') %paired samples
+[H,P,~,STATS] = ttest(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsBS),1),Data_25_45.Slope.BS(intersect(subjectsIntact,subjectsBS),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsBS),1)) - mean(Data_25_45.Slope.BS(intersect(subjectsIntact,subjectsBS),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
        
 disp('Intact vs Occ')
-[p,h,stats] = ranksum(Intact(subjectsIntact,2),Occluded(subjectsOcc,2)) 
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsOcc),2),Occluded(intersect(subjectsIntact,subjectsOcc),2)) 
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsOcc),1),Data_25_45.Slope.Occluded(intersect(subjectsIntact,subjectsOcc),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsOcc),1),Data_25_45.Slope.Occluded(intersect(subjectsIntact,subjectsOcc),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsOcc),1)) - mean(Data_25_45.Slope.Occluded(intersect(subjectsIntact,subjectsOcc),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Intact vs DelSh')
-[p,h,stats] = ranksum(Intact(subjectsIntact,2),DeletedSharp(subjectsDelSh,2))
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsDelSh),2),DeletedSharp(intersect(subjectsIntact,subjectsDelSh),2))
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.DeletedSharp(subjectsDelSh,1))
+[p,h,stats] = signrank(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelSh),1),Data_25_45.Slope.DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1),'method','approximate')
+[H,P,~,STATS] = ttest(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelSh),1),Data_25_45.Slope.DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelSh),1))  -  mean(Data_25_45.Slope.DeletedSharp(intersect(subjectsIntact,subjectsDelSh),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Intact vs DelFuzz')
-[p,h,stats] = ranksum(Intact(subjectsIntact,2),DeletedFuzzy(subjectsDelFuzz,2))
-[p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),2))
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1),'method','approximate')
+[H,P,~,STATS] = ttest(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelFuzz),1)) - mean(Data_25_45.Slope.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('BS vs Occ')
-[p,h,stats] = ranksum(BS(subjectsBS,2),Occluded(subjectsOcc,2)) 
-[p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsOcc),2),Occluded(intersect(subjectsBS,subjectsOcc),2)) 
+% [p,h,stats] = ranksum(Data_25_45.Slope.BS(subjectsBS,1),Data_25_45.Slope.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsOcc),1),Data_25_45.Slope.Occluded(intersect(subjectsBS,subjectsOcc),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsOcc),1),Data_25_45.Slope.Occluded(intersect(subjectsBS,subjectsOcc),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsOcc),1)) - mean(Data_25_45.Slope.Occluded(intersect(subjectsBS,subjectsOcc),1))
+%for bayes
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('BS vs DelSh')
-[p,h,stats] = ranksum(BS(subjectsBS,2),DeletedSharp(subjectsDelSh,2)) 
-[p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsDelSh),2),DeletedSharp(intersect(subjectsBS,subjectsDelSh),2))
+% [p,h,stats] = ranksum(Data_25_45.Slope.BS(subjectsBS,1),Data_25_45.Slope.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelSh),1),Data_25_45.Slope.DeletedSharp(intersect(subjectsBS,subjectsDelSh),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelSh),1),Data_25_45.Slope.DeletedSharp(intersect(subjectsBS,subjectsDelSh),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelSh),1)) - mean(Data_25_45.Slope.DeletedSharp(intersect(subjectsBS,subjectsDelSh),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('BS vs DelFuzz')
-[p,h,stats] = ranksum(BS(subjectsBS,2),DeletedFuzzy(subjectsDelFuzz,2))
-[p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),2)) 
+% [p,h,stats] = ranksum(Data_25_45.Slope.BS(subjectsBS,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelFuzz),1)) - mean(Data_25_45.Slope.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Occ vs DelSh')
-[p,h,stats] = ranksum(Occluded(subjectsOcc,2),DeletedSharp(subjectsDelSh,2)) 
-[p,h,stats] = signrank(Occluded(intersect(subjectsOcc,subjectsDelSh),2),DeletedSharp(intersect(subjectsOcc,subjectsDelSh),2)) 
+% [p,h,stats] = ranksum(Data_25_45.Slope.Occluded(subjectsOcc,1),Data_25_45.Slope.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelSh),1),Data_25_45.Slope.DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelSh),1),Data_25_45.Slope.DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelSh),1)) - mean(Data_25_45.Slope.DeletedSharp(intersect(subjectsOcc,subjectsDelSh),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('Occ vs DelFuzz')
-[p,h,stats] = ranksum(Occluded(subjectsOcc,2),DeletedFuzzy(subjectsDelFuzz,2)) 
-[p,h,stats] = signrank(Occluded(intersect(subjectsOcc,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),2)) 
+% [p,h,stats] = ranksum(Data_25_45.Slope.Occluded(subjectsOcc,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelFuzz),1)) - mean(Data_25_45.Slope.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
 
 disp('DelSh vs DelFuzz')
-[p,h,stats] = ranksum(DeletedSharp(subjectsDelSh,2),DeletedFuzzy(subjectsDelFuzz,2)) 
-[p,h,stats] = signrank(DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),2)) 
+% [p,h,stats] = ranksum(Data_25_45.Slope.DeletedSharp(subjectsDelSh,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_25_45.Slope.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1),'method','approximate') 
+[H,P,~,STATS] = ttest(Data_25_45.Slope.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1),Data_25_45.Slope.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1))
+%for bayes
+raweffect = mean(Data_25_45.Slope.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),1)) - mean(Data_25_45.Slope.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+%%%%%
 
 
 
-%% make boxplot for slopes
-figure; bx = boxplot(Alldatatoplot,groups,'Notch','on', 'MedianStyle', 'line');
+%% significant diffs for PSEs medians for 0.20 - 0.60
+
+disp('Intact vs BS')
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.BS(subjectsBS,1)) %independent samples
+[p,h,stats] = signrank(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1),Data_20_60.Slope.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1)) %paired samples
+[H,P,~,STATS] = ttest(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1),Data_20_60.Slope.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1))- mean(Data_20_60.Slope.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+       
+disp('Intact vs Occ')
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1),Data_20_60.Slope.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1),Data_20_60.Slope.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1))- mean(Data_20_60.Slope.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Intact vs DelSh')
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.DeletedSharp(subjectsDelSh,1))
+[p,h,stats] = signrank(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1),Data_20_60.Slope.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1),'method', 'approximate')
+[H,P,~,STATS] = ttest(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1),Data_20_60.Slope.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1))- mean(Data_20_60.Slope.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Intact vs DelFuzz')
+% [p,h,stats] = ranksum(Data_25_45.Slope.Intact(subjectsIntact,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1),'method', 'approximate')
+[H,P,~,STATS] = ttest(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.Slope.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs Occ')
+% [p,h,stats] = ranksum(Data_25_45.Slope.BS(subjectsBS,1),Data_25_45.Slope.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1),Data_20_60.Slope.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1),Data_20_60.Slope.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1))- mean(Data_20_60.Slope.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('BS vs DelSh')
+% [p,h,stats] = ranksum(Data_25_45.Slope.BS(subjectsBS,1),Data_25_45.Slope.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1),Data_20_60.Slope.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1),Data_20_60.Slope.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1))- mean(Data_20_60.Slope.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+
+disp('BS vs DelFuzz')
+% [p,h,stats] = ranksum(Data_25_45.Slope.BS(subjectsBS,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.Slope.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occ vs DelSh')
+% [p,h,stats] = ranksum(Data_25_45.Slope.Occluded(subjectsOcc,1),Data_25_45.Slope.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1),Data_20_60.Slope.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1),Data_20_60.Slope.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1))- mean(Data_20_60.Slope.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('Occ vs DelFuzz')
+% [p,h,stats] = ranksum(Data_25_45.Slope.Occluded(subjectsOcc,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.Slope.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+
+disp('DelSh vs DelFuzz')
+% [p,h,stats] = ranksum(Data_25_45.Slope.DeletedSharp(subjectsDelSh,1),Data_25_45.Slope.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Data_20_60.Slope.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1),'method', 'approximate') 
+[H,P,~,STATS] = ttest(Data_20_60.Slope.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1),Data_20_60.Slope.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1))
+%for bayes
+raweffect = mean(Data_20_60.Slope.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1))- mean(Data_20_60.Slope.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37),1))
+SE = raweffect/STATS.tstat
+corrected_SE = SE*(1 + 20/(STATS.df*STATS.df)) %for small sample sizes <30
+%%%%%%%%%%% 
+
+%% significant diffs for PSEs medians for combined groups
+
+%  data structures are getting a bit complicated, extract data first and then perform stats, for better readability
+
+Intact_for_IntvsBS = [Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsBS)); Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsBS20_60-37))];
+BS_for_IntvsBS = [Data_25_45.Slope.BS(intersect(subjectsIntact,subjectsBS)); Data_20_60.Slope.BS(intersect(subjectsIntact20_60-37,subjectsBS20_60-37))];
+
+Intact_for_IntvsOcc = [Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsOcc)); Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37))];
+Occ_for_IntvsOcc = [Data_25_45.Slope.Occluded(intersect(subjectsIntact,subjectsOcc)); Data_20_60.Slope.Occluded(intersect(subjectsIntact20_60-37,subjectsOcc20_60-37))];
+
+Intact_for_IntvsDelSh = [Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelSh)); Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37))];
+DelSh_forIntvsDelSh = [Data_25_45.Slope.DeletedSharp(intersect(subjectsIntact,subjectsDelSh)); Data_20_60.Slope.DeletedSharp(intersect(subjectsIntact20_60-37,subjectsDelSh20_60-37))];
+
+Intact_for_IntvsDelFuzz = [Data_25_45.Slope.Intact(intersect(subjectsIntact,subjectsDelFuzz)); Data_20_60.Slope.Intact(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_IntvsDelFuzz = [Data_25_45.Slope.DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz)); Data_20_60.Slope.DeletedFuzzy(intersect(subjectsIntact20_60-37,subjectsDelFuzz20_60-37))];
+
+BS_for_BSvsOcc = [Data_25_45.Slope.BS(intersect(subjectsBS,subjectsOcc)); Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsOcc20_60-37))];
+Occ_for_BSvsOcc = [Data_25_45.Slope.Occluded(intersect(subjectsBS,subjectsOcc)); Data_20_60.Slope.Occluded(intersect(subjectsBS20_60-37,subjectsOcc20_60-37))];
+
+BS_for_BSvsDelSh = [Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelSh)); Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37))];
+DelSh_for_BSvsDelSh = [Data_25_45.Slope.DeletedSharp(intersect(subjectsBS,subjectsDelSh)); Data_20_60.Slope.DeletedSharp(intersect(subjectsBS20_60-37,subjectsDelSh20_60-37))];
+
+BS_for_BSvsDelFuzz = [Data_25_45.Slope.BS(intersect(subjectsBS,subjectsDelFuzz)); Data_20_60.Slope.BS(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_BSvsDelFuzz = [Data_25_45.Slope.DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz)); Data_20_60.Slope.DeletedFuzzy(intersect(subjectsBS20_60-37,subjectsDelFuzz20_60-37))];
+
+Occ_for_OccvsDelSh = [Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelSh)); Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37))];
+DelSh_OccvsDelSh = [Data_25_45.Slope.DeletedSharp(intersect(subjectsOcc,subjectsDelSh)); Data_20_60.Slope.DeletedSharp(intersect(subjectsOcc20_60-37,subjectsDelSh20_60-37))];
+
+Occ_for_OccvsDelFuzz = [Data_25_45.Slope.Occluded(intersect(subjectsOcc,subjectsDelFuzz)); Data_20_60.Slope.Occluded(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_OccvsDelFuzz = [Data_25_45.Slope.DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz)); Data_20_60.Slope.DeletedFuzzy(intersect(subjectsOcc20_60-37,subjectsDelFuzz20_60-37))];
+
+DelSh_for_DelShvsDelFuzz = [Data_25_45.Slope.DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz)); Data_20_60.Slope.DeletedSharp(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37))];
+DelFuzz_for_DelShvsDelFuzz = [Data_25_45.Slope.DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz)); Data_20_60.Slope.DeletedFuzzy(intersect(subjectsDelSh20_60-37,subjectsDelFuzz20_60-37))];
+
+
+disp('Intact vs BS')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.BS(subjectsBS,1)) %independent samples
+[p,h,stats] = signrank(Intact_for_IntvsBS, BS_for_IntvsBS) %paired samples
+       
+disp('Intact vs Occ')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(Intact_for_IntvsOcc, Occ_for_IntvsOcc) 
+
+disp('Intact vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1))
+[p,h,stats] = signrank(Intact_for_IntvsDelSh, DelSh_forIntvsDelSh)
+
+disp('Intact vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Intact(subjectsIntact,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(Intact_for_IntvsDelFuzz, DelFuzz_for_IntvsDelFuzz)
+
+disp('BS vs Occ')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.Occluded(subjectsOcc,1)) 
+[p,h,stats] = signrank(BS_for_BSvsOcc,Occ_for_BSvsOcc) 
+
+disp('BS vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(BS_for_BSvsDelSh, DelSh_for_BSvsDelSh) 
+
+disp('BS vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.BS(subjectsBS,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1))
+[p,h,stats] = signrank(BS_for_BSvsDelFuzz, DelFuzz_for_BSvsDelFuzz) 
+
+disp('Occ vs DelSh')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Occluded(subjectsOcc,1),Data_20_60.PSE.DeletedSharp(subjectsDelSh,1)) 
+[p,h,stats] = signrank(Occ_for_OccvsDelSh, DelSh_OccvsDelSh) 
+
+disp('Occ vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.Occluded(subjectsOcc,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(Occ_for_OccvsDelFuzz, DelFuzz_for_OccvsDelFuzz) 
+
+disp('DelSh vs DelFuzz')
+% [p,h,stats] = ranksum(Data_20_60.PSE.DeletedSharp(subjectsDelSh,1),Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz,1)) 
+[p,h,stats] = signrank(DelSh_for_DelShvsDelFuzz, DelFuzz_for_DelShvsDelFuzz) 
+
+
+% % disp('Intact vs BS')
+% % [p,h,stats] = ranksum(Intact(subjectsIntact,2),BS(subjectsBS,2))
+% % [p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsBS),2),BS(intersect(subjectsIntact,subjectsBS),2))
+% %        
+% % disp('Intact vs Occ')
+% % [p,h,stats] = ranksum(Intact(subjectsIntact,2),Occluded(subjectsOcc,2)) 
+% % [p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsOcc),2),Occluded(intersect(subjectsIntact,subjectsOcc),2)) 
+% % 
+% % disp('Intact vs DelSh')
+% % [p,h,stats] = ranksum(Intact(subjectsIntact,2),DeletedSharp(subjectsDelSh,2))
+% % [p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsDelSh),2),DeletedSharp(intersect(subjectsIntact,subjectsDelSh),2))
+% % 
+% % disp('Intact vs DelFuzz')
+% % [p,h,stats] = ranksum(Intact(subjectsIntact,2),DeletedFuzzy(subjectsDelFuzz,2))
+% % [p,h,stats] = signrank(Intact(intersect(subjectsIntact,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsIntact,subjectsDelFuzz),2))
+% % 
+% % disp('BS vs Occ')
+% % [p,h,stats] = ranksum(BS(subjectsBS,2),Occluded(subjectsOcc,2)) 
+% % [p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsOcc),2),Occluded(intersect(subjectsBS,subjectsOcc),2)) 
+% % 
+% % disp('BS vs DelSh')
+% % [p,h,stats] = ranksum(BS(subjectsBS,2),DeletedSharp(subjectsDelSh,2)) 
+% % [p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsDelSh),2),DeletedSharp(intersect(subjectsBS,subjectsDelSh),2))
+% % 
+% % disp('BS vs DelFuzz')
+% % [p,h,stats] = ranksum(BS(subjectsBS,2),DeletedFuzzy(subjectsDelFuzz,2))
+% % [p,h,stats] = signrank(BS(intersect(subjectsBS,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsBS,subjectsDelFuzz),2)) 
+% % 
+% % disp('Occ vs DelSh')
+% % [p,h,stats] = ranksum(Occluded(subjectsOcc,2),DeletedSharp(subjectsDelSh,2)) 
+% % [p,h,stats] = signrank(Occluded(intersect(subjectsOcc,subjectsDelSh),2),DeletedSharp(intersect(subjectsOcc,subjectsDelSh),2)) 
+% % 
+% % disp('Occ vs DelFuzz')
+% % [p,h,stats] = ranksum(Occluded(subjectsOcc,2),DeletedFuzzy(subjectsDelFuzz,2)) 
+% % [p,h,stats] = signrank(Occluded(intersect(subjectsOcc,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsOcc,subjectsDelFuzz),2)) 
+% % 
+% % disp('DelSh vs DelFuzz')
+% % [p,h,stats] = ranksum(DeletedSharp(subjectsDelSh,2),DeletedFuzzy(subjectsDelFuzz,2)) 
+% % [p,h,stats] = signrank(DeletedSharp(intersect(subjectsDelSh,subjectsDelFuzz),2),DeletedFuzzy(intersect(subjectsDelSh,subjectsDelFuzz),2)) 
+
+
+
+%% make boxplot for slopes 0.25 - 0.45
+figure; bx = boxplot(Alldatatoplot25_45,groups,'Notch','off', 'MedianStyle', 'line');
 ax = gca;
 
 h = get(bx(5,:),{'XData','YData'});
@@ -669,28 +2084,104 @@ set(lines,'linewidth',3)
 % patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
 hold on
 % plot([0 6],[0.3 0.3], 'g--')
-plotspreadhandles = plotSpread(individdata,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+plotspreadhandles = plotSpread(individdata25_45,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
 set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
 
 % set(findall(3,'type','line','color','k'),'markerSize',16)
 set(gca, 'fontsize',16);
 set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
 set(gca, 'TickDir', 'out')
-ylabel('Slope')
-% axis([0 6 0.2 0.7])
+ylabel('Slope for 0.25 - 0.45 group')
+axis([0 6 -5 90])
 set(gcf, 'Position', [200, 200, 1600, 900])
+
+
+%% make boxplot for slopes 0.20 - 0.60
+figure; bx = boxplot(Alldatatoplot20_60,groups,'Notch','off', 'MedianStyle', 'line');
+ax = gca;
+
+h = get(bx(5,:),{'XData','YData'});
+for k=1:size(h,1)
+   patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+   patch(h{k,1},h{k,2},'y');
+end
+ax.Children = ax.Children([end 1:end-1]);
+
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+% set(lines,'linewidth',1, 'Color', 'r');
+set(lines,'linewidth',3)
+
+% h = findobj(gca,'Tag','Box');
+% for j=1:length(h)
+%    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+% end
+% boxplot(Alldatatoplot,groups,'Notch','on')
+
+% patch(get(h,'XData'),get(h,'YData'),'r')
+% patch(groups,Alldatatoplot,'r')
+% patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+hold on
+% plot([0 6],[0.3 0.3], 'g--')
+plotspreadhandles = plotSpread(individdata20_60,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+
+% set(findall(3,'type','line','color','k'),'markerSize',16)
+set(gca, 'fontsize',16);
+set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
+set(gca, 'TickDir', 'out')
+ylabel('Slope for 0.20 - 0.60 group')
+axis([0 6 155 250])
+axis([0 6 -5 90])
+set(gcf, 'Position', [200, 200, 1600, 900])
+
+%% make boxplot for slopes 0.20 - 0.60
+figure; bx = boxplot(Alldatatoplot_combined,groups,'Notch','off', 'MedianStyle', 'line');
+ax = gca;
+
+h = get(bx(5,:),{'XData','YData'});
+for k=1:size(h,1)
+   patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
+   patch(h{k,1},h{k,2},'y');
+end
+ax.Children = ax.Children([end 1:end-1]);
+
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+% set(lines,'linewidth',1, 'Color', 'r');
+set(lines,'linewidth',3)
+
+% h = findobj(gca,'Tag','Box');
+% for j=1:length(h)
+%    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
+% end
+% boxplot(Alldatatoplot,groups,'Notch','on')
+
+% patch(get(h,'XData'),get(h,'YData'),'r')
+% patch(groups,Alldatatoplot,'r')
+% patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
+hold on
+% plot([0 6],[0.3 0.3], 'g--')
+plotspreadhandles = plotSpread(individdata_combined,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
+set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
+
+% set(findall(3,'type','line','color','k'),'markerSize',16)
+set(gca, 'fontsize',16);
+set(gca,'XTickLabel', {'Intact', 'Blindspot', 'Occluded', 'Deleted Sharp', 'Deleted Fuzzy'}) 
+set(gca, 'TickDir', 'out')
+ylabel('Slope for 0.20 - 0.60 group')
+axis([0 6 -5 90])
+set(gcf, 'Position', [200, 200, 1600, 900])
+
 
 
 %% VVIQ PSE
 
-removeoutliers = 0;
-
-% % %outliers
-% subjectsIntactOutliers = [];
-% subjectsBSOutliers = [19 26];
-% subjectsOccOutliers = [1 6 17 19 20 27];
-% subjectsDelShOutliers = [1 6 9 19 20 27];
-% subjectsDelFuzzOutliers = [1 19 20 27];
+% % 
+% % % %outliers
+% % subjectsIntactOutliers = [];
+% % subjectsBSOutliers = [19 26];
+% % subjectsOccOutliers = [1 6 17 19 20 27];
+% % subjectsDelShOutliers = [1 6 9 19 20 27];
+% % subjectsDelFuzzOutliers = [1 19 20 27];
 % 
 % % or keep everything 
 % subjectsIntact = [1:27];
@@ -700,60 +2191,157 @@ removeoutliers = 0;
 % subjectsDelFuzz = [1:27];
 
 
-if removeoutliers %overwrite the sublists
-    subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
-    subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
-    subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
-    subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
-    subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+
+
+removeoutliers = 1;
+
+%%% 25-45 or 20-60 analysis?
+analysis_group = 20; %25 or 20
+
+if analysis_group == 25
+    allsubs = [1:38]; %all good subs for 25-45
+elseif analysis_group == 20
+    allsubs = [38:64]; %all good subs for 20-60
 end
+
+% %outliers (all bad subs for both 25-45 and 20-60)
+subjectsIntactOutliers = [1, 3, 13, 44, 47, 56, 57, 59];
+subjectsBSOutliers = [1, 3, 19, 26, 29, 32, 36, 41, 44, 48, 50, 56, 57, 59];
+subjectsOccOutliers = [1, 8, 12, 13, 17, 19, 20, 22, 27, 29, 32, 36, 37, 38, 40, 44, 45, 48, 50, 52, 56, 57, 59, 64];
+subjectsDelShOutliers = [1, 16, 19, 20, 26, 27, 29, 32, 37, 38, 40, 41, 42, 44, 45, 46, 48, 56, 57, 59, 64];
+subjectsDelFuzzOutliers = [1, 18, 19, 20, 27, 29, 31, 32, 37, 38, 40, 44, 45, 50, 53, 56, 57, 59, 64];
+
+
+if removeoutliers %overwrite the sublists
+    
+    
+   if analysis_group == 20
+        
+        % everything
+        subjectsIntact20_60 = [allsubs];
+        subjectsBS20_60 = [allsubs];
+        subjectsOcc20_60 = [allsubs];
+        subjectsDelSh20_60 = [allsubs];
+        subjectsDelFuzz20_60 = [allsubs];
+        
+        
+        subjectsIntact20_60 = setdiff(subjectsIntact20_60, subjectsIntactOutliers);
+        subjectsBS20_60 = setdiff(subjectsBS20_60,subjectsBSOutliers);
+        subjectsOcc20_60 = setdiff(subjectsOcc20_60, subjectsOccOutliers);
+        subjectsDelSh20_60 = setdiff(subjectsDelSh20_60,subjectsDelShOutliers);
+        subjectsDelFuzz20_60 = setdiff(subjectsDelFuzz20_60, subjectsDelFuzzOutliers);
+   
+   else  
+        % everything
+        subjectsIntact = [allsubs];
+        subjectsBS = [allsubs];
+        subjectsOcc = [allsubs];
+        subjectsDelSh = [allsubs];
+        subjectsDelFuzz = [allsubs];
+        
+        subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
+        subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
+        subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
+        subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
+        subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+   end
+    
+end
+
+
+% 
+% if removeoutliers %overwrite the sublists
+%     subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
+%     subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
+%     subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
+%     subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
+%     subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
+% end
+
+
+% calculate bias for all subs
+bias_BS =  [Data_20_60.PSE.BS(subjectsBS20_60-37); Data_25_45.PSE.BS(subjectsBS)] - [Data_20_60.PTE(subjectsBS20_60-37); Data_25_45.PTE(subjectsBS)];
+VVIQ_BS = VVIQ([subjectsBS20_60, subjectsBS])
+bias_Occ = [Data_20_60.PSE.Occluded(subjectsOcc20_60-37);Data_25_45.PSE.Occluded(subjectsOcc)] - [Data_20_60.PTE(subjectsOcc20_60-37);Data_25_45.PTE(subjectsOcc)];
+VVIQ_Occ = VVIQ([subjectsOcc20_60, subjectsOcc])
+bias_DelSh =  [Data_20_60.PSE.DeletedSharp(subjectsDelSh20_60-37); Data_25_45.PSE.DeletedSharp(subjectsDelSh)] - [Data_20_60.PTE(subjectsDelSh20_60-37);Data_25_45.PTE(subjectsDelSh)];
+VVIQ_DelSh = VVIQ([subjectsDelSh20_60, subjectsDelSh])
+bias_DelFuzz = [Data_20_60.PSE.DeletedFuzzy(subjectsDelFuzz20_60-37); Data_25_45.PSE.DeletedFuzzy(subjectsDelFuzz)] - [Data_20_60.PTE(subjectsDelFuzz20_60-37);Data_25_45.PTE(subjectsDelFuzz)];
+VVIQ_DelFuzz = VVIQ([subjectsDelFuzz20_60, subjectsDelFuzz])
 %% VVIQ plot BS
-[r p] = corrcoef(VVIQ(subjectsBS), BS(subjectsBS,1), 'rows','complete') %correlation excluding NaNs
-[rspearman pspearman] = corr(VVIQ(subjectsBS), BS(subjectsBS,1), 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
-figure;scatter(VVIQ(subjectsBS), BS(subjectsBS,1), 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
+[r p] = corrcoef(VVIQ_BS, bias_BS, 'rows','complete') %correlation excluding NaNs
+[rspearman pspearman] = corr(VVIQ_BS, bias_BS, 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
+figure;scatter(VVIQ_BS, bias_BS, 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
 set(gca, 'TickDir', 'out')
 set(gca, 'fontsize',16);
-ylabel('PSE')
+ylabel('Bias BS')
 xlabel('Imagery Strength')
+axis([1 5 -0.3 0.5])
 hold on
 h = lsline;
 set(h, 'LineWidth',3)
 title(sprintf('r = %f; p = %f',r(1,2),p(1,2)))
 
+bootstraptimes = 10000;
+%try some bootstrap
+% for sb_av = 2:3 %for sb and av
+%     for x = 1:3 %for condition 1 to 3
+%         for c = 1:nSubs, %for each subject
+           collboot = bootstrp(bootstraptimes, @(bootr)[corrcoef(bootr,'rows','complete')], [VVIQ_BS, bias_BS]);
+            collboot = sort(collboot(:,2));
+            collbootZ = fisherztransform(collboot);
+            submean = collbootZ(bootstraptimes*.5);
+%             testindresults(c) = submean(c,x,sb_av); % pc(:,2) sb, 3 = av
+%         end
+ 
+%         testboot = bootstrp(bootstraptimes,@mean,testindresults); %bootstrap the means 5000 times
+%         testboot = sort(testboot); %sort this
+%         testboot(bootstraptimes*.025); %test at alpha level 0.05. 0.025 because it's two-sided test
+        values = {[collbootZ(bootstraptimes*.025) collbootZ(bootstraptimes*.5) collbootZ(bootstraptimes*.975)]}; %save the mean and CI
+%         themean(sb_av,x) = testboot(bootstraptimes*.5); %mean
+        ci_lo = submean - [collbootZ(bootstraptimes*.025)]; %mean - 2.5th %tile = low CI
+        ci_hi = collbootZ(bootstraptimes*.975) - submean; % 97.5th %tile = high CI
+%     end %cond1/2
+% end %sb/av
+
+
 %% VVIQ plot occl
-[r p] = corrcoef(VVIQ(subjectsOcc), Occluded(subjectsOcc,1), 'rows','complete') %correlation excluding NaNs
-[rspearman pspearman] = corr(VVIQ(subjectsOcc), Occluded(subjectsOcc,1), 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
-figure;scatter(VVIQ(subjectsOcc), Occluded(subjectsOcc,1), 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
+[r p] = corrcoef(VVIQ_Occ, bias_Occ, 'rows','complete') %correlation excluding NaNs
+[rspearman pspearman] = corr(VVIQ_Occ, bias_Occ, 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
+figure;scatter(VVIQ_Occ, bias_Occ, 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
 set(gca, 'TickDir', 'out')
 set(gca, 'fontsize',16);
-ylabel('PSE')
+ylabel('Bias Occ')
 xlabel('Imagery Strength')
+axis([1 5 -0.3 0.5])
 hold on
 h = lsline;
 set(h, 'LineWidth',3)
 title(sprintf('r = %f; p = %f',r(1,2),p(1,2)))
 
 %% VVIQ plot delet sharp
-[r p] = corrcoef(VVIQ(subjectsDelSh), DeletedSharp(subjectsDelSh,1), 'rows','complete') %correlation excluding NaNs
-[rspearman pspearman] = corr(VVIQ(subjectsDelSh), DeletedSharp(subjectsDelSh,1), 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
-figure;scatter(VVIQ(subjectsDelSh), DeletedSharp(subjectsDelSh,1), 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
+[r p] = corrcoef(VVIQ_DelSh, bias_DelSh, 'rows','complete') %correlation excluding NaNs
+[rspearman pspearman] = corr(VVIQ_DelSh, bias_DelSh, 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
+figure;scatter(VVIQ_DelSh, bias_DelSh, 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
 set(gca, 'TickDir', 'out')
 set(gca, 'fontsize',16);
-ylabel('PSE')
+ylabel('Bias DelSh')
 xlabel('Imagery Strength')
+axis([1 5 -0.3 0.5])
 hold on
 h = lsline;
 set(h, 'LineWidth',3)
 title(sprintf('r = %f; p = %f',r(1,2),p(1,2)))
 
 %% VVIQ deleted fuzzy
-[r p] = corrcoef(VVIQ(subjectsDelFuzz), DeletedFuzzy(subjectsDelFuzz,1), 'rows','complete') %correlation excluding NaNs
-[rspearman pspearman] = corr(VVIQ(subjectsDelFuzz), DeletedFuzzy(subjectsDelFuzz,1), 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
-figure;scatter(VVIQ(subjectsDelFuzz), DeletedFuzzy(subjectsDelFuzz,1), 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
+[r p] = corrcoef(VVIQ_DelFuzz, bias_DelFuzz, 'rows','complete') %correlation excluding NaNs
+[rspearman pspearman] = corr(VVIQ_DelFuzz, bias_DelFuzz, 'rows','complete', 'type', 'Spearman') %correlation excluding NaNs)
+figure;scatter(VVIQ_DelFuzz, bias_DelFuzz, 'MarkerFaceColor','y', 'MarkerEdgeColor','k')
 set(gca, 'TickDir', 'out')
 set(gca, 'fontsize',16);
-ylabel('PSE')
+ylabel('Bias DelFuzz')
 xlabel('Imagery Strength')
+axis([1 5 -0.3 0.5])
 hold on
 h = lsline;
 set(h, 'LineWidth',3)
@@ -1108,164 +2696,9 @@ title(sprintf('r = %f; p = %f',r(1,2),p(1,2)))
 
 
 
-%% BS sizes, perceived cpd vs actual cpd in gap conditions
-
-
-removeoutliers = 1;
-
-% % %outliers
-% subjectsIntactOutliers = [];
-% subjectsBSOutliers = [19 26];
-% subjectsOccOutliers = [1 6 17 19 20 27];
-% subjectsDelShOutliers = [1 6 9 19 20 27];
-% subjectsDelFuzzOutliers = [1 19 20 27];
-% 
-% everything 
-subjectsIntact = [1:nSubs];
-subjectsBS = [1:nSubs];
-subjectsOcc = [1:nSubs];
-subjectsDelSh = [1:nSubs];
-subjectsDelFuzz = [1:nSubs];
-
-if removeoutliers %overwrite the sublists
-    subjectsIntact = setdiff(subjectsIntact, subjectsIntactOutliers);
-    subjectsBS = setdiff(subjectsBS,subjectsBSOutliers);
-    subjectsOcc = setdiff(subjectsOcc, subjectsOccOutliers);
-    subjectsDelSh = setdiff(subjectsDelSh,subjectsDelShOutliers);
-    subjectsDelFuzz = setdiff(subjectsDelFuzz, subjectsDelFuzzOutliers);
-end
-
-
-%%
-% BS size
-BS_Size(:,1);
-
-Barlength = BS_Size(:,1) + 10; %in deg, 10 deg of visible bar outside BS
-
-NcyclesControl = Barlength * 0.3; %control was always 0.3 cpd
-
-Perceived_cpd_BS = BS(subjectsBS,1);
-
-Perceived_cpd_Occ = Occluded(subjectsOcc,1);
-
-Perceived_cpd_DelSh = DeletedSharp(subjectsDelSh,1);
-
-Perceived_cpd_DelFuzz = DeletedFuzzy(subjectsDelFuzz,1);
-
-cpd_veridical = NcyclesControl/10; %10 deg of visible bar
-
-bias_BS =  Perceived_cpd_BS - cpd_veridical(subjectsBS);
-bias_Occ = Perceived_cpd_Occ - cpd_veridical(subjectsOcc);
-bias_DelSh =  Perceived_cpd_DelSh - cpd_veridical(subjectsDelSh);
-bias_DelFuzz = Perceived_cpd_DelFuzz - cpd_veridical(subjectsDelFuzz);
-
-
-medianbias_BS = median(bias_BS)
-medianbias_Occ = median(bias_Occ)
-medianbias_DelSh = median(bias_DelSh)
-medianbias_DelFuzz = median(bias_DelFuzz)
-
-%%
-disp('BS')
-[P,H,STATS] = ranksum(Perceived_cpd_BS,cpd_veridical(subjectsBS))
-[P,H,STATS] = signrank(Perceived_cpd_BS,cpd_veridical(subjectsBS))
-disp('Occluded')
-[P,H,STATS] = ranksum(Perceived_cpd_Occ,cpd_veridical(subjectsOcc))
-[P,H,STATS] = signrank(Perceived_cpd_Occ,cpd_veridical(subjectsOcc))
-disp('DelSharp')
-[P,H,STATS] = ranksum(Perceived_cpd_DelSh,cpd_veridical(subjectsDelSh))
-[P,H,STATS] = signrank(Perceived_cpd_DelSh,cpd_veridical(subjectsDelSh))
-disp('DelFuzzy')
-[P,H,STATS] = ranksum(Perceived_cpd_DelFuzz,cpd_veridical(subjectsDelFuzz))
-[P,H,STATS] = signrank(Perceived_cpd_DelFuzz,cpd_veridical(subjectsDelFuzz))
 
 
 
-figure; plot([1 2], [Perceived_cpd_BS cpd_veridical(subjectsBS)])
-axis([0.5 2.5 0.2 1])
-ylabel('CPD')
-% xlabel('VVIQ')
-set(gca,'XTickLabel', {'', 'Perceived cpd BS','', 'cpd veridical',''}) 
-
-figure; plot([1 2], [Perceived_cpd_Occ cpd_veridical(subjectsOcc)])
-axis([0.5 2.5 0.2 1])
-ylabel('CPD')
-% xlabel('VVIQ')
-set(gca,'XTickLabel', {'','Perceived cpd Occ', '','cpd veridical'}) 
-
-figure; plot([1 2], [Perceived_cpd_DelSh cpd_veridical(subjectsDelSh)])
-axis([0.5 2.5 0.2 1])
-ylabel('CPD')
-% xlabel('VVIQ')
-set(gca,'XTickLabel', {'','Perceived cpd DelSh','', 'cpd veridical'}) 
-
-figure; plot([1 2], [Perceived_cpd_DelFuzz cpd_veridical(subjectsDelFuzz)])
-axis([0.5 2.5 0.2 1])
-ylabel('CPD')
-% xlabel('VVIQ')
-set(gca,'XTickLabel', {'','Perceived cpd DelFuzz', '','cpd veridical'}) 
-
-
-% boxplot figures
-
-for i = 1:4
-    switch i
-        case 1
-            X = [Perceived_cpd_BS cpd_veridical(subjectsBS)];
-            Label = {'PSE BS', 'PTE BS'};
-        case 2
-            X = [Perceived_cpd_Occ cpd_veridical(subjectsOcc)];
-            Label = {'PSE Occ', 'PTE Occ'};
-        case 3
-            X = [Perceived_cpd_DelSh cpd_veridical(subjectsDelSh)];
-            Label = {'PSE DelSh', 'PTE DelSh'};
-        case 4
-            X = [Perceived_cpd_DelFuzz cpd_veridical(subjectsDelFuzz)];
-            Label = {'PSE DelFuzz', 'PTE DelFuzz'};
-    end
-        
-        
-    figure; bx = boxplot(X,'Notch','on', 'MedianStyle', 'line');
-    ax = gca;
-    
-    h = get(bx(5,:),{'XData','YData'});
-    for k=1:size(h,1)
-        patch(h{k,1},h{k,2},[0.4 0.8 0.85]);
-        patch(h{k,1},h{k,2},'y');
-    end
-    ax.Children = ax.Children([end 1:end-1]);
-    
-    lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-    % set(lines,'linewidth',1, 'Color', 'r');
-    set(lines,'linewidth',3)
-    
-    % h = findobj(gca,'Tag','Box');
-    % for j=1:length(h)
-    %    patch(get(h(j),'XData'),get(h(j),'YData'),'y');
-    % end
-    % boxplot(Alldatatoplot,groups,'Notch','on')
-    
-    % patch(get(h,'XData'),get(h,'YData'),'r')
-    % patch(groups,Alldatatoplot,'r')
-    % patch(get(h,'XData'),get(h,'YData'),color(length(h)),'FaceAlpha',.5)
-    hold on
-    plot([0 3],[0.3 0.3], 'g--')
-    plotspreadhandles = plotSpread(X,'distributionMarkers', 'o', 'distributionColors', 'k','spreadWidth', 0.5);
-    set(plotspreadhandles{1},'MarkerFaceColor','k', 'MarkerSize',5);
-    
-    
-    plot([1 2], X)
-    
-    
-    % set(findall(3,'type','line','color','k'),'markerSize',16)
-    set(gca, 'fontsize',16);
-    set(gca,'XTickLabel', Label)
-    set(gca, 'TickDir', 'out')
-    ylabel('PSE')
-    axis([0.7 2.3 0.25 1.1])
-    set(gcf, 'Position', [200, 200, 900, 900])
-    
-end
 %% ??
 
 figure; plot(Perceived_cpd_BS, cpd_veridical(subjectsBS),'MarkerFaceColor','y', 'MarkerEdgeColor','k')
