@@ -20,7 +20,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 % goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
 goggledelay = 0.090 %seconds
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -714,7 +714,7 @@ for Sequence = 1:nSeq
                 % aperture image. The noise image will shine through in areas
                 % of the aperture image where its alpha value is zero (i.e.
                 % transparent):
-%                 Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
+                Screen('DrawTexture', window, aperture(currSequenceOrder(Stimulus)), [], [], [], filterMode); % call up the right texture for the curr stim
                 
                 if stereoModeOn
                     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT

@@ -10,7 +10,7 @@ stereoMode = 4;        % 4 for split screen, 10 for two screens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% GOGGLES ON/OFF for debugging %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-togglegoggle = 0; % 0 goggles off for debug; 1 = goggles on for real expt
+togglegoggle = 1; % 0 goggles off for debug; 1 = goggles on for real expt
 % goggledelay = 0.020 %seconds %on lab monitor HP ProDisplay P202
 goggledelay = 0.070 %seconds
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,7 +24,7 @@ debugmode = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%% BLIND SPOT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-bs_eye = 'left'   %% Right eye has the blind spot. Left fixation spot
+bs_eye = 'right'   %% Right eye has the blind spot. Left fixation spot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -379,7 +379,11 @@ if stereoModeOn
     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
 end
 Screen('FillOval', window, [0.2 0.2 0.2], oval_rect_centred);
-DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the + \n \n Waiting for Experimenter Key press...', 'center', 'center', textcolor, [],[]);
+if strcmp(bs_eye, 'left')
+    DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your RIGHT eye and fixating on the + \n \n Waiting for Experimenter Key press...', 'center', 'center', textcolor, [],[]);
+else
+    DrawFormattedText(window, 'This is the location of blindspot \n \n Check you cannot see it \n \n by closing your LEFT eye and fixating on the + \n \n Waiting for Experimenter Key press...', 'center', 'center', textcolor, [],[]);
+end
 disp('BS location. Check values and press space')
 
 if stereoModeOn
