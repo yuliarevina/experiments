@@ -72,7 +72,7 @@ textcolor = [0 0 0];
 subCode = input('Enter Subject Code:   ');
 subAge = input('Enter Subject Age in yrs:   ');
 subGender = input('Enter Subject Gender:   ');
-
+feedbackYes = input('Give Feedback?:   ')
 
 filename = sprintf('Data_%s_%s_%s_%s.mat', todaydate, subCode, num2str(subAge), subGender);
 % _______________________________________________________________________
@@ -109,8 +109,8 @@ AssertOpenGL;
 
 PsychImaging('PrepareConfiguration')
 
-PsychImaging('AddTask', 'LeftView', 'DisplayColorCorrection', 'LookupTable');
-PsychImaging('AddTask', 'RightView', 'DisplayColorCorrection', 'LookupTable');
+% PsychImaging('AddTask', 'LeftView', 'DisplayColorCorrection', 'LookupTable');
+% PsychImaging('AddTask', 'RightView', 'DisplayColorCorrection', 'LookupTable');
 
 
 if IsWin
@@ -160,12 +160,12 @@ KbStrokeWait(-1)
 
 % 
 % 
-load CLUT_Station3_1152x864_100Hz_20_Jun_2018.mat
-%clut = 1-clut; %for debug
-PsychColorCorrection('SetLookupTable', window, clut, 'LeftView');
-
-load CLUT_Station2_1152x864_100Hz_18_Jun_2018.mat
-PsychColorCorrection('SetLookupTable', window, clut, 'RightView');
+% load CLUT_Station3_1152x864_100Hz_20_Jun_2018.mat
+% %clut = 1-clut; %for debug
+% PsychColorCorrection('SetLookupTable', window, clut, 'LeftView');
+% 
+% load CLUT_Station2_1152x864_100Hz_18_Jun_2018.mat
+% PsychColorCorrection('SetLookupTable', window, clut, 'RightView');
 % 
 
 % % Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
@@ -805,21 +805,33 @@ rng('shuffle'); % randomize the random number generator. Otherwise
 % add conditions manually because we don't have every combination of
 % parameters so hard to do a loop
 
-conditions = [  repmat([0 0 1], 15, 1); ... % 3 numbers = first 3 columns from above ^
-                repmat([0 0 2], 15, 1); ...
-                repmat([0 2 1], 15, 1); ...
-                repmat([0 1 2], 15, 1); ...
-                repmat([1 0 0], 60, 1); ...
-                repmat([1 3 0], 20, 1); ...
-                repmat([1 3 1], 20, 1); ...
-                repmat([1 3 2], 20, 1); ...
-                repmat([1 2 0], 30, 1); ...
-                repmat([1 1 0], 30, 1); ...
-                repmat([1 1 1], 30, 1); ...
-                repmat([1 2 2], 30, 1)];
+
+% For training it's different:
+%First column
+% 0 = Fellow L
+% 1 = Fellow R
+% 2 = BS L
+% 3 = BS R
+% Second column
+% 0 = No inset
+% 1 = Inset
+% Third column
+% Orientation
+
+% Show each condition 6 times (3 for each orientation
+
+conditions = [  repmat([0 0], 3, 1); ... % 
+                repmat([1 0], 3, 1); ...
+                repmat([2 0], 3, 1); ...
+                repmat([3 0], 3, 1); ...
+                repmat([0 1], 3, 1); ... % 
+                repmat([1 1], 3, 1); ...
+                repmat([2 1], 3, 1); ...
+                repmat([3 1], 3, 1); ...
+                ];
 conditions = repmat(conditions,2, 1)  ;       
-conditions(1:300, 4) = 0; %add orientations
-conditions(301:600, 4) = 90; %add orientations
+conditions(1:24, 3) = 0; %add orientations
+conditions(25:48, 3) = 90; %add orientations
 
 
 % allconds = [condsvector orientationvector];
@@ -878,13 +890,17 @@ Screen('DrawTexture', window, InsetTexture, [], InsetRectLeft, 90) %Inset
 DrawFormattedText(window, 'Left BS inset', 'center', 100, textcolor, [], 1);
 ShowFix()
 
-%draw a blindspot oval to test its location
-oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l];
-oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l);
-% show blind spot
-Screen('FrameOval', window, [1 0.2 0.2], oval_rect_centred);
+% %draw a blindspot oval to test its location
+% oval_rect = [0 0 BS_diameter_h2_l BS_diameter_v_l];
+% oval_rect_centred = CenterRectOnPoint(oval_rect, BS_center_h2_l, BS_center_v_l);
+% % show blind spot
+% Screen('FrameOval', window, [1 0.2 0.2], oval_rect_centred);
 
 Screen('Flip', window)
+%make a screenshot
+imageArray = Screen('GetImage', window); %omitting rect argument means the whole screen is taken
+% imwrite is a Matlab function, not a PTB-3 function
+imwrite(imageArray, 'myscreenshot.jpg');
 KbStrokeWait(-1);
 
 
@@ -954,7 +970,7 @@ Screen('Flip', window)
  
 KbStrokeWait(-1);
 
-
+corrNumber = 0;
 
 for trialN = 1:size(conditions,1)
     
@@ -995,9 +1011,9 @@ for trialN = 1:size(conditions,1)
      
      
      
-     currcondition = conditions(condsorder(trialN),2);
-     currorientation = conditions(condsorder(trialN),4);
-     currinset = conditions(condsorder(trialN),3);
+     currcondition = conditions(condsorder(trialN),1)
+     currorientation = conditions(condsorder(trialN),3)
+     currinset = conditions(condsorder(trialN),2)
      
      
      
@@ -1008,7 +1024,7 @@ for trialN = 1:size(conditions,1)
 %      end
      
      
-     disp(sprintf('Trial type: 0 = Fellow Only; 1 = R BS; 2 = L BS; 3 = Both BS: \n %d | \n Orientation: \n %d | \n Inset 0 = none; 1 = Right; 2 = Left: \n %d',currcondition,currorientation,currinset))
+%      disp(sprintf('Trial type: 0 = Fellow Only; 1 = R BS; 2 = L BS; 3 = Both BS: \n %d | \n Orientation: \n %d | \n Inset 0 = none; 1 = Right; 2 = Left: \n %d',currcondition,currorientation,currinset))
      
      
      
@@ -1027,35 +1043,20 @@ for trialN = 1:size(conditions,1)
         %    draw fixation dot
         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
         
-        if currcondition == 0 % FELLOW ONLY
+        if currcondition == 0 % FELLOW L
             % draw L BS stimulus on the right screen. LEFT inset also goes
             % here
             Screen('CopyWindow', rightFixWin, aperture(1), [], rightScreenRect); %Always Right fix frame because this is right screen
             Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_LEFT); %left BS aperture
             Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, currorientation) % FULL GRATING %Right screen -> LEFT BS position
             Screen('DrawTexture', window, aperture(1), [], [], 0) %right aperture mask
-            if currinset == 2 % LEFT inset
+            if currinset == 1 % LEFT inset
                 Screen('DrawTexture', window, maskTexture1, [], GrayBlobRectLeft, 0) %gray blob
                 Screen('DrawTexture', window, InsetTexture, [], InsetRectLeft, currorientation+90) %Inset
             end
             ShowFix()
-        elseif currcondition == 1 % RIGHT BS
-            % draw R BS stimulus on the right screen
-            % draw L BS stimulus on the right screen (fellow eye stimulation)
-            % either L or R inset to go here as well
-            Screen('CopyWindow', rightFixWin, aperture(1), [], rightScreenRect); %Always Right fix frame because this is right screen
-            Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_LEFT); %Left BS location
-            Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_RIGHT); %R BS location
-            Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, currorientation) % FULL GRATING %Right screen -> LEFT side for BS position
-%             Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, currorientation) % FULL GRATING %Right screen -> RIGHT side for BS position
-            Screen('DrawTexture', window, aperture(1), [], [], 0)%right aperture mask
-            if currinset == 2 % LEFT inset
-                Screen('DrawTexture', window, maskTexture1, [], GrayBlobRectLeft, 0) %gray blob
-                Screen('DrawTexture', window, InsetTexture, [], InsetRectLeft, currorientation+90) %Inset
-            elseif currinset == 1 % RIGHT inset
-                Screen('DrawTexture', window, maskTexture1, [], GrayBlobRectRight, 0) %gray blob
-                Screen('DrawTexture', window, InsetTexture, [], InsetRectRight, currorientation+90) %Inset
-            end
+        elseif currcondition == 1 % Fellow R
+            % Blank
             ShowFix()
         elseif currcondition == 2 % LEFT BS
             % draw L BS stimulus on the left screen
@@ -1065,7 +1066,7 @@ for trialN = 1:size(conditions,1)
             % right screen should just be blank
             ShowFix()
             
-        elseif currcondition == 3 % Both BS
+        elseif currcondition == 3 % BS R
             % draw R BS on the right screen
             Screen('CopyWindow', rightFixWin, aperture(1), [], rightScreenRect); %Always Right fix frame because this is right screen
             Screen('FillOval', aperture(1), [1 1 1 0], Stim_oval_RIGHT); %Left BS location
@@ -1088,9 +1089,10 @@ for trialN = 1:size(conditions,1)
         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);%    draw stereo fusion helper lines
         
-        if currcondition == 0 % Fellow only
-            % draw R BS on left screen
-            % right inset goes here
+        if currcondition == 0 % Fellow L
+            % Blank
+            ShowFix()
+        elseif currcondition == 1 % Fellow R
             Screen('CopyWindow', leftFixWin, aperture(2), [], rightScreenRect); %always left fix frame
             Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_RIGHT);   %right BS aperture 
             Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, currorientation) %left screen R BS position
@@ -1100,39 +1102,23 @@ for trialN = 1:size(conditions,1)
                 Screen('DrawTexture', window, InsetTexture, [], InsetRectRight, currorientation+90) %Inset
             end 
             ShowFix()
-        elseif currcondition == 1 % R BS
-            % left screen is blank
-            ShowFix()
-            
         elseif currcondition == 2 % L BS
             % L BS on left screen
             % R BS on left screen (fellow eye stimulation)
             % insets goes here
             Screen('CopyWindow', leftFixWin, aperture(2), [], rightScreenRect); %always left fix frame
-            Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_RIGHT); %right BS aperture
+%             Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_RIGHT); %right BS aperture
             Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT); %left BS aperture
-            Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, currorientation) %left screen RIGHT BS position
-%             Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, currorientation) %left screen LEFT BS position
+%             Screen('DrawTexture', window, gratingtex, [], gratingrectRIGHTeye, currorientation) %left screen RIGHT BS position
+            Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, currorientation) %left screen LEFT BS position
             Screen('DrawTexture', window, aperture(2), [], [], 0) %show aperture         
-            if currinset == 2 % LEFT inset
+            if currinset == 1 % LEFT inset
                 Screen('DrawTexture', window, maskTexture1, [], GrayBlobRectLeft, 0) %gray blob
                 Screen('DrawTexture', window, InsetTexture, [], InsetRectLeft, currorientation+90) %Inset
-            elseif currinset == 1 % RIGHT inset
-                Screen('DrawTexture', window, maskTexture1, [], GrayBlobRectRight, 0) %gray blob
-                Screen('DrawTexture', window, InsetTexture, [], InsetRectRight, currorientation+90) %Inset
             end
             ShowFix()
-        elseif currcondition == 3 % Both BS
-            % L BS on left screen
-            % left inset goes here
-            Screen('CopyWindow', leftFixWin, aperture(2), [], rightScreenRect); %always left fix frame
-            Screen('FillOval', aperture(2), [1 1 1 0], Stim_oval_LEFT); %left BS aperture
-            Screen('DrawTexture', window, gratingtex, [], gratingrectLEFTeye, currorientation) %left screen LEFT BS position
-            Screen('DrawTexture', window, aperture(2), [], [], 0) %show aperture
-            if currinset == 2 % LEFT inset
-                Screen('DrawTexture', window, maskTexture1, [], GrayBlobRectLeft, 0) %gray blob
-                Screen('DrawTexture', window, InsetTexture, [], InsetRectLeft, currorientation+90) %Inset
-            end
+        elseif currcondition == 3 % R BS
+            % Blank
             ShowFix()
         end
         
@@ -1171,16 +1157,17 @@ for trialN = 1:size(conditions,1)
             Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
             Screen('CopyWindow', rightFixWin, window, [], rightScreenRect); %stereo fusion helper
             
-            if currcondition == 0 % Fellow only
+            if currcondition == 0 % Fellow L
                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectLEFTeye, 0) %LEft
                 Screen('DrawTexture', window, aperture(1), [], [], 0)
-            elseif currcondition == 1 % R BS
-                Screen('DrawTexture', window, maskgridtex(i), [], gratingrectLEFTeye, 0) %Left
-                Screen('DrawTexture', window, maskgridtex(i), [], gratingrectRIGHTeye, 0) %Right
-                Screen('DrawTexture', window, aperture(1), [], [], 0)
+            elseif currcondition == 1 % Fellow R
+                %Blank
+%                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectLEFTeye, 0) %Left
+%                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectRIGHTeye, 0) %Right
+%                 Screen('DrawTexture', window, aperture(1), [], [], 0)
             elseif currcondition == 2 % L BS
                 % Blank
-            elseif currcondition == 3 % Both BS
+            elseif currcondition == 3 % R BS
                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectRIGHTeye, 0) %Right
                 Screen('DrawTexture', window, aperture(1), [], [], 0)
             end
@@ -1197,18 +1184,21 @@ for trialN = 1:size(conditions,1)
             Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
             
-            if currcondition == 0 % Fellow only
+            if currcondition == 0 % Fellow L
+                %blank
+               
+            elseif currcondition == 1 % Fellow R
+                % Blank
                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectRIGHTeye, 0) %left
                 Screen('DrawTexture', window, aperture(2), [], [], 0)
-            elseif currcondition == 1 % R BS
-                % Blank
             elseif currcondition == 2 % L BS
-                Screen('DrawTexture', window, maskgridtex(i), [], gratingrectRIGHTeye, 0) %Right
+%                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectRIGHTeye, 0) %Right
                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectLEFTeye, 0) %Left
                 Screen('DrawTexture', window, aperture(2), [], [], 0)
-            elseif currcondition == 3 % Both BS
-                Screen('DrawTexture', window, maskgridtex(i), [], gratingrectLEFTeye, 0) %Left
-                Screen('DrawTexture', window, aperture(2), [], [], 0)
+            elseif currcondition == 3 % R BS
+                % blank
+%                 Screen('DrawTexture', window, maskgridtex(i), [], gratingrectLEFTeye, 0) %Left
+%                 Screen('DrawTexture', window, aperture(2), [], [], 0)
             end
             
 %             Screen('FrameOval', window, [1 0 0], BS_oval_LEFT, 10); %BS shaped oval, for debugging
@@ -1238,11 +1228,11 @@ for trialN = 1:size(conditions,1)
     % -----------------------
     Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
     Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
-    DrawFormattedText(window,'Left or Right stim more continuous?', 'center','center',[0 0 0], [],1);
+    DrawFormattedText(window,'Was there an inset?', 'center','center',[0 0 0], [],1);
     
     Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
     Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-    DrawFormattedText(window,'Left or Right stim more continuous?', 'center','center',[0 0 0], [],1);
+    DrawFormattedText(window,'Was there an inset?', 'center','center',[0 0 0], [],1);
     Screen('Flip', window);
     
     
@@ -1258,11 +1248,11 @@ for trialN = 1:size(conditions,1)
         
         Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
         Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
-        DrawFormattedText(window,'Left or Right stim more continuous?', 'center','center',[0 0 0], [],1);
+        DrawFormattedText(window,'Was there an inset?', 'center','center',[0 0 0], [],1);
         
         Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
         Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
-        DrawFormattedText(window,'Left or Right stim more continuous?', 'center','center',[0 0 0], [],1);
+        DrawFormattedText(window,'Was there an inset?', 'center','center',[0 0 0], [],1);
         Screen('Flip', window);
         
         
@@ -1270,8 +1260,8 @@ for trialN = 1:size(conditions,1)
         if keyIsDown
             if keyCode(escapeKey);
                 resp2Bmade = false; endtime = GetSecs; save (filename); sca;
-            elseif keyCode(leftKey); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
-            elseif keyCode(rightKey); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
+            elseif keyCode(upKey); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
+            elseif keyCode(downKey); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
             else
                 %just go through the while loop since resp2Bmade is
                 %still true
@@ -1311,14 +1301,14 @@ for trialN = 1:size(conditions,1)
         
         
         
-        if keyIsDown
+        if keyIsDown % for the training block, don't record confidence
             if keyCode(escapeKey);
                 resp2Bmade = false; endtime = GetSecs; save (filename); sca;
-            elseif keyCode(one); resp2Bmade = false; curr_response = 1; endtime = GetSecs;
-            elseif keyCode(two); resp2Bmade = false; curr_response = 2; endtime = GetSecs;
-            elseif keyCode(three); resp2Bmade = false; curr_response = 3; endtime = GetSecs;
-            elseif keyCode(four); resp2Bmade = false; curr_response = 4; endtime = GetSecs;
-            elseif keyCode(five); resp2Bmade = false; curr_response = 5; endtime = GetSecs;
+            elseif keyCode(one); resp2Bmade = false; %curr_response = 1; endtime = GetSecs;
+            elseif keyCode(two); resp2Bmade = false; %curr_response = 2; endtime = GetSecs;
+            elseif keyCode(three); resp2Bmade = false; %curr_response = 3; endtime = GetSecs;
+            elseif keyCode(four); resp2Bmade = false; %curr_response = 4; endtime = GetSecs;
+            elseif keyCode(five); resp2Bmade = false; %curr_response = 5; endtime = GetSecs;
             else
                 %just go through the while loop since resp2Bmade is
                 %still true
@@ -1328,18 +1318,64 @@ for trialN = 1:size(conditions,1)
         
               
         
-        % Clear screen
-        subjectdata(trialN,7) = curr_response; %Record confidence
-        %     subjectdata(trialN,5) = nexttrial(3); %standard 1st or 2nd
-        
-        %     subjectdata(trialN,7) = endtime - starttime; % Record RT in secs
-       
-    end
-    
-    
-    
-    
-     disp(sprintf('Trial %d out of %d completed', trialN, size(conditions,1)))
+%         % Clear screen
+%         subjectdata(trialN,7) = curr_response; %Record confidence
+%         %     subjectdata(trialN,5) = nexttrial(3); %standard 1st or 2nd
+%         
+%         %     subjectdata(trialN,7) = endtime - starttime; % Record RT in secs
+
+     end
+     
+     % Provide Feedback
+     
+     
+     if ((currcondition == 0 || currcondition == 1)&& currinset == 1 && curr_response == 1) || ...
+             ((currcondition == 0 || currcondition == 1)&& currinset == 0 && curr_response == 2) || ...
+             ((currcondition == 2 || currcondition == 3)&& currinset == 1 && curr_response == 2) || ...
+             ((currcondition == 2 || currcondition == 3)&& currinset == 0 && curr_response == 2)
+         % Fellow inset present and said yes
+         % Fellow inset absent and said no
+         % BS inset present and said no
+         % BS inset absent and said no
+         corrNumber = corrNumber + 1;
+         if feedbackYes == 1
+             Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+             DrawFormattedText(window,'Correct! :)', 'center','center',[0 0 0], [],1);
+             
+             Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+             Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+             DrawFormattedText(window,'Correct! :)', 'center','center',[0 0 0], [],1);
+             Screen('Flip', window);
+             KbStrokeWait(-1)
+         end
+         
+         
+     elseif ((currcondition == 0 || currcondition == 1) && currinset == 1 && curr_response == 2) || ...
+             ((currcondition == 0 || currcondition == 1) && currinset == 0 && curr_response == 1) || ...
+             ((currcondition == 2 || currcondition == 3) && currinset == 1 && curr_response == 1) || ...
+             ((currcondition == 2 || currcondition == 3) && currinset == 0 && curr_response == 1)
+         
+         % fellow inset present and said no
+         % fellow inset absent and said yes
+         % bs inset present and said yes
+         % bs inset absent and said yes
+         if feedbackYes == 1
+             Screen('SelectStereoDrawBuffer', window, 0);  %LEFT
+             Screen('CopyWindow', leftFixWin, window, [], rightScreenRect);
+             DrawFormattedText(window,'Incorrect! :(', 'center','center',[0 0 0], [],1);
+             
+             Screen('SelectStereoDrawBuffer', window, 1);  %RIGHT
+             Screen('CopyWindow', rightFixWin, window, [], rightScreenRect);
+             DrawFormattedText(window,'Incorrect! :(', 'center','center',[0 0 0], [],1);
+             Screen('Flip', window);
+             KbStrokeWait(-1)
+         end
+     end
+
+
+
+    disp(sprintf('Trial %d out of %d completed', trialN, size(conditions,1)))
      
      
      if mod(trialN,50) == 0 %if a block of 50 trials has been completed. ntrials divided by 50 should leave no remainder, ie 150/50 = 3, 50/50 = 1 etc
@@ -1403,6 +1439,6 @@ catch ERR
     rethrow(ERR)
 end
 
- save (filename)
-
+save (filename)
+corrNumber
 sca
