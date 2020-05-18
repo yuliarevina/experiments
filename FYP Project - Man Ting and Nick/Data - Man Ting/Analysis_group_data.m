@@ -269,13 +269,17 @@ t_test_pairwise (Data_IC.PSE.CtrlPeri.Concave(intersect(subjectsControlPeri_Conc
 %~~
 disp('Occ Fov vs Ctrl Fov')
 t_test_pairwise (Data_IC.PSE.OccFov.Concave(intersect(subjectsOccFov_Concave,subjectsControlFov_Concave)), Data_IC.PSE.CtrlFov.Concave(intersect(subjectsOccFov_Concave,subjectsControlFov_Concave)))
-%% UNDERESTIMATION OF CURVATURE
+%% UNDERESTIMATION OF CURVATURE & Foveal bias
+
+%Select subs
 
 BS_flat_subs = intersect(subjectsBS_Convex,subjectsBS_Concave);
 OccPeri_flat_subs = intersect(subjectsOccPeri_Convex,subjectsOccPeri_Concave);
 CtrlPeri_flat_subs =  intersect(subjectsControlPeri_Convex,subjectsControlPeri_Concave);
 OccFov_flat_subs = intersect(subjectsOccFov_Convex,subjectsOccFov_Concave);
 CtrlFov_flat_subs = intersect(subjectsControlFov_Convex,subjectsControlFov_Concave);
+
+%% UNDERESTIMATION OF CURVATURE
 
 BS_flattenning = Data_IC.PSE.BS.Underestimation_of_curvature(BS_flat_subs);
 OccludedPeri_flattenning = Data_IC.PSE.OccPeri.Underestimation_of_curvature(OccPeri_flat_subs);
@@ -309,7 +313,75 @@ individdata_FLAT = {BS_flattenning; ...
     ControlPeri_flattenning; ...
     OccludedFov_flattenning; ...
     ControlFov_flattenning};
-%% T TESTS
+
+%% UNDERESTIMATION OF CURVATURE for dot eye analysis
+
+OccludedFov_flattenning_BS =Data_IC.PSE.OccFov.Underestimation_of_curvature_BS(OccFov_flat_subs);
+OccludedFov_flattenning_Fellow =Data_IC.PSE.OccFov.Underestimation_of_curvature_Fellow(OccFov_flat_subs);
+ControlFov_flattenning_BS =Data_IC.PSE.CtrlFov.Underestimation_of_curvature_BS(CtrlFov_flat_subs);
+ControlFov_flattenning_Fellow =Data_IC.PSE.CtrlFov.Underestimation_of_curvature_Fellow(CtrlFov_flat_subs);
+
+OccludedFov_flattenning_all_BS =Data_IC.PSE.OccFov.Underestimation_of_curvature_BS();
+OccludedFov_flattenning_all_Fellow =Data_IC.PSE.OccFov.Underestimation_of_curvature_Fellow();
+ControlFov_flattenning_all_BS =Data_IC.PSE.CtrlFov.Underestimation_of_curvature_BS();
+ControlFov_flattenning_all_Fellow =Data_IC.PSE.CtrlFov.Underestimation_of_curvature_Fellow();
+
+% Alldatatoplot_FLAT = [];
+% individdata_FLAT= [];
+% %group data for boxplot 0.25 - 0.45
+% 
+% Alldatatoplot_FLAT = [BS_flattenning; ...
+%     OccludedPeri_flattenning; ...
+%     ControlPeri_flattenning; ...
+%     OccludedFov_flattenning; ...
+%     ControlFov_flattenning; ...
+%    ];
+% groups_FLAT = [ones(1,length(BS_flattenning))';2*ones(1,length(OccludedPeri_flattenning))'; ...
+%     3*ones(1,length(ControlPeri_flattenning))'; 4*ones(1,length(OccludedFov_flattenning))'; ...
+%     5*ones(1,length(ControlFov_flattenning))'; ...
+%    ];
+% 
+% individdata_FLAT = {BS_flattenning; ...
+%     OccludedPeri_flattenning; ...
+%     ControlPeri_flattenning; ...
+%     OccludedFov_flattenning; ...
+%     ControlFov_flattenning};
+
+
+%% Foveal bias
+BS_fov_bias = Data_IC.PSE.BS.Foveal_bias(BS_flat_subs);
+OccludedPeri_fov_bias = Data_IC.PSE.OccPeri.Foveal_bias(OccPeri_flat_subs);
+ControlPeri_fov_bias = Data_IC.PSE.CtrlPeri.Foveal_bias(CtrlPeri_flat_subs);
+OccludedFov_fov_bias =Data_IC.PSE.OccFov.Foveal_bias(OccFov_flat_subs);
+ControlFov_fov_bias =Data_IC.PSE.CtrlFov.Foveal_bias(CtrlFov_flat_subs);
+
+BS_fov_bias_all = Data_IC.PSE.BS.Foveal_bias();
+OccludedPeri_fov_bias_all = Data_IC.PSE.OccPeri.Foveal_bias();
+ControlPeri_fov_bias_all = Data_IC.PSE.CtrlPeri.Foveal_bias();
+OccludedFov_fov_bias_all =Data_IC.PSE.OccFov.Foveal_bias();
+ControlFov_fov_bias_all =Data_IC.PSE.CtrlFov.Foveal_bias();
+
+Alldatatoplot_FLAT = [];
+individdata_FLAT= [];
+%group data for boxplot 0.25 - 0.45
+
+Alldatatoplot_FLAT = [BS_fov_bias; ...
+    OccludedPeri_fov_bias; ...
+    ControlPeri_fov_bias; ...
+    OccludedFov_fov_bias; ...
+    ControlFov_fov_bias; ...
+   ];
+groups_FLAT = [ones(1,length(BS_fov_bias))';2*ones(1,length(OccludedPeri_fov_bias))'; ...
+    3*ones(1,length(ControlPeri_fov_bias))'; 4*ones(1,length(OccludedFov_fov_bias))'; ...
+    5*ones(1,length(ControlFov_fov_bias))'; ...
+   ];
+
+individdata_FLAT = {BS_fov_bias; ...
+    OccludedPeri_fov_bias; ...
+    ControlPeri_fov_bias; ...
+    OccludedFov_fov_bias; ...
+    ControlFov_fov_bias};
+%% T TESTS for Underestimatin
 disp('BS vs Occ Peri')
 t_test_pairwise (BS_flattenning_all(intersect(BS_flat_subs,OccPeri_flat_subs)), OccludedPeri_flattenning_all(intersect(BS_flat_subs,OccPeri_flat_subs)))
 
@@ -377,7 +449,77 @@ t_test_pairwise (OccludedFov_flattenning, Data_IC.PSE.Flat_value(OccFov_flat_sub
 
 disp('Ctrl Fov')
 t_test_pairwise (ControlFov_flattenning, Data_IC.PSE.Flat_value(CtrlFov_flat_subs))
-%% PLOT FLATNESS
+
+
+%% T TESTS for Fov Bias
+disp('BS vs Occ Peri')
+t_test_pairwise (BS_fov_bias_all(intersect(BS_flat_subs,OccPeri_flat_subs)), OccludedPeri_fov_bias_all(intersect(BS_flat_subs,OccPeri_flat_subs)))
+
+disp('BS vs Ctrl Peri')
+t_test_pairwise (BS_fov_bias_all(intersect(BS_flat_subs,CtrlPeri_flat_subs)), ControlPeri_fov_bias_all(intersect(BS_flat_subs,CtrlPeri_flat_subs)))
+
+disp('BS vs Occ Fov')
+t_test_pairwise (BS_fov_bias_all(intersect(BS_flat_subs,OccFov_flat_subs)), OccludedFov_fov_bias_all(intersect(BS_flat_subs,OccFov_flat_subs)))
+
+disp('BS vs Ctrl Fov')
+t_test_pairwise (BS_fov_bias_all(intersect(BS_flat_subs,CtrlFov_flat_subs)), ControlFov_fov_bias_all(intersect(BS_flat_subs,CtrlFov_flat_subs)))
+
+%~~
+disp('Occ Peri vs Ctrl Peri')
+t_test_pairwise (OccludedPeri_fov_bias_all(intersect(OccPeri_flat_subs,CtrlPeri_flat_subs)), ControlPeri_fov_bias_all(intersect(OccPeri_flat_subs,CtrlPeri_flat_subs)))
+
+disp('Occ Peri vs Occ Fov')
+t_test_pairwise (OccludedPeri_fov_bias_all(intersect(OccPeri_flat_subs,OccFov_flat_subs)), OccludedFov_fov_bias_all(intersect(OccPeri_flat_subs,OccFov_flat_subs)))
+
+disp('Occ Peri vs Ctrl Fov')
+t_test_pairwise (OccludedPeri_fov_bias_all(intersect(OccPeri_flat_subs,CtrlFov_flat_subs)), ControlFov_fov_bias_all(intersect(OccPeri_flat_subs,CtrlFov_flat_subs)))
+
+%~~
+disp('Ctrl Peri vs Occ Fov')
+t_test_pairwise (ControlPeri_fov_bias_all(intersect(CtrlPeri_flat_subs,OccFov_flat_subs)), OccludedFov_fov_bias_all(intersect(CtrlPeri_flat_subs,OccFov_flat_subs)))
+
+disp('Ctrl Peri vs Ctrl Fov')
+t_test_pairwise (ControlPeri_fov_bias_all(intersect(CtrlPeri_flat_subs,CtrlFov_flat_subs)), ControlFov_fov_bias_all(intersect(CtrlPeri_flat_subs,CtrlFov_flat_subs)))
+
+%~~
+disp('Occ Fov vs Ctrl Fov')
+t_test_pairwise (OccludedFov_fov_bias_all(intersect(OccFov_flat_subs,CtrlFov_flat_subs)), ControlFov_fov_bias_all(intersect(OccFov_flat_subs,CtrlFov_flat_subs)))
+
+
+% from Zero
+disp('BS')
+t_test_from_zero (BS_fov_bias)
+
+disp('Occ Peri')
+t_test_from_zero (OccludedPeri_fov_bias)
+
+disp('Ctrl Peri')
+t_test_from_zero (ControlPeri_fov_bias)
+
+disp('Occ Fov')
+t_test_from_zero (OccludedFov_fov_bias)
+
+disp('Ctrl Fov')
+t_test_from_zero (ControlFov_fov_bias)
+
+
+% % from individual flat value
+% 
+% disp('BS')
+% t_test_pairwise (BS_flattenning, Data_IC.PSE.Flat_value(BS_flat_subs))
+% 
+% disp('Occ Peri')
+% t_test_pairwise (OccludedPeri_flattenning, Data_IC.PSE.Flat_value(OccPeri_flat_subs))
+% 
+% disp('Ctrl Peri')
+% t_test_pairwise (ControlPeri_flattenning, Data_IC.PSE.Flat_value(CtrlPeri_flat_subs))
+% 
+% disp('Occ Fov')
+% t_test_pairwise (OccludedFov_flattenning, Data_IC.PSE.Flat_value(OccFov_flat_subs))
+% 
+% disp('Ctrl Fov')
+% t_test_pairwise (ControlFov_flattenning, Data_IC.PSE.Flat_value(CtrlFov_flat_subs))
+%% PLOT FLATNESS OR foveal bias
 
 figure; bx = boxplot(Alldatatoplot_FLAT,groups_FLAT,'Notch','off', 'MedianStyle', 'line');
 ax = gca;
@@ -423,8 +565,9 @@ set(gca,'XTickLabel', {'Blind Spot', 'Occluded Peri', 'Control Peri', 'Occluded 
      'Control Fovea'}) 
 set(gca, 'XTickLabelRotation', 45);
 set(gca, 'TickDir', 'out')
-ylabel('Underestimation of Curvature')
-axis([0 6 -1 3])
+% ylabel('Underestimation of Curvature')
+ylabel('Foveal bias')
+axis([0 6 -3.5 5])
 set(gcf, 'Position', [200, 200, 1600, 900])
 
 
@@ -744,6 +887,15 @@ t_test_pairwise (mean([Data_IC.Slope.OccFov.Convex(intersect(OccFov_both_curvatu
 [p,h,stats]= signrank (mean([Data_IC.Slope.OccFov.Convex(intersect(OccFov_both_curvatures,CtrlFov_both_curvatures)), Data_IC.Slope.OccFov.Concave(intersect(OccFov_both_curvatures,CtrlFov_both_curvatures))],2), ...
     mean([Data_IC.Slope.CtrlFov.Convex(intersect(OccFov_both_curvatures,CtrlFov_both_curvatures)), Data_IC.Slope.CtrlFov.Concave(intersect(OccFov_both_curvatures,CtrlFov_both_curvatures))],2),'method', 'approximate')
 
+
+%for dot eye analysis
+t_test_pairwise (mean([Data_IC.Slope.OccFov.BS_convex(OccFov_both_curvatures), Data_IC.Slope.OccFov.BS_concave(OccFov_both_curvatures)],2), ...
+    mean([Data_IC.Slope.OccFov.Fellow_convex(OccFov_both_curvatures), Data_IC.Slope.OccFov.Fellow_concave(OccFov_both_curvatures)],2))
+
+t_test_pairwise (mean([Data_IC.Slope.CtrlFov.BS_convex(CtrlFov_both_curvatures), Data_IC.Slope.CtrlFov.BS_concave(CtrlFov_both_curvatures)],2), ...
+    mean([Data_IC.Slope.CtrlFov.Fellow_convex(CtrlFov_both_curvatures), Data_IC.Slope.CtrlFov.Fellow_concave(CtrlFov_both_curvatures)],2))
+
+
 %% RT
 
 % exclude subs with bad fix
@@ -760,7 +912,7 @@ end
 
 % figure; hist(Data_IC.RT(:,1),10)
 
-
+%% GROUP RT
 excludedsubs = [1, 4, 17, 20];
 allsubs = [1:30];
 goodsubs = setdiff(allsubs,excludedsubs);

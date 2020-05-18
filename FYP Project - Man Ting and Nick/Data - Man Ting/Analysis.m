@@ -4,8 +4,8 @@
 
 
 %% set parameters
-ntrialseachcond = 20; %remember to double this number if testing con-vex and -cave together [convex =3]
-convex = 1; %convex =1, concave =2; 3 to test both averaged together
+ntrialseachcond = 400; %remember to double this number if testing con-vex and -cave together [convex =3]
+convex = 2; %convex =1, concave =2; 3 to test both averaged together
 outsidekey = 2; %normally should be 2 but try 1 if you think person mixed up the buttons
 
 nDotPos = 7; %how many dot positions were there in total? (prob 7 or 9)
