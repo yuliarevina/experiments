@@ -78,6 +78,13 @@
            
             incrementframe = incrementframe + 1;
             
+            if makescreenshotsforvideo && mod(framenumber,2) == 0
+                imageArray = Screen('GetImage', window, [412, 200, 1018, 806]);
+                filenameimage = sprintf('screenshots_myscreenshot%d.jpg', framenumber);
+                imwrite(imageArray, filenameimage);
+%                 framenumber = framenumber+1;
+            end
+            framenumber = framenumber+1;
         end %while 
         time_elapsed_comp = vbl - start_time;
         disp(sprintf('    Time elapsed for comparison:  %.5f seconds using VBL - start',time_elapsed_comp));
