@@ -1,10 +1,11 @@
-col = 15;
+col = 18;
 
-col2correlatewith = 16;
+col2correlatewith = 12;
 
-figure; scatter(unnamed(:,col), unnamed(:,col2correlatewith)); lsline; [r,p] = corr(unnamed(:,col), unnamed(:,col2correlatewith)), title([num2str(r), '  ', num2str(p)]);
-[r, p] = corr(unnamed(:,col), unnamed(:,col2correlatewith), 'Type', 'Spearman')
-
+figure; scatter(unnamed(:,col), unnamed(:,col2correlatewith)); lsline; [r,p] = corr(unnamed(:,col), unnamed(:,col2correlatewith), 'rows', 'complete'), %title([num2str(r), '  ', num2str(p)]);
+[r, p] = corr(unnamed(:,col), unnamed(:,col2correlatewith), 'Type', 'Spearman', 'rows', 'complete')
+% [r, p] = corr(unnamed(:,col), unnamed(:,col2correlatewith), 'Type', 'Pearson')
+title(sprintf('r = %f, p = %f', r, p))
 
 
 
